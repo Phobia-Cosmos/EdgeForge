@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from edgeforge import __version__
+from edgeforge.kernel import KernelSpec, kernel_supports_operator, kernel_supports_worker
 from edgeforge.scheduler import select_worker
 
 
@@ -86,6 +87,23 @@ class Store:
                     metadata TEXT NOT NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS kernels (
+                    id TEXT PRIMARY KEY,
+                    operator TEXT NOT NULL,
+                    backend TEXT NOT NULL,
+                    version TEXT NOT NULL,
+                    architectures TEXT NOT NULL,
+                    dtypes TEXT NOT NULL,
+                    shape_constraints TEXT NOT NULL,
+                    metadata TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    created_at REAL NOT NULL,
+                    registered_by_version TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS kernels_operator_idx
+                ON kernels(operator, status, created_at DESC);
+
                 CREATE TABLE IF NOT EXISTS benchmarks (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     task_id TEXT NOT NULL,
@@ -93,7 +111,10 @@ class Store:
                     runtime_version TEXT,
                     worker_id TEXT NOT NULL,
                     architecture TEXT NOT NULL,
+                    hardware_fingerprint TEXT,
                     operator TEXT NOT NULL,
+                    kernel_id TEXT,
+                    kernel_version TEXT,
                     shape TEXT NOT NULL,
                     dtype TEXT NOT NULL,
                     backend TEXT NOT NULL,
@@ -118,6 +139,13 @@ class Store:
                 connection.execute("ALTER TABLE tasks ADD COLUMN version TEXT NOT NULL DEFAULT '0.1.0'")
             if "runtime_version" not in columns:
                 connection.execute("ALTER TABLE tasks ADD COLUMN runtime_version TEXT")
+            benchmark_columns = {row["name"] for row in connection.execute("PRAGMA table_info(benchmarks)").fetchall()}
+            if "kernel_id" not in benchmark_columns:
+                connection.execute("ALTER TABLE benchmarks ADD COLUMN kernel_id TEXT")
+            if "kernel_version" not in benchmark_columns:
+                connection.execute("ALTER TABLE benchmarks ADD COLUMN kernel_version TEXT")
+            if "hardware_fingerprint" not in benchmark_columns:
+                connection.execute("ALTER TABLE benchmarks ADD COLUMN hardware_fingerprint TEXT")
             connection.execute(
                 "INSERT OR IGNORE INTO releases(version, created_at, status, summary, metadata) VALUES (?, ?, 'active', ?, '{}')",
                 (self.version, time.time(), f"EdgeForge runtime {self.version}"),
@@ -226,6 +254,13 @@ class Store:
             from edgeforge.operator import OperatorSpec
 
             OperatorSpec.from_payload(payload.get("operator") or {})
+            kernel_id = payload.get("kernel_id") or (data.get("requirements") or {}).get("kernel_id")
+            if kernel_id:
+                kernel = self.get_kernel(str(kernel_id))
+                if not kernel_supports_operator(kernel, payload.get("operator") or {}):
+                    raise ValueError(f"kernel {kernel_id} does not support this operator or dtype")
+                payload["kernel_id"] = str(kernel_id)
+                payload["kernel"] = kernel
         else:
             argv = payload.get("argv")
             if not isinstance(argv, list) or not argv or not all(isinstance(item, str) and item for item in argv):
@@ -324,7 +359,12 @@ class Store:
             selected_row = None
             for row in queued:
                 requirements = json.loads(row["requirements"])
-                selected = select_worker(online_workers, requirements)
+                candidates = online_workers
+                kernel_id = requirements.get("kernel_id") or (json.loads(row["payload"]).get("kernel_id") if row["kind"] == "operator_benchmark" else None)
+                if kernel_id:
+                    kernel = self.get_kernel(str(kernel_id))
+                    candidates = [worker for worker in candidates if kernel_supports_worker(kernel, worker)]
+                selected = select_worker(candidates, requirements)
                 if selected and selected["id"] == worker_id:
                     selected_row = row
                     break
@@ -385,6 +425,76 @@ class Store:
         )
         return task
 
+    def register_kernel(self, data: dict[str, Any]) -> dict[str, Any]:
+        spec = KernelSpec.from_payload(data)
+        now = time.time()
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO kernels(id, operator, backend, version, architectures, dtypes,
+                                    shape_constraints, metadata, status, created_at, registered_by_version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    operator = excluded.operator,
+                    backend = excluded.backend,
+                    version = excluded.version,
+                    architectures = excluded.architectures,
+                    dtypes = excluded.dtypes,
+                    shape_constraints = excluded.shape_constraints,
+                    metadata = excluded.metadata,
+                    status = excluded.status,
+                    registered_by_version = excluded.registered_by_version
+                """,
+                (
+                    spec.id,
+                    spec.operator,
+                    spec.backend,
+                    spec.version,
+                    json.dumps(list(spec.architectures), separators=(",", ":")),
+                    json.dumps(list(spec.dtypes), separators=(",", ":")),
+                    json.dumps(spec.shape_constraints, separators=(",", ":")),
+                    json.dumps(spec.metadata, ensure_ascii=False, separators=(",", ":")),
+                    data.get("status", "active"),
+                    now,
+                    self.version,
+                ),
+            )
+        kernel = self.get_kernel(spec.id)
+        self.append_event("kernel.registered", "control", "kernel", spec.id, kernel)
+        return kernel
+
+    def get_kernel(self, kernel_id: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM kernels WHERE id = ?", (kernel_id,)).fetchone()
+        if row is None:
+            raise KeyError(kernel_id)
+        item = dict(row)
+        item["architectures"] = json.loads(item["architectures"])
+        item["dtypes"] = json.loads(item["dtypes"])
+        item["shape_constraints"] = json.loads(item["shape_constraints"])
+        item["metadata"] = json.loads(item["metadata"])
+        return item
+
+    def list_kernels(self, operator: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        with self._connect() as connection:
+            if operator:
+                rows = connection.execute(
+                    "SELECT * FROM kernels WHERE operator IN (?, '*') ORDER BY created_at DESC, id LIMIT ?",
+                    (operator, limit),
+                ).fetchall()
+            else:
+                rows = connection.execute("SELECT * FROM kernels ORDER BY created_at DESC, id LIMIT ?", (limit,)).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["architectures"] = json.loads(item["architectures"])
+            item["dtypes"] = json.loads(item["dtypes"])
+            item["shape_constraints"] = json.loads(item["shape_constraints"])
+            item["metadata"] = json.loads(item["metadata"])
+            result.append(item)
+        return result
+
     def append_event(
         self,
         event_type: str,
@@ -436,8 +546,9 @@ class Store:
             connection.execute(
                 """
                 INSERT INTO benchmarks(task_id, version, runtime_version, worker_id, architecture,
-                                       operator, shape, dtype, backend, correctness, timings, summary, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                       hardware_fingerprint, operator, kernel_id, kernel_version, shape, dtype,
+                                       backend, correctness, timings, summary, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     task["id"],
@@ -445,7 +556,10 @@ class Store:
                     task.get("runtime_version"),
                     worker_id,
                     capabilities.get("architecture", "unknown"),
+                    capabilities.get("hardware_fingerprint"),
                     operator.get("name", "unknown"),
+                    result.get("kernel_id") or operator.get("kernel_id") or task["payload"].get("kernel_id"),
+                    result.get("kernel_version") or operator.get("kernel_version"),
                     json.dumps(operator.get("shape") or []),
                     operator.get("dtype", "unknown"),
                     result.get("backend") or operator.get("backend", "unknown"),
@@ -478,10 +592,55 @@ class Store:
             result.append(item)
         return result
 
+    def performance_regressions(self, operator: str | None = None, threshold: float = 0.2) -> list[dict[str, Any]]:
+        threshold = min(10.0, max(0.0, float(threshold)))
+        rows = self.list_benchmarks(operator, 1000)
+        groups: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+        for row in rows:
+            key = (
+                row["operator"],
+                json.dumps(row["shape"], separators=(",", ":")),
+                row["dtype"],
+                row["backend"],
+                row.get("kernel_id"),
+                row["architecture"],
+            )
+            groups.setdefault(key, []).append(row)
+        regressions = []
+        for key, values in groups.items():
+            values.sort(key=lambda value: (value["created_at"], value["id"]))
+            if len(values) < 2:
+                continue
+            previous = values[-2]
+            latest = values[-1]
+            previous_median = float(previous["summary"].get("median_ms") or 0.0)
+            latest_median = float(latest["summary"].get("median_ms") or 0.0)
+            if previous_median > 0 and latest_median > previous_median * (1.0 + threshold):
+                regressions.append(
+                    {
+                        "operator": key[0],
+                        "shape": json.loads(key[1]),
+                        "dtype": key[2],
+                        "backend": key[3],
+                        "kernel_id": key[4],
+                        "architecture": key[5],
+                        "previous": previous,
+                        "latest": latest,
+                        "slowdown_ratio": round(latest_median / previous_median, 4),
+                    }
+                )
+        return regressions
+
     def record_release(self, version: str, summary: str, metadata: dict[str, Any], status: str = "active") -> dict[str, Any]:
         with self._lock, self._connect() as connection:
             connection.execute(
-                "INSERT OR REPLACE INTO releases(version, created_at, status, summary, metadata) VALUES (?, ?, ?, ?, ?)",
+                """
+                INSERT INTO releases(version, created_at, status, summary, metadata) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(version) DO UPDATE SET
+                    status = excluded.status,
+                    summary = excluded.summary,
+                    metadata = excluded.metadata
+                """,
                 (version, time.time(), status, summary, json.dumps(metadata, ensure_ascii=False, separators=(",", ":"))),
             )
         release = self.get_release(version)

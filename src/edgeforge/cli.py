@@ -104,12 +104,13 @@ def build_parser() -> argparse.ArgumentParser:
     submit.add_argument("--wait", action="store_true")
     submit.add_argument("argv", nargs=argparse.REMAINDER, help="command after --")
 
-    operator = subparsers.add_parser("operator-benchmark", help="run a V2 Operator IR benchmark")
+    operator = subparsers.add_parser("operator-benchmark", help="run an Operator IR benchmark")
     _add_client_options(operator)
     operator.add_argument("--operator", required=True, choices=("matmul", "softmax", "rmsnorm", "silu"))
     operator.add_argument("--shape", required=True, help="comma-separated dimensions; matmul uses M,K,N")
     operator.add_argument("--dtype", default="fp32", choices=("fp32", "fp16", "bf16"))
     operator.add_argument("--backend", default="python-reference")
+    operator.add_argument("--kernel-id")
     operator.add_argument("--arch", action="append", default=[])
     operator.add_argument("--worker-id", action="append", default=[])
     operator.add_argument("--accelerator", action="append", default=[])
@@ -136,6 +137,25 @@ def build_parser() -> argparse.ArgumentParser:
     release.add_argument("--summary", required=True)
     release.add_argument("--status", default="active", choices=("active", "deprecated", "retired"))
     release.add_argument("--metadata", default="{}", help="JSON object")
+
+    kernels = subparsers.add_parser("kernels", help="list registered kernels")
+    _add_client_options(kernels)
+    kernels.add_argument("--operator")
+
+    kernel = subparsers.add_parser("kernel-register", help="register a kernel candidate")
+    _add_client_options(kernel)
+    kernel.add_argument("--id")
+    kernel.add_argument("--operator", required=True)
+    kernel.add_argument("--backend", required=True)
+    kernel.add_argument("--version", required=True)
+    kernel.add_argument("--arch", action="append", default=[])
+    kernel.add_argument("--dtype", action="append", default=["fp32"])
+    kernel.add_argument("--metadata", default="{}")
+
+    regressions = subparsers.add_parser("regressions", help="find benchmark regressions")
+    _add_client_options(regressions)
+    regressions.add_argument("--operator")
+    regressions.add_argument("--threshold", type=float, default=0.2)
     return parser
 
 
@@ -203,6 +223,7 @@ def _operator_submit(args: argparse.Namespace) -> int:
                 "architectures": args.arch,
                 "worker_ids": args.worker_id,
                 "accelerators": args.accelerator,
+                "kernel_id": args.kernel_id,
             },
             "priority": args.priority,
         },
@@ -215,6 +236,31 @@ def _operator_submit(args: argparse.Namespace) -> int:
         task = _client(args).request("GET", f"/api/v1/tasks/{task['id']}")
     _print_json(task)
     return 0 if task["status"] == "succeeded" else 1
+
+
+def _register_kernel(args: argparse.Namespace) -> int:
+    try:
+        metadata = json.loads(args.metadata)
+    except json.JSONDecodeError as error:
+        raise ValueError("--metadata must be valid JSON") from error
+    if not isinstance(metadata, dict):
+        raise ValueError("--metadata must be a JSON object")
+    _print_json(
+        _client(args).request(
+            "POST",
+            "/api/v1/kernels",
+            {
+                "id": args.id,
+                "operator": args.operator,
+                "backend": args.backend,
+                "version": args.version,
+                "architectures": args.arch or ["*"],
+                "dtypes": args.dtype,
+                "metadata": metadata,
+            },
+        )
+    )
+    return 0
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -282,6 +328,18 @@ def main(argv: list[str] | None = None) -> None:
                     {"version": args.version, "summary": args.summary, "status": args.status, "metadata": metadata},
                 )
             )
+            return
+        if args.command == "kernels":
+            query = f"?operator={args.operator}" if args.operator else ""
+            _print_json(_client(args).request("GET", f"/api/v1/kernels{query}"))
+            return
+        if args.command == "kernel-register":
+            raise SystemExit(_register_kernel(args))
+        if args.command == "regressions":
+            query = f"?threshold={args.threshold}"
+            if args.operator:
+                query += f"&operator={args.operator}"
+            _print_json(_client(args).request("GET", f"/api/v1/regressions{query}"))
             return
     except (APIError, OSError, ValueError) as error:
         parser.exit(2, f"error: {error}\n")

@@ -1,6 +1,6 @@
 # 版本与日志策略
 
-EdgeForge 使用语义化版本 `MAJOR.MINOR.PATCH`。协议不兼容、任务或 IR 语义不兼容时增加 MAJOR；增加向后兼容能力时增加 MINOR；仅修复兼容问题时增加 PATCH。
+EdgeForge 使用语义化版本 `MAJOR.MINOR.PATCH`。协议不兼容、任务或 IR 语义不兼容时增加 MAJOR；增加向后兼容能力时增加 MINOR；仅修复兼容问题时增加 PATCH。当前开发线为 `0.3.0`，V2 的 `0.2.0` 已通过四节点验证并冻结。
 
 每个版本必须同时留下四类记录：`CHANGELOG.md` 的用户可见变更、`releases/vX.Y.Z.md` 的发布验证证据、`EDGEFORGE_LOG_DIR/vX.Y.Z/` 的进程 JSONL 日志，以及控制面 SQLite 中的 release/event/task/benchmark 结构化数据。只写其中一种不能视为完整发布。
 

@@ -64,6 +64,19 @@ class WorkerExecutionTests(unittest.TestCase):
         self.assertTrue(result["correctness"])
         self.assertEqual(result["summary"]["runs"], 2)
 
+    def test_operator_result_preserves_kernel_identity(self):
+        result = self.worker.execute(
+            {
+                "kind": "operator_benchmark",
+                "payload": {
+                    "operator": {"name": "softmax", "shape": [8], "dtype": "fp32"},
+                    "kernel": {"id": "kernel-softmax-v1", "version": "1"},
+                },
+            }
+        )
+        self.assertEqual(result["kernel_id"], "kernel-softmax-v1")
+        self.assertEqual(result["kernel_version"], "1")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import math
 import os
@@ -73,7 +74,7 @@ def _accelerators() -> list[str]:
 def collect_capabilities() -> dict[str, Any]:
     memory = _memory_info()
     runtimes = [name for name in ("python3", "git", "cmake", "ninja", "gcc", "clang", "nvidia-smi") if shutil.which(name)]
-    return {
+    capabilities = {
         "architecture": _architecture(),
         "os": platform.system().lower(),
         "kernel": platform.release(),
@@ -84,6 +85,17 @@ def collect_capabilities() -> dict[str, Any]:
         "runtimes": runtimes,
         "python": platform.python_version(),
     }
+    identity = {
+        "architecture": capabilities["architecture"],
+        "cpu_model": capabilities["cpu_model"],
+        "cpu_count": capabilities["cpu_count"],
+        "memory_total_mb": capabilities["memory_total_mb"],
+        "accelerators": capabilities["accelerators"],
+    }
+    capabilities["hardware_fingerprint"] = hashlib.sha256(
+        json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()[:24]
+    return capabilities
 
 
 def _temperatures() -> dict[str, float]:
@@ -214,6 +226,10 @@ class Worker:
         if task["kind"] == "operator_benchmark":
             spec = OperatorSpec.from_payload(payload.get("operator") or {})
             result = benchmark_operator(spec, int(payload.get("repeats") or 3))
+            kernel = payload.get("kernel") or {}
+            if kernel:
+                result["kernel_id"] = kernel.get("id")
+                result["kernel_version"] = kernel.get("version")
             result["exit_code"] = 0 if result["correctness"] else 1
             result["elapsed_ms"] = round(sum(result.get("timings_ms") or []), 3)
             return result

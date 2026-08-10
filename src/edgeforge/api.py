@@ -107,6 +107,18 @@ class ControlHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/v1/releases":
                 self._send(HTTPStatus.OK, {"releases": self.server.store.list_releases()})
                 return
+            if parsed.path == "/api/v1/kernels":
+                query = parse_qs(parsed.query)
+                limit = int(query.get("limit", ["100"])[0])
+                operator = query.get("operator", [None])[0]
+                self._send(HTTPStatus.OK, {"kernels": self.server.store.list_kernels(operator, limit)})
+                return
+            if parsed.path == "/api/v1/regressions":
+                query = parse_qs(parsed.query)
+                operator = query.get("operator", [None])[0]
+                threshold = float(query.get("threshold", ["0.2"])[0])
+                self._send(HTTPStatus.OK, {"regressions": self.server.store.performance_regressions(operator, threshold)})
+                return
             match = TASK_PATH.match(parsed.path)
             if match:
                 self._send(HTTPStatus.OK, self.server.store.get_task(match.group(1)))
@@ -143,6 +155,10 @@ class ControlHandler(BaseHTTPRequestHandler):
                     raise ValueError("release version and summary are required")
                 release = self.server.store.record_release(version, summary, data.get("metadata") or {}, data.get("status", "active"))
                 self._send(HTTPStatus.CREATED, release)
+                return
+            if parsed.path == "/api/v1/kernels":
+                kernel = self.server.store.register_kernel(data)
+                self._send(HTTPStatus.CREATED, kernel)
                 return
             match = HEARTBEAT_PATH.match(parsed.path)
             if match:

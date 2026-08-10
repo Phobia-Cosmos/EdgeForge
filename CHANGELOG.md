@@ -2,6 +2,15 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.3.0 - 2026-08-10
+
+### Added
+
+- Kernel Registry、KernelSpec、架构/dtype 兼容性过滤。
+- Benchmark 结果中的 kernel identity 和性能回归查询。
+- `kernels`、`kernel-register` 和 `regressions` CLI/API。
+- 稳定硬件指纹和从 V2 SQLite schema 到 V3 的向后兼容迁移。
+
 ## 0.2.0 - 2026-08-10
 
 ### Added

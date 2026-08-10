@@ -3,6 +3,7 @@ import threading
 import unittest
 from pathlib import Path
 
+from edgeforge import __version__
 from edgeforge.api import ControlServer
 from edgeforge.client import APIError, Client
 from edgeforge.db import Store
@@ -69,7 +70,7 @@ class APITests(unittest.TestCase):
         )
         self.assertEqual(completed["status"], "succeeded")
 
-        events = self.client.request("GET", "/api/v1/events?version=0.2.0")["events"]
+        events = self.client.request("GET", f"/api/v1/events?version={__version__}")["events"]
         self.assertTrue(any(event["event_type"] == "task.completed" for event in events))
 
     def test_release_ledger(self):
@@ -81,6 +82,23 @@ class APITests(unittest.TestCase):
         self.assertEqual(release["metadata"]["tests"], 1)
         versions = [item["version"] for item in self.client.request("GET", "/api/v1/releases")["releases"]]
         self.assertIn("0.2.0-test", versions)
+
+    def test_kernel_registry_api(self):
+        kernel = self.client.request(
+            "POST",
+            "/api/v1/kernels",
+            {
+                "id": "kernel-api-softmax-v1",
+                "operator": "softmax",
+                "backend": "python-reference",
+                "version": "1",
+                "architectures": ["aarch64"],
+                "dtypes": ["fp32"],
+            },
+        )
+        self.assertEqual(kernel["registered_by_version"], __version__)
+        kernels = self.client.request("GET", "/api/v1/kernels?operator=softmax")["kernels"]
+        self.assertEqual([item["id"] for item in kernels], ["kernel-api-softmax-v1"])
 
 
 if __name__ == "__main__":
