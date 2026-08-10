@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.4.0` 在 V3 Kernel Registry 之上增加了内容寻址 Artifact Store 与 `compile → correctness → benchmark` Pipeline。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.5.0` 在 V4 Compiler Pipeline 之上增加了 Triton MatMul Auto Tuning、完整候选历史和最佳配置回写。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 设计见 [docs/design-v4.md](docs/design-v4.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 
@@ -85,6 +85,7 @@ python3 -m edgeforge operator-benchmark \
 | `GET/POST /api/v1/kernels` | 查询或登记 Kernel 候选 |
 | `GET /api/v1/regressions` | 查询相邻 Benchmark 性能回归 |
 | `GET/POST /api/v1/artifacts` | 查询或写入内容寻址 Artifact |
+| `GET /api/v1/tuning-runs` | 查询 Auto Tuning 搜索历史和最佳配置 |
 
 除 `/healthz` 外，所有接口都要求 `Authorization: Bearer <token>`。
 
@@ -107,6 +108,7 @@ python3 -m edgeforge releases --token "$EDGEFORGE_TOKEN"
 python3 -m edgeforge events --token "$EDGEFORGE_TOKEN" --version 0.4.0
 python3 -m edgeforge benchmarks --token "$EDGEFORGE_TOKEN" --operator matmul
 python3 -m edgeforge artifacts --token "$EDGEFORGE_TOKEN" --kind compiler-manifest
+python3 -m edgeforge tuning-runs --token "$EDGEFORGE_TOKEN" --operator matmul
 ```
 
 Operator IR 当前支持 `matmul`、`softmax`、`rmsnorm` 和 `silu`。`python-reference` Backend 用于跨架构 correctness 基线，不宣称模拟 FP16/BF16 舍入，也不用于替代后续 CUDA、Triton、RKNN 或 RVV Kernel。
@@ -151,6 +153,23 @@ python3 -m edgeforge artifact-put \
   --media-type application/json \
   ./manifest.json
 ```
+
+在 NVIDIA GPU Worker 上使用默认 Grid Search 调优 Triton MatMul：
+
+```sh
+python3 -m edgeforge kernel-autotune \
+  --token "$EDGEFORGE_TOKEN" \
+  --kernel-id kernel-triton-matmul-autotune-v1 \
+  --operator matmul \
+  --shape 256,256,256 \
+  --dtype fp16 \
+  --worker-id worker-4070s \
+  --repeats 10 \
+  --warmup 5 \
+  --wait
+```
+
+可重复传入 `--candidate '{"block_m":64,"block_n":64,"block_k":32,"num_warps":4,"num_stages":3}'` 覆盖默认搜索空间。只有 correctness 通过的候选会参与最佳配置选择。
 
 ## 测试
 

@@ -19,7 +19,7 @@ from typing import Any
 
 from edgeforge import __version__
 from edgeforge.client import APIError, Client
-from edgeforge.compiler import run_kernel_pipeline
+from edgeforge.compiler import run_kernel_autotune, run_kernel_pipeline
 from edgeforge.operator import OperatorSpec, benchmark_operator
 
 
@@ -224,6 +224,8 @@ class Worker:
 
     def execute(self, task: dict[str, Any]) -> dict[str, Any]:
         payload = task["payload"]
+        if task["kind"] == "kernel_autotune":
+            return run_kernel_autotune(payload)
         if task["kind"] == "kernel_pipeline":
             return run_kernel_pipeline(payload)
         if task["kind"] == "operator_benchmark":

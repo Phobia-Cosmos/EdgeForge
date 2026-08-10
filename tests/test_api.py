@@ -1,3 +1,4 @@
+import base64
 import tempfile
 import threading
 import unittest
@@ -170,6 +171,106 @@ class APITests(unittest.TestCase):
         self.assertIsNotNone(benchmarks[0]["compile_ms"])
         event_types = {item["event_type"] for item in self.client.request("GET", f"/api/v1/events?version={__version__}")["events"]}
         self.assertTrue({"pipeline.compile", "pipeline.correctness", "pipeline.benchmark"}.issubset(event_types))
+
+    def test_kernel_autotune_persists_candidates_and_updates_kernel(self):
+        registration = {
+            "id": "autotune-worker",
+            "hostname": "autotune-worker",
+            "capabilities": {
+                "architecture": "x86_64",
+                "accelerators": ["nvidia-gpu"],
+                "cpu_count": 4,
+                "memory_total_mb": 16000,
+                "hardware_fingerprint": "autotune-fingerprint",
+            },
+            "metrics": {"load_1m": 0, "memory_available_mb": 12000},
+            "labels": {},
+            "version": __version__,
+        }
+        self.client.request("POST", "/api/v1/workers/register", registration)
+        kernel_id = "kernel-triton-autotune-v1"
+        self.client.request(
+            "POST",
+            "/api/v1/kernels",
+            {
+                "id": kernel_id,
+                "operator": "matmul",
+                "backend": "triton",
+                "version": "1",
+                "architectures": ["x86_64"],
+                "accelerators": ["nvidia-gpu"],
+                "dtypes": ["fp16"],
+            },
+        )
+        task = self.client.request(
+            "POST",
+            "/api/v1/tasks",
+            {
+                "kind": "kernel_autotune",
+                "payload": {
+                    "operator": {"name": "matmul", "shape": [128, 128, 128], "dtype": "fp16"},
+                    "kernel_id": kernel_id,
+                },
+                "requirements": {"worker_ids": ["autotune-worker"], "kernel_id": kernel_id},
+            },
+        )
+        self.client.request("POST", "/api/v1/workers/autotune-worker/lease", {})
+        best_config = {"block_m": 64, "block_n": 64, "block_k": 32, "num_warps": 4, "num_stages": 3}
+        slower_config = {"block_m": 32, "block_n": 32, "block_k": 32, "num_warps": 4, "num_stages": 2}
+        result = {
+            "operator": {"name": "matmul", "shape": [128, 128, 128], "dtype": "fp16"},
+            "backend": "triton",
+            "kernel_id": kernel_id,
+            "kernel_version": "1",
+            "correctness": True,
+            "timings_ms": [0.02, 0.021],
+            "summary": {"runs": 2, "min_ms": 0.02, "median_ms": 0.0205, "p95_ms": 0.021},
+            "compile_ms": 100.0,
+            "best_config": best_config,
+            "search_space": [slower_config, best_config],
+            "candidates": [
+                {"config": slower_config, "status": "succeeded", "correctness": True, "compile_ms": 80.0, "summary": {"median_ms": 0.03}},
+                {"config": best_config, "status": "succeeded", "correctness": True, "compile_ms": 100.0, "summary": {"median_ms": 0.0205}},
+            ],
+            "exit_code": 0,
+            "artifact_upload": {
+                "name": "autotune.json",
+                "kind": "autotune-manifest",
+                "media_type": "application/json",
+                "content_base64": base64.b64encode(b"autotune-manifest").decode("ascii"),
+            },
+        }
+        completed = self.client.request(
+            "POST",
+            f"/api/v1/tasks/{task['id']}/complete",
+            {"worker_id": "autotune-worker", "runtime_version": __version__, "status": "succeeded", "result": result},
+        )
+        digest = completed["result"]["artifact"]["digest"]
+        tuning_runs = self.client.request("GET", "/api/v1/tuning-runs?operator=matmul")["tuning_runs"]
+        self.assertEqual(tuning_runs[0]["best_config"], best_config)
+        self.assertEqual(len(tuning_runs[0]["candidates"]), 2)
+        self.assertEqual(tuning_runs[0]["artifact_digest"], digest)
+        kernel = self.client.request("GET", "/api/v1/kernels?operator=matmul")["kernels"][0]
+        self.assertEqual(kernel["metadata"]["tuning_config"], best_config)
+        self.assertEqual(kernel["artifact_digest"], digest)
+        pipeline_task = self.client.request(
+            "POST",
+            "/api/v1/tasks",
+            {
+                "kind": "kernel_pipeline",
+                "payload": {
+                    "operator": {"name": "matmul", "shape": [128, 128, 128], "dtype": "fp16"},
+                    "kernel_id": kernel_id,
+                },
+                "requirements": {"worker_ids": ["autotune-worker"], "kernel_id": kernel_id},
+            },
+        )
+        self.assertEqual(pipeline_task["payload"]["kernel"]["metadata"]["tuning_config"], best_config)
+        self.assertEqual(pipeline_task["payload"]["operator"]["backend"], "triton")
+        benchmarks = self.client.request("GET", "/api/v1/benchmarks?operator=matmul")["benchmarks"]
+        self.assertEqual(benchmarks[0]["summary"]["median_ms"], 0.0205)
+        event_types = {item["event_type"] for item in self.client.request("GET", f"/api/v1/events?version={__version__}")["events"]}
+        self.assertTrue({"autotune.candidate", "autotune.completed", "kernel.tuned"}.issubset(event_types))
 
 
 if __name__ == "__main__":

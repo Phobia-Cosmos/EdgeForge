@@ -145,6 +145,30 @@ class Store:
                 CREATE INDEX IF NOT EXISTS artifacts_kind_idx
                 ON artifacts(kind, created_at DESC);
 
+                CREATE TABLE IF NOT EXISTS tuning_runs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_id TEXT NOT NULL UNIQUE,
+                    version TEXT NOT NULL,
+                    runtime_version TEXT,
+                    worker_id TEXT NOT NULL,
+                    architecture TEXT NOT NULL,
+                    hardware_fingerprint TEXT,
+                    operator TEXT NOT NULL,
+                    kernel_id TEXT,
+                    kernel_version TEXT,
+                    shape TEXT NOT NULL,
+                    dtype TEXT NOT NULL,
+                    backend TEXT NOT NULL,
+                    search_space TEXT NOT NULL,
+                    candidates TEXT NOT NULL,
+                    best_config TEXT,
+                    artifact_digest TEXT,
+                    created_at REAL NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS tuning_runs_lookup_idx
+                ON tuning_runs(operator, architecture, created_at DESC);
+
                 CREATE INDEX IF NOT EXISTS tasks_queue_idx
                 ON tasks(status, priority DESC, created_at ASC);
 
@@ -279,20 +303,29 @@ class Store:
         now = time.time()
         task_id = uuid.uuid4().hex
         kind = data.get("kind") or "command"
-        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline"}:
+        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline", "kernel_autotune"}:
             raise ValueError(f"unsupported task kind: {kind}")
         payload = data.get("payload") or {}
-        if kind in {"operator_benchmark", "kernel_pipeline"}:
+        if kind in {"operator_benchmark", "kernel_pipeline", "kernel_autotune"}:
             from edgeforge.operator import OperatorSpec
 
             OperatorSpec.from_payload(payload.get("operator") or {})
             kernel_id = payload.get("kernel_id") or (data.get("requirements") or {}).get("kernel_id")
             if kind == "kernel_pipeline" and not kernel_id:
                 raise ValueError("kernel_pipeline requires kernel_id")
+            if kind == "kernel_autotune" and not kernel_id:
+                raise ValueError("kernel_autotune requires kernel_id")
             if kernel_id:
                 kernel = self.get_kernel(str(kernel_id))
                 if not kernel_supports_operator(kernel, payload.get("operator") or {}):
                     raise ValueError(f"kernel {kernel_id} does not support this operator or dtype")
+                if kind == "kernel_autotune":
+                    from edgeforge.autotune import normalize_triton_matmul_candidates
+
+                    if kernel.get("backend") != "triton" or payload["operator"].get("name") != "matmul":
+                        raise ValueError("kernel_autotune currently requires a Triton MatMul kernel")
+                    payload["candidates"] = normalize_triton_matmul_candidates(payload.get("candidates") or [])
+                payload["operator"] = {**payload["operator"], "backend": kernel["backend"]}
                 payload["kernel_id"] = str(kernel_id)
                 payload["kernel"] = kernel
         else:
@@ -396,7 +429,7 @@ class Store:
                 candidates = online_workers
                 kernel_id = requirements.get("kernel_id") or (
                     json.loads(row["payload"]).get("kernel_id")
-                    if row["kind"] in {"operator_benchmark", "kernel_pipeline"}
+                    if row["kind"] in {"operator_benchmark", "kernel_pipeline", "kernel_autotune"}
                     else None
                 )
                 if kernel_id:
@@ -456,7 +489,11 @@ class Store:
         kernel_id = (task.get("result") or {}).get("kernel_id")
         if artifact.get("digest") and kernel_id:
             self.bind_kernel_artifact(str(kernel_id), str(artifact["digest"]))
-        if task["kind"] in {"operator_benchmark", "kernel_pipeline"} and task["result"]:
+        if task["kind"] == "kernel_autotune" and task["result"]:
+            self._record_tuning_run(task, worker_id)
+            if task["result"].get("best_config"):
+                self.update_kernel_tuning(kernel_id, task["result"]["best_config"], artifact.get("digest"))
+        if task["kind"] in {"operator_benchmark", "kernel_pipeline", "kernel_autotune"} and task["result"]:
             self._record_benchmark(task, worker_id)
         if task["kind"] == "kernel_pipeline" and task["result"]:
             for stage in task["result"].get("pipeline") or []:
@@ -467,6 +504,22 @@ class Store:
                     task_id,
                     {"worker_id": worker_id, **stage},
                 )
+        if task["kind"] == "kernel_autotune" and task["result"]:
+            for candidate in task["result"].get("candidates") or []:
+                self.append_event(
+                    "autotune.candidate",
+                    "worker",
+                    "task",
+                    task_id,
+                    {"worker_id": worker_id, **candidate},
+                )
+            self.append_event(
+                "autotune.completed",
+                "worker",
+                "task",
+                task_id,
+                {"worker_id": worker_id, "best_config": task["result"].get("best_config")},
+            )
         self.append_event(
             "task.completed",
             "worker",
@@ -565,6 +618,22 @@ class Store:
             if cursor.rowcount != 1:
                 raise KeyError(kernel_id)
 
+    def update_kernel_tuning(self, kernel_id: str | None, config: dict[str, Any], digest: str | None = None) -> None:
+        if not kernel_id:
+            raise ValueError("autotune result requires kernel_id")
+        kernel = self.get_kernel(kernel_id)
+        metadata = dict(kernel.get("metadata") or {})
+        metadata["tuning_config"] = config
+        metadata["tuning_version"] = self.version
+        with self._lock, self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE kernels SET metadata = ?, artifact_digest = COALESCE(?, artifact_digest) WHERE id = ?",
+                (json.dumps(metadata, ensure_ascii=False, separators=(",", ":")), digest, kernel_id),
+            )
+            if cursor.rowcount != 1:
+                raise KeyError(kernel_id)
+        self.append_event("kernel.tuned", "control", "kernel", kernel_id, {"config": config, "artifact_digest": digest})
+
     def record_artifact(self, artifact: dict[str, Any]) -> dict[str, Any]:
         now = time.time()
         with self._lock, self._connect() as connection:
@@ -621,6 +690,63 @@ class Store:
         for row in rows:
             item = dict(row)
             item["metadata"] = json.loads(item["metadata"])
+            result.append(item)
+        return result
+
+    def _record_tuning_run(self, task: dict[str, Any], worker_id: str) -> None:
+        result = task["result"]
+        operator = result.get("operator") or task["payload"].get("operator") or {}
+        worker = self.get_worker(worker_id)
+        capabilities = worker.get("capabilities") or {}
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO tuning_runs(
+                    task_id, version, runtime_version, worker_id, architecture, hardware_fingerprint,
+                    operator, kernel_id, kernel_version, shape, dtype, backend, search_space, candidates,
+                    best_config, artifact_digest, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    task["id"],
+                    task["version"],
+                    task.get("runtime_version"),
+                    worker_id,
+                    capabilities.get("architecture", "unknown"),
+                    capabilities.get("hardware_fingerprint"),
+                    operator.get("name", "unknown"),
+                    result.get("kernel_id") or task["payload"].get("kernel_id"),
+                    result.get("kernel_version"),
+                    json.dumps(operator.get("shape") or []),
+                    operator.get("dtype", "unknown"),
+                    result.get("backend") or "unknown",
+                    json.dumps(result.get("search_space") or [], separators=(",", ":")),
+                    json.dumps(result.get("candidates") or [], separators=(",", ":")),
+                    json.dumps(result.get("best_config"), separators=(",", ":")) if result.get("best_config") else None,
+                    (result.get("artifact") or {}).get("digest"),
+                    time.time(),
+                ),
+            )
+
+    def list_tuning_runs(self, operator: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        with self._connect() as connection:
+            if operator:
+                rows = connection.execute(
+                    "SELECT * FROM tuning_runs WHERE operator = ? ORDER BY created_at DESC, id DESC LIMIT ?",
+                    (operator, limit),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT * FROM tuning_runs ORDER BY created_at DESC, id DESC LIMIT ?", (limit,)
+                ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["shape"] = json.loads(item["shape"])
+            item["search_space"] = json.loads(item["search_space"])
+            item["candidates"] = json.loads(item["candidates"])
+            item["best_config"] = json.loads(item["best_config"]) if item["best_config"] else None
             result.append(item)
         return result
 

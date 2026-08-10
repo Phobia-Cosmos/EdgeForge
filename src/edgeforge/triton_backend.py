@@ -15,6 +15,7 @@ import triton
 import triton.language as tl
 
 from edgeforge import __version__
+from edgeforge.autotune import normalize_triton_matmul_candidates, normalize_triton_matmul_config, select_best_candidate
 from edgeforge.operator import OperatorSpec
 
 
@@ -57,12 +58,13 @@ def _matmul_kernel(
     tl.store(output_ptrs, output_values, mask=(offsets_m[:, None] < m_size) & (offsets_n[None, :] < n_size))
 
 
-def _launch(left: torch.Tensor, right: torch.Tensor, output: torch.Tensor) -> None:
+def _launch(left: torch.Tensor, right: torch.Tensor, output: torch.Tensor, config: dict[str, int] | None = None) -> None:
     m_size, k_size = left.shape
     _, n_size = right.shape
-    block_m = 32
-    block_n = 32
-    block_k = 32
+    selected = normalize_triton_matmul_config(config or {})
+    block_m = selected["block_m"]
+    block_n = selected["block_n"]
+    block_k = selected["block_k"]
     grid = (triton.cdiv(m_size, block_m) * triton.cdiv(n_size, block_n),)
     _matmul_kernel[grid](
         left,
@@ -80,7 +82,8 @@ def _launch(left: torch.Tensor, right: torch.Tensor, output: torch.Tensor) -> No
         block_m,
         block_n,
         block_k,
-        num_warps=4,
+        num_warps=selected["num_warps"],
+        num_stages=selected["num_stages"],
     )
 
 
@@ -93,6 +96,7 @@ def run_triton_matmul_pipeline(spec: OperatorSpec, kernel: dict[str, Any], repea
         raise ValueError("the Triton MatMul backend currently supports fp16 and bf16")
     m_size, k_size, n_size = spec.shape
     torch_dtype = torch.float16 if spec.dtype == "fp16" else torch.bfloat16
+    tuning_config = normalize_triton_matmul_config((kernel.get("metadata") or {}).get("tuning_config") or {})
     torch.manual_seed(0)
     left = torch.randn((m_size, k_size), device="cuda", dtype=torch_dtype)
     right = torch.randn((k_size, n_size), device="cuda", dtype=torch_dtype)
@@ -100,7 +104,7 @@ def run_triton_matmul_pipeline(spec: OperatorSpec, kernel: dict[str, Any], repea
     stages = []
 
     started = time.perf_counter()
-    _launch(left, right, output)
+    _launch(left, right, output, tuning_config)
     torch.cuda.synchronize()
     compile_ms = (time.perf_counter() - started) * 1000.0
     stages.append({"name": "compile", "status": "succeeded", "elapsed_ms": round(compile_ms, 3), "details": {"first_launch_includes_jit": True}})
@@ -123,13 +127,13 @@ def run_triton_matmul_pipeline(spec: OperatorSpec, kernel: dict[str, Any], repea
     timings = []
     if correctness:
         for _ in range(max(0, warmup)):
-            _launch(left, right, output)
+            _launch(left, right, output, tuning_config)
         torch.cuda.synchronize()
         for _ in range(repeats):
             start_event = torch.cuda.Event(enable_timing=True)
             end_event = torch.cuda.Event(enable_timing=True)
             start_event.record()
-            _launch(left, right, output)
+            _launch(left, right, output, tuning_config)
             end_event.record()
             end_event.synchronize()
             timings.append(round(float(start_event.elapsed_time(end_event)), 6))
@@ -158,6 +162,7 @@ def run_triton_matmul_pipeline(spec: OperatorSpec, kernel: dict[str, Any], repea
             "cuda_device": torch.cuda.get_device_name(0),
             "compute_capability": list(torch.cuda.get_device_capability(0)),
             "source_digest": source_digest,
+            "tuning_config": tuning_config,
         },
     }
     manifest_bytes = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -183,3 +188,120 @@ def run_triton_matmul_pipeline(spec: OperatorSpec, kernel: dict[str, Any], repea
         },
     }
 
+
+def run_triton_matmul_autotune(
+    spec: OperatorSpec,
+    kernel: dict[str, Any],
+    candidates: list[dict[str, Any]],
+    repeats: int,
+    warmup: int,
+) -> dict[str, Any]:
+    if spec.name != "matmul":
+        raise ValueError("the Triton Auto Tuner currently supports only matmul")
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available to this worker")
+    if spec.dtype not in {"fp16", "bf16"}:
+        raise ValueError("the Triton Auto Tuner currently supports fp16 and bf16")
+    search_space = normalize_triton_matmul_candidates(candidates)
+    m_size, k_size, n_size = spec.shape
+    torch_dtype = torch.float16 if spec.dtype == "fp16" else torch.bfloat16
+    torch.manual_seed(0)
+    left = torch.randn((m_size, k_size), device="cuda", dtype=torch_dtype)
+    right = torch.randn((k_size, n_size), device="cuda", dtype=torch_dtype)
+    output = torch.empty((m_size, n_size), device="cuda", dtype=torch_dtype)
+    reference = torch.matmul(left, right)
+    results: list[dict[str, Any]] = []
+    for config in search_space:
+        candidate: dict[str, Any] = {"config": config, "status": "failed", "correctness": False}
+        try:
+            started = time.perf_counter()
+            _launch(left, right, output, config)
+            torch.cuda.synchronize()
+            compile_ms = (time.perf_counter() - started) * 1000.0
+            candidate["compile_ms"] = round(compile_ms, 3)
+            max_abs_error = float((output - reference).abs().max().item())
+            tolerance = 0.08 if spec.dtype == "fp16" else 0.15
+            correctness = bool(torch.allclose(output, reference, rtol=tolerance, atol=tolerance))
+            candidate["correctness"] = correctness
+            candidate["max_abs_error"] = max_abs_error
+            candidate["status"] = "succeeded" if correctness else "failed"
+            if not correctness:
+                candidate["error"] = "correctness tolerance exceeded"
+                results.append(candidate)
+                continue
+            for _ in range(max(0, warmup)):
+                _launch(left, right, output, config)
+            torch.cuda.synchronize()
+            timings = []
+            for _ in range(repeats):
+                start_event = torch.cuda.Event(enable_timing=True)
+                end_event = torch.cuda.Event(enable_timing=True)
+                start_event.record()
+                _launch(left, right, output, config)
+                end_event.record()
+                end_event.synchronize()
+                timings.append(round(float(start_event.elapsed_time(end_event)), 6))
+            ordered = sorted(timings)
+            p95_index = min(len(ordered) - 1, max(0, math.ceil(len(ordered) * 0.95) - 1))
+            median_ms = (ordered[len(ordered) // 2 - 1] + ordered[len(ordered) // 2]) / 2 if len(ordered) % 2 == 0 else ordered[len(ordered) // 2]
+            candidate["timings_ms"] = timings
+            candidate["summary"] = {
+                "runs": len(timings),
+                "min_ms": min(timings),
+                "median_ms": median_ms,
+                "p95_ms": ordered[p95_index],
+            }
+        except Exception as error:
+            candidate["status"] = "failed"
+            candidate["error"] = str(error)[:500]
+        results.append(candidate)
+    best = select_best_candidate(results)
+    source_digest = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    manifest = {
+        "schema_version": 1,
+        "backend": "triton",
+        "runtime_version": __version__,
+        "operator": spec.to_dict(),
+        "kernel": kernel,
+        "search_space": search_space,
+        "candidates": results,
+        "best_config": best.get("config") if best else None,
+        "compiler": {
+            "torch": torch.__version__,
+            "triton": triton.__version__,
+            "cuda_device": torch.cuda.get_device_name(0),
+            "compute_capability": list(torch.cuda.get_device_capability(0)),
+            "source_digest": source_digest,
+        },
+    }
+    manifest_bytes = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    correctness = best is not None
+    best_summary = best.get("summary") if best else {"runs": 0}
+    pipeline = [
+        {"name": "compile", "status": "succeeded" if any(item.get("compile_ms") is not None for item in results) else "failed", "elapsed_ms": round(sum(float(item.get("compile_ms") or 0.0) for item in results), 3), "details": {"candidate_count": len(results)}},
+        {"name": "correctness", "status": "succeeded" if correctness else "failed", "elapsed_ms": 0.0, "details": {"successful_candidates": sum(1 for item in results if item.get("correctness"))}},
+        {"name": "benchmark", "status": "succeeded" if correctness else "failed", "elapsed_ms": round(sum(sum(float(value) for value in item.get("timings_ms", [])) for item in results), 3), "details": {"best_config": best.get("config") if best else None}},
+    ]
+    return {
+        "operator": spec.to_dict(),
+        "backend": "triton",
+        "kernel_id": kernel.get("id"),
+        "kernel_version": kernel.get("version"),
+        "correctness": correctness,
+        "timings_ms": (best or {}).get("timings_ms", []),
+        "summary": best_summary,
+        "compile_ms": (best or {}).get("compile_ms"),
+        "best_config": (best or {}).get("config"),
+        "search_space": search_space,
+        "candidates": results,
+        "pipeline": pipeline,
+        "elapsed_ms": round(sum(stage["elapsed_ms"] for stage in pipeline), 3),
+        "exit_code": 0 if correctness else 1,
+        "artifact_upload": {
+            "name": f"{kernel.get('id', 'triton-matmul')}-autotune-manifest.json",
+            "kind": "autotune-manifest",
+            "media_type": "application/json",
+            "metadata": {"backend": "triton", "source_digest": source_digest, "runtime_version": __version__},
+            "content_base64": base64.b64encode(manifest_bytes).decode("ascii"),
+        },
+    }

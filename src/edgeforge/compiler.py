@@ -96,3 +96,21 @@ def run_kernel_pipeline(payload: dict[str, Any]) -> dict[str, Any]:
         return run_triton_matmul_pipeline(spec, kernel, repeats, int(payload.get("warmup") or 5))
     raise ValueError(f"unsupported compiler backend: {backend}")
 
+
+def run_kernel_autotune(payload: dict[str, Any]) -> dict[str, Any]:
+    spec = OperatorSpec.from_payload(payload.get("operator") or {})
+    kernel = payload.get("kernel") or {}
+    if not kernel:
+        raise ValueError("kernel_autotune requires a registered kernel snapshot")
+    backend = kernel.get("backend") or spec.backend
+    if backend != "triton":
+        raise ValueError("the first Auto Tuner supports only Triton kernels")
+    from edgeforge.triton_backend import run_triton_matmul_autotune
+
+    return run_triton_matmul_autotune(
+        spec,
+        kernel,
+        payload.get("candidates") or [],
+        min(100, max(1, int(payload.get("repeats") or 5))),
+        min(100, max(0, int(payload.get("warmup") or 3))),
+    )

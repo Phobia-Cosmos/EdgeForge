@@ -2,6 +2,19 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.5.0 - 2026-08-10
+
+### Added
+
+- Triton MatMul 参数网格搜索与最佳候选选择。
+- `kernel_autotune` 任务、tuning run 数据库、候选事件和 Kernel 最佳配置回写。
+- `kernel-autotune` 与 `tuning-runs` CLI/API。
+
+### Validation
+
+- 36/36 自动化测试通过，V4 数据迁移验证通过。
+- RTX 4070 SUPER 上 4/4 Triton MatMul 候选 correctness 通过，最佳配置已回写并被后续 Pipeline 复用。
+
 ## 0.4.0 - 2026-08-10
 
 ### Added

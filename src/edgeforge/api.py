@@ -143,6 +143,12 @@ class ControlHandler(BaseHTTPRequestHandler):
                 limit = int(query.get("limit", ["100"])[0])
                 self._send(HTTPStatus.OK, {"artifacts": self.server.store.list_artifacts(kind, limit)})
                 return
+            if parsed.path == "/api/v1/tuning-runs":
+                query = parse_qs(parsed.query)
+                operator = query.get("operator", [None])[0]
+                limit = int(query.get("limit", ["100"])[0])
+                self._send(HTTPStatus.OK, {"tuning_runs": self.server.store.list_tuning_runs(operator, limit)})
+                return
             artifact_match = ARTIFACT_PATH.match(parsed.path)
             if artifact_match:
                 self._send(HTTPStatus.OK, self.server.store.get_artifact(artifact_match.group(1)))

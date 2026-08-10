@@ -174,6 +174,24 @@ def build_parser() -> argparse.ArgumentParser:
     pipeline.add_argument("--warmup", type=int, default=5)
     pipeline.add_argument("--wait", action="store_true")
 
+    autotune = subparsers.add_parser("kernel-autotune", help="search and select the best kernel configuration")
+    _add_client_options(autotune)
+    autotune.add_argument("--kernel-id", required=True)
+    autotune.add_argument("--operator", required=True, choices=("matmul",))
+    autotune.add_argument("--shape", required=True)
+    autotune.add_argument("--dtype", default="fp16", choices=("fp16", "bf16"))
+    autotune.add_argument("--worker-id", action="append", default=[])
+    autotune.add_argument("--arch", action="append", default=[])
+    autotune.add_argument("--candidate", action="append", default=[], help="JSON tuning config; repeat as needed")
+    autotune.add_argument("--repeats", type=int, default=5)
+    autotune.add_argument("--warmup", type=int, default=3)
+    autotune.add_argument("--wait", action="store_true")
+
+    tuning_runs = subparsers.add_parser("tuning-runs", help="list persisted Auto Tuning runs")
+    _add_client_options(tuning_runs)
+    tuning_runs.add_argument("--operator")
+    tuning_runs.add_argument("--limit", type=int, default=100)
+
     artifacts = subparsers.add_parser("artifacts", help="list content-addressed artifacts")
     _add_client_options(artifacts)
     artifacts.add_argument("--kind")
@@ -329,6 +347,49 @@ def _pipeline_submit(args: argparse.Namespace) -> int:
     return 0 if task["status"] == "succeeded" else 1
 
 
+def _autotune_submit(args: argparse.Namespace) -> int:
+    try:
+        shape = [int(item.strip()) for item in args.shape.split(",") if item.strip()]
+    except ValueError as error:
+        raise ValueError("--shape must be comma-separated integers") from error
+    candidates = []
+    for value in args.candidate:
+        try:
+            candidate = json.loads(value)
+        except json.JSONDecodeError as error:
+            raise ValueError("--candidate must be a valid JSON object") from error
+        if not isinstance(candidate, dict):
+            raise ValueError("--candidate must be a JSON object")
+        candidates.append(candidate)
+    task = _client(args).request(
+        "POST",
+        "/api/v1/tasks",
+        {
+            "kind": "kernel_autotune",
+            "payload": {
+                "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype},
+                "kernel_id": args.kernel_id,
+                "candidates": candidates,
+                "repeats": args.repeats,
+                "warmup": args.warmup,
+            },
+            "requirements": {
+                "kernel_id": args.kernel_id,
+                "worker_ids": args.worker_id,
+                "architectures": args.arch,
+            },
+        },
+    )
+    _print_json(task)
+    if not args.wait:
+        return 0
+    while task["status"] not in {"succeeded", "failed", "cancelled"}:
+        time.sleep(1)
+        task = _client(args).request("GET", f"/api/v1/tasks/{task['id']}")
+    _print_json(task)
+    return 0 if task["status"] == "succeeded" else 1
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -409,6 +470,14 @@ def main(argv: list[str] | None = None) -> None:
             return
         if args.command == "kernel-pipeline":
             raise SystemExit(_pipeline_submit(args))
+        if args.command == "kernel-autotune":
+            raise SystemExit(_autotune_submit(args))
+        if args.command == "tuning-runs":
+            query = f"?limit={args.limit}"
+            if args.operator:
+                query += f"&operator={args.operator}"
+            _print_json(_client(args).request("GET", f"/api/v1/tuning-runs{query}"))
+            return
         if args.command == "artifacts":
             query = f"?limit={args.limit}"
             if args.kind:
