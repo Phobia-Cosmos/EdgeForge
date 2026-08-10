@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import time
@@ -59,6 +60,7 @@ def build_parser() -> argparse.ArgumentParser:
     control.add_argument("--bind", default=os.environ.get("EDGEFORGE_BIND", "127.0.0.1"))
     control.add_argument("--port", type=int, default=int(os.environ.get("EDGEFORGE_PORT", "8080")))
     control.add_argument("--database", default=os.environ.get("EDGEFORGE_DATABASE", "./edgeforge.db"))
+    control.add_argument("--artifact-dir", default=os.environ.get("EDGEFORGE_ARTIFACT_DIR", "./artifacts"))
     control.add_argument("--token", default=os.environ.get("EDGEFORGE_TOKEN"))
     control.add_argument("--worker-timeout", type=float, default=30.0)
 
@@ -149,13 +151,40 @@ def build_parser() -> argparse.ArgumentParser:
     kernel.add_argument("--backend", required=True)
     kernel.add_argument("--version", required=True)
     kernel.add_argument("--arch", action="append", default=[])
-    kernel.add_argument("--dtype", action="append", default=["fp32"])
+    kernel.add_argument("--accelerator", action="append", default=[])
+    kernel.add_argument("--dtype", action="append", default=[])
     kernel.add_argument("--metadata", default="{}")
+    kernel.add_argument("--compiler", default="{}")
+    kernel.add_argument("--artifact-digest")
 
     regressions = subparsers.add_parser("regressions", help="find benchmark regressions")
     _add_client_options(regressions)
     regressions.add_argument("--operator")
     regressions.add_argument("--threshold", type=float, default=0.2)
+
+    pipeline = subparsers.add_parser("kernel-pipeline", help="run compile, correctness and benchmark stages")
+    _add_client_options(pipeline)
+    pipeline.add_argument("--kernel-id", required=True)
+    pipeline.add_argument("--operator", required=True, choices=("matmul", "softmax", "rmsnorm", "silu"))
+    pipeline.add_argument("--shape", required=True)
+    pipeline.add_argument("--dtype", default="fp32", choices=("fp32", "fp16", "bf16"))
+    pipeline.add_argument("--worker-id", action="append", default=[])
+    pipeline.add_argument("--arch", action="append", default=[])
+    pipeline.add_argument("--repeats", type=int, default=5)
+    pipeline.add_argument("--warmup", type=int, default=5)
+    pipeline.add_argument("--wait", action="store_true")
+
+    artifacts = subparsers.add_parser("artifacts", help="list content-addressed artifacts")
+    _add_client_options(artifacts)
+    artifacts.add_argument("--kind")
+    artifacts.add_argument("--limit", type=int, default=100)
+
+    artifact_put = subparsers.add_parser("artifact-put", help="upload one small artifact")
+    _add_client_options(artifact_put)
+    artifact_put.add_argument("path")
+    artifact_put.add_argument("--kind", default="generic")
+    artifact_put.add_argument("--media-type", default="application/octet-stream")
+    artifact_put.add_argument("--name")
     return parser
 
 
@@ -241,10 +270,11 @@ def _operator_submit(args: argparse.Namespace) -> int:
 def _register_kernel(args: argparse.Namespace) -> int:
     try:
         metadata = json.loads(args.metadata)
+        compiler = json.loads(args.compiler)
     except json.JSONDecodeError as error:
-        raise ValueError("--metadata must be valid JSON") from error
-    if not isinstance(metadata, dict):
-        raise ValueError("--metadata must be a JSON object")
+        raise ValueError("--metadata and --compiler must be valid JSON") from error
+    if not isinstance(metadata, dict) or not isinstance(compiler, dict):
+        raise ValueError("--metadata and --compiler must be JSON objects")
     _print_json(
         _client(args).request(
             "POST",
@@ -255,12 +285,48 @@ def _register_kernel(args: argparse.Namespace) -> int:
                 "backend": args.backend,
                 "version": args.version,
                 "architectures": args.arch or ["*"],
-                "dtypes": args.dtype,
+                "accelerators": args.accelerator,
+                "dtypes": args.dtype or ["fp32"],
                 "metadata": metadata,
+                "compiler": compiler,
+                "artifact_digest": args.artifact_digest,
             },
         )
     )
     return 0
+
+
+def _pipeline_submit(args: argparse.Namespace) -> int:
+    try:
+        shape = [int(item.strip()) for item in args.shape.split(",") if item.strip()]
+    except ValueError as error:
+        raise ValueError("--shape must be comma-separated integers") from error
+    task = _client(args).request(
+        "POST",
+        "/api/v1/tasks",
+        {
+            "kind": "kernel_pipeline",
+            "payload": {
+                "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype},
+                "kernel_id": args.kernel_id,
+                "repeats": args.repeats,
+                "warmup": args.warmup,
+            },
+            "requirements": {
+                "kernel_id": args.kernel_id,
+                "worker_ids": args.worker_id,
+                "architectures": args.arch,
+            },
+        },
+    )
+    _print_json(task)
+    if not args.wait:
+        return 0
+    while task["status"] not in {"succeeded", "failed", "cancelled"}:
+        time.sleep(1)
+        task = _client(args).request("GET", f"/api/v1/tasks/{task['id']}")
+    _print_json(task)
+    return 0 if task["status"] == "succeeded" else 1
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -272,7 +338,7 @@ def main(argv: list[str] | None = None) -> None:
         if args.command == "control":
             if not args.token:
                 raise ValueError("control plane requires --token or EDGEFORGE_TOKEN")
-            serve(args.bind, args.port, args.database, args.token, args.worker_timeout)
+            serve(args.bind, args.port, args.database, args.token, args.worker_timeout, args.artifact_dir)
             return
         if args.command == "worker":
             worker = Worker(
@@ -340,6 +406,30 @@ def main(argv: list[str] | None = None) -> None:
             if args.operator:
                 query += f"&operator={args.operator}"
             _print_json(_client(args).request("GET", f"/api/v1/regressions{query}"))
+            return
+        if args.command == "kernel-pipeline":
+            raise SystemExit(_pipeline_submit(args))
+        if args.command == "artifacts":
+            query = f"?limit={args.limit}"
+            if args.kind:
+                query += f"&kind={args.kind}"
+            _print_json(_client(args).request("GET", f"/api/v1/artifacts{query}"))
+            return
+        if args.command == "artifact-put":
+            path = Path(args.path)
+            content = path.read_bytes()
+            _print_json(
+                _client(args).request(
+                    "POST",
+                    "/api/v1/artifacts",
+                    {
+                        "name": args.name or path.name,
+                        "kind": args.kind,
+                        "media_type": args.media_type,
+                        "content_base64": base64.b64encode(content).decode("ascii"),
+                    },
+                )
+            )
             return
     except (APIError, OSError, ValueError) as error:
         parser.exit(2, f"error: {error}\n")

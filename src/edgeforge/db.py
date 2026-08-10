@@ -93,9 +93,12 @@ class Store:
                     backend TEXT NOT NULL,
                     version TEXT NOT NULL,
                     architectures TEXT NOT NULL,
+                    accelerators TEXT NOT NULL DEFAULT '[]',
                     dtypes TEXT NOT NULL,
                     shape_constraints TEXT NOT NULL,
                     metadata TEXT NOT NULL,
+                    compiler TEXT NOT NULL DEFAULT '{}',
+                    artifact_digest TEXT,
                     status TEXT NOT NULL,
                     created_at REAL NOT NULL,
                     registered_by_version TEXT NOT NULL
@@ -115,6 +118,8 @@ class Store:
                     operator TEXT NOT NULL,
                     kernel_id TEXT,
                     kernel_version TEXT,
+                    artifact_digest TEXT,
+                    compile_ms REAL,
                     shape TEXT NOT NULL,
                     dtype TEXT NOT NULL,
                     backend TEXT NOT NULL,
@@ -123,6 +128,22 @@ class Store:
                     summary TEXT NOT NULL,
                     created_at REAL NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS artifacts (
+                    digest TEXT PRIMARY KEY,
+                    algorithm TEXT NOT NULL,
+                    size_bytes INTEGER NOT NULL,
+                    kind TEXT NOT NULL,
+                    media_type TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    storage_path TEXT NOT NULL,
+                    metadata TEXT NOT NULL,
+                    created_at REAL NOT NULL,
+                    created_by_version TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS artifacts_kind_idx
+                ON artifacts(kind, created_at DESC);
 
                 CREATE INDEX IF NOT EXISTS tasks_queue_idx
                 ON tasks(status, priority DESC, created_at ASC);
@@ -146,6 +167,17 @@ class Store:
                 connection.execute("ALTER TABLE benchmarks ADD COLUMN kernel_version TEXT")
             if "hardware_fingerprint" not in benchmark_columns:
                 connection.execute("ALTER TABLE benchmarks ADD COLUMN hardware_fingerprint TEXT")
+            if "artifact_digest" not in benchmark_columns:
+                connection.execute("ALTER TABLE benchmarks ADD COLUMN artifact_digest TEXT")
+            if "compile_ms" not in benchmark_columns:
+                connection.execute("ALTER TABLE benchmarks ADD COLUMN compile_ms REAL")
+            kernel_columns = {row["name"] for row in connection.execute("PRAGMA table_info(kernels)").fetchall()}
+            if "compiler" not in kernel_columns:
+                connection.execute("ALTER TABLE kernels ADD COLUMN compiler TEXT NOT NULL DEFAULT '{}'")
+            if "artifact_digest" not in kernel_columns:
+                connection.execute("ALTER TABLE kernels ADD COLUMN artifact_digest TEXT")
+            if "accelerators" not in kernel_columns:
+                connection.execute("ALTER TABLE kernels ADD COLUMN accelerators TEXT NOT NULL DEFAULT '[]'")
             connection.execute(
                 "INSERT OR IGNORE INTO releases(version, created_at, status, summary, metadata) VALUES (?, ?, 'active', ?, '{}')",
                 (self.version, time.time(), f"EdgeForge runtime {self.version}"),
@@ -247,14 +279,16 @@ class Store:
         now = time.time()
         task_id = uuid.uuid4().hex
         kind = data.get("kind") or "command"
-        if kind not in {"command", "benchmark", "operator_benchmark"}:
+        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline"}:
             raise ValueError(f"unsupported task kind: {kind}")
         payload = data.get("payload") or {}
-        if kind == "operator_benchmark":
+        if kind in {"operator_benchmark", "kernel_pipeline"}:
             from edgeforge.operator import OperatorSpec
 
             OperatorSpec.from_payload(payload.get("operator") or {})
             kernel_id = payload.get("kernel_id") or (data.get("requirements") or {}).get("kernel_id")
+            if kind == "kernel_pipeline" and not kernel_id:
+                raise ValueError("kernel_pipeline requires kernel_id")
             if kernel_id:
                 kernel = self.get_kernel(str(kernel_id))
                 if not kernel_supports_operator(kernel, payload.get("operator") or {}):
@@ -360,7 +394,11 @@ class Store:
             for row in queued:
                 requirements = json.loads(row["requirements"])
                 candidates = online_workers
-                kernel_id = requirements.get("kernel_id") or (json.loads(row["payload"]).get("kernel_id") if row["kind"] == "operator_benchmark" else None)
+                kernel_id = requirements.get("kernel_id") or (
+                    json.loads(row["payload"]).get("kernel_id")
+                    if row["kind"] in {"operator_benchmark", "kernel_pipeline"}
+                    else None
+                )
                 if kernel_id:
                     kernel = self.get_kernel(str(kernel_id))
                     candidates = [worker for worker in candidates if kernel_supports_worker(kernel, worker)]
@@ -414,8 +452,21 @@ class Store:
             if cursor.rowcount != 1:
                 raise RuntimeError("task is not running on this worker")
         task = self.get_task(task_id)
-        if task["kind"] == "operator_benchmark" and task["result"]:
+        artifact = (task.get("result") or {}).get("artifact") or {}
+        kernel_id = (task.get("result") or {}).get("kernel_id")
+        if artifact.get("digest") and kernel_id:
+            self.bind_kernel_artifact(str(kernel_id), str(artifact["digest"]))
+        if task["kind"] in {"operator_benchmark", "kernel_pipeline"} and task["result"]:
             self._record_benchmark(task, worker_id)
+        if task["kind"] == "kernel_pipeline" and task["result"]:
+            for stage in task["result"].get("pipeline") or []:
+                self.append_event(
+                    f"pipeline.{stage.get('name', 'unknown')}",
+                    "worker",
+                    "task",
+                    task_id,
+                    {"worker_id": worker_id, **stage},
+                )
         self.append_event(
             "task.completed",
             "worker",
@@ -431,17 +482,21 @@ class Store:
         with self._lock, self._connect() as connection:
             connection.execute(
                 """
-                INSERT INTO kernels(id, operator, backend, version, architectures, dtypes,
-                                    shape_constraints, metadata, status, created_at, registered_by_version)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO kernels(id, operator, backend, version, architectures, accelerators, dtypes,
+                                    shape_constraints, metadata, compiler, artifact_digest,
+                                    status, created_at, registered_by_version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     operator = excluded.operator,
                     backend = excluded.backend,
                     version = excluded.version,
                     architectures = excluded.architectures,
+                    accelerators = excluded.accelerators,
                     dtypes = excluded.dtypes,
                     shape_constraints = excluded.shape_constraints,
                     metadata = excluded.metadata,
+                    compiler = excluded.compiler,
+                    artifact_digest = COALESCE(excluded.artifact_digest, kernels.artifact_digest),
                     status = excluded.status,
                     registered_by_version = excluded.registered_by_version
                 """,
@@ -451,9 +506,12 @@ class Store:
                     spec.backend,
                     spec.version,
                     json.dumps(list(spec.architectures), separators=(",", ":")),
+                    json.dumps(list(spec.accelerators), separators=(",", ":")),
                     json.dumps(list(spec.dtypes), separators=(",", ":")),
                     json.dumps(spec.shape_constraints, separators=(",", ":")),
                     json.dumps(spec.metadata, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(data.get("compiler") or {}, ensure_ascii=False, separators=(",", ":")),
+                    data.get("artifact_digest"),
                     data.get("status", "active"),
                     now,
                     self.version,
@@ -470,9 +528,11 @@ class Store:
             raise KeyError(kernel_id)
         item = dict(row)
         item["architectures"] = json.loads(item["architectures"])
+        item["accelerators"] = json.loads(item["accelerators"])
         item["dtypes"] = json.loads(item["dtypes"])
         item["shape_constraints"] = json.loads(item["shape_constraints"])
         item["metadata"] = json.loads(item["metadata"])
+        item["compiler"] = json.loads(item["compiler"])
         return item
 
     def list_kernels(self, operator: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
@@ -489,8 +549,77 @@ class Store:
         for row in rows:
             item = dict(row)
             item["architectures"] = json.loads(item["architectures"])
+            item["accelerators"] = json.loads(item["accelerators"])
             item["dtypes"] = json.loads(item["dtypes"])
             item["shape_constraints"] = json.loads(item["shape_constraints"])
+            item["metadata"] = json.loads(item["metadata"])
+            item["compiler"] = json.loads(item["compiler"])
+            result.append(item)
+        return result
+
+    def bind_kernel_artifact(self, kernel_id: str, digest: str) -> None:
+        with self._lock, self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE kernels SET artifact_digest = ? WHERE id = ?", (digest, kernel_id)
+            )
+            if cursor.rowcount != 1:
+                raise KeyError(kernel_id)
+
+    def record_artifact(self, artifact: dict[str, Any]) -> dict[str, Any]:
+        now = time.time()
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO artifacts(digest, algorithm, size_bytes, kind, media_type, name,
+                                      storage_path, metadata, created_at, created_by_version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(digest) DO UPDATE SET
+                    kind = excluded.kind,
+                    media_type = excluded.media_type,
+                    name = excluded.name,
+                    metadata = excluded.metadata
+                """,
+                (
+                    artifact["digest"],
+                    artifact.get("algorithm", "sha256"),
+                    int(artifact["size_bytes"]),
+                    artifact["kind"],
+                    artifact["media_type"],
+                    artifact["name"],
+                    artifact["storage_path"],
+                    json.dumps(artifact.get("metadata") or {}, ensure_ascii=False, separators=(",", ":")),
+                    now,
+                    self.version,
+                ),
+            )
+        stored = self.get_artifact(artifact["digest"])
+        self.append_event("artifact.stored", "control", "artifact", artifact["digest"], stored)
+        return stored
+
+    def get_artifact(self, digest: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM artifacts WHERE digest = ?", (digest,)).fetchone()
+        if row is None:
+            raise KeyError(digest)
+        item = dict(row)
+        item["metadata"] = json.loads(item["metadata"])
+        return item
+
+    def list_artifacts(self, kind: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        with self._connect() as connection:
+            if kind:
+                rows = connection.execute(
+                    "SELECT * FROM artifacts WHERE kind = ? ORDER BY created_at DESC LIMIT ?",
+                    (kind, limit),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT * FROM artifacts ORDER BY created_at DESC LIMIT ?", (limit,)
+                ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
             item["metadata"] = json.loads(item["metadata"])
             result.append(item)
         return result
@@ -546,9 +675,10 @@ class Store:
             connection.execute(
                 """
                 INSERT INTO benchmarks(task_id, version, runtime_version, worker_id, architecture,
-                                       hardware_fingerprint, operator, kernel_id, kernel_version, shape, dtype,
-                                       backend, correctness, timings, summary, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                       hardware_fingerprint, operator, kernel_id, kernel_version,
+                                       artifact_digest, compile_ms, shape, dtype, backend, correctness,
+                                       timings, summary, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     task["id"],
@@ -560,6 +690,8 @@ class Store:
                     operator.get("name", "unknown"),
                     result.get("kernel_id") or operator.get("kernel_id") or task["payload"].get("kernel_id"),
                     result.get("kernel_version") or operator.get("kernel_version"),
+                    (result.get("artifact") or {}).get("digest"),
+                    result.get("compile_ms"),
                     json.dumps(operator.get("shape") or []),
                     operator.get("dtype", "unknown"),
                     result.get("backend") or operator.get("backend", "unknown"),

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hmac
 import json
 import logging
@@ -12,6 +13,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from edgeforge import __version__
+from edgeforge.artifact import ArtifactStore
 from edgeforge.db import Store
 
 
@@ -20,15 +22,17 @@ TASK_PATH = re.compile(r"^/api/v1/tasks/([0-9a-f]+)$")
 COMPLETE_PATH = re.compile(r"^/api/v1/tasks/([0-9a-f]+)/complete$")
 HEARTBEAT_PATH = re.compile(r"^/api/v1/workers/([^/]+)/heartbeat$")
 LEASE_PATH = re.compile(r"^/api/v1/workers/([^/]+)/lease$")
+ARTIFACT_PATH = re.compile(r"^/api/v1/artifacts/([0-9a-f]{64})$")
 
 
 class ControlServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address: tuple[str, int], store: Store, token: str):
+    def __init__(self, address: tuple[str, int], store: Store, token: str, artifact_store: ArtifactStore | None = None):
         super().__init__(address, ControlHandler)
         self.store = store
         self.token = token
+        self.artifact_store = artifact_store or ArtifactStore(f"{store.path}.artifacts")
 
 
 class ControlHandler(BaseHTTPRequestHandler):
@@ -76,6 +80,20 @@ class ControlHandler(BaseHTTPRequestHandler):
             raise ValueError("request body must be a JSON object")
         return value
 
+    def _store_artifact_upload(self, upload: dict[str, Any]) -> dict[str, Any]:
+        try:
+            content = base64.b64decode(str(upload["content_base64"]), validate=True)
+        except (KeyError, ValueError) as error:
+            raise ValueError("artifact content_base64 is required and must be valid base64") from error
+        artifact = self.server.artifact_store.put(
+            content,
+            kind=str(upload.get("kind", "generic")),
+            media_type=str(upload.get("media_type", "application/octet-stream")),
+            name=str(upload.get("name", "artifact.bin")),
+            metadata=upload.get("metadata") or {},
+        )
+        return self.server.store.record_artifact(artifact)
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path == "/healthz":
@@ -119,6 +137,16 @@ class ControlHandler(BaseHTTPRequestHandler):
                 threshold = float(query.get("threshold", ["0.2"])[0])
                 self._send(HTTPStatus.OK, {"regressions": self.server.store.performance_regressions(operator, threshold)})
                 return
+            if parsed.path == "/api/v1/artifacts":
+                query = parse_qs(parsed.query)
+                kind = query.get("kind", [None])[0]
+                limit = int(query.get("limit", ["100"])[0])
+                self._send(HTTPStatus.OK, {"artifacts": self.server.store.list_artifacts(kind, limit)})
+                return
+            artifact_match = ARTIFACT_PATH.match(parsed.path)
+            if artifact_match:
+                self._send(HTTPStatus.OK, self.server.store.get_artifact(artifact_match.group(1)))
+                return
             match = TASK_PATH.match(parsed.path)
             if match:
                 self._send(HTTPStatus.OK, self.server.store.get_task(match.group(1)))
@@ -160,6 +188,10 @@ class ControlHandler(BaseHTTPRequestHandler):
                 kernel = self.server.store.register_kernel(data)
                 self._send(HTTPStatus.CREATED, kernel)
                 return
+            if parsed.path == "/api/v1/artifacts":
+                artifact = self._store_artifact_upload(data)
+                self._send(HTTPStatus.CREATED, artifact)
+                return
             match = HEARTBEAT_PATH.match(parsed.path)
             if match:
                 worker = self.server.store.heartbeat(match.group(1), data.get("metrics") or {})
@@ -175,6 +207,11 @@ class ControlHandler(BaseHTTPRequestHandler):
                 worker_id = data.get("worker_id")
                 if not worker_id:
                     raise ValueError("worker_id is required")
+                result = data.get("result") or {}
+                upload = result.pop("artifact_upload", None)
+                if upload:
+                    result["artifact"] = self._store_artifact_upload(upload)
+                    data["result"] = result
                 task = self.server.store.complete_task(match.group(1), worker_id, data)
                 self._send(HTTPStatus.OK, task)
                 return
@@ -188,9 +225,9 @@ class ControlHandler(BaseHTTPRequestHandler):
             self._send(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "internal server error"})
 
 
-def serve(bind: str, port: int, database: str, token: str, worker_timeout: float) -> None:
+def serve(bind: str, port: int, database: str, token: str, worker_timeout: float, artifact_dir: str) -> None:
     store = Store(database, worker_timeout=worker_timeout)
-    server = ControlServer((bind, port), store, token)
+    server = ControlServer((bind, port), store, token, ArtifactStore(artifact_dir))
     LOG.info("control plane listening on http://%s:%d", bind, port)
     try:
         server.serve_forever()

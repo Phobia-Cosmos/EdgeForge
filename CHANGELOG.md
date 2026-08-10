@@ -2,6 +2,21 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.4.0 - 2026-08-10
+
+### Added
+
+- SHA-256 内容寻址 Artifact Store 与 artifact 查询 API/CLI。
+- `compile -> correctness -> benchmark` Kernel Pipeline。
+- Reference Compiler Backend 与 RTX 4070S Triton MatMul Backend。
+- Kernel/Benchmark artifact digest、compile time 和 pipeline stage 事件。
+
+### Validation
+
+- 32/32 自动化测试通过，V3 数据迁移验证通过。
+- 四节点 Reference Pipeline 与 RTX 4070 SUPER Triton FP16 MatMul Pipeline correctness 均通过。
+- 中央验证数据库保存 5 个任务、5 条 Benchmark 和 2 个唯一 Artifact。
+
 ## 0.3.0 - 2026-08-10
 
 ### Added

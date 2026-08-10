@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.3.0` 在 V2 分布式闭环之上增加了版本化日志、Operator IR、Kernel Registry 和性能回归查询。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.4.0` 在 V3 Kernel Registry 之上增加了内容寻址 Artifact Store 与 `compile → correctness → benchmark` Pipeline。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 设计见 [docs/design-v4.md](docs/design-v4.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 
@@ -84,6 +84,7 @@ python3 -m edgeforge operator-benchmark \
 | `GET/POST /api/v1/releases` | 查询或登记版本发布 |
 | `GET/POST /api/v1/kernels` | 查询或登记 Kernel 候选 |
 | `GET /api/v1/regressions` | 查询相邻 Benchmark 性能回归 |
+| `GET/POST /api/v1/artifacts` | 查询或写入内容寻址 Artifact |
 
 除 `/healthz` 外，所有接口都要求 `Authorization: Bearer <token>`。
 
@@ -93,7 +94,7 @@ python3 -m edgeforge operator-benchmark \
 
 ```text
 logs/
-└── v0.2.0/
+└── v0.4.0/
     ├── control/<UTC-run-id>.jsonl
     ├── worker/<UTC-run-id>.jsonl
     └── cli/<UTC-run-id>.jsonl
@@ -103,8 +104,9 @@ logs/
 
 ```sh
 python3 -m edgeforge releases --token "$EDGEFORGE_TOKEN"
-python3 -m edgeforge events --token "$EDGEFORGE_TOKEN" --version 0.2.0
+python3 -m edgeforge events --token "$EDGEFORGE_TOKEN" --version 0.4.0
 python3 -m edgeforge benchmarks --token "$EDGEFORGE_TOKEN" --operator matmul
+python3 -m edgeforge artifacts --token "$EDGEFORGE_TOKEN" --kind compiler-manifest
 ```
 
 Operator IR 当前支持 `matmul`、`softmax`、`rmsnorm` 和 `silu`。`python-reference` Backend 用于跨架构 correctness 基线，不宣称模拟 FP16/BF16 舍入，也不用于替代后续 CUDA、Triton、RKNN 或 RVV Kernel。
@@ -125,6 +127,29 @@ python3 -m edgeforge operator-benchmark \
   --operator softmax --shape 1024 \
   --kernel-id kernel-softmax-arm-v1 \
   --worker-id worker-orangepi --wait
+```
+
+运行 V4 Kernel Pipeline：
+
+```sh
+python3 -m edgeforge kernel-pipeline \
+  --token "$EDGEFORGE_TOKEN" \
+  --kernel-id kernel-softmax-arm-v1 \
+  --operator softmax \
+  --shape 1024 \
+  --dtype fp32 \
+  --worker-id worker-orangepi \
+  --wait
+```
+
+上传一个本地 manifest 或其他小型 Artifact：
+
+```sh
+python3 -m edgeforge artifact-put \
+  --token "$EDGEFORGE_TOKEN" \
+  --kind compiler-manifest \
+  --media-type application/json \
+  ./manifest.json
 ```
 
 ## 测试
