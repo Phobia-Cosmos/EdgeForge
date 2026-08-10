@@ -1,0 +1,23 @@
+[Unit]
+Description=EdgeForge worker runtime
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=edgeforge
+Group=edgeforge
+EnvironmentFile=/etc/edgeforge/edgeforge.env
+WorkingDirectory=/var/lib/edgeforge
+ExecStart=/usr/bin/python3 -m edgeforge worker --work-root /var/lib/edgeforge/work
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/edgeforge
+LogsDirectory=edgeforge
+
+[Install]
+WantedBy=multi-user.target

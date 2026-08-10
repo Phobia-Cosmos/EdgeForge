@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edgeforge"
+version = "0.2.0"
+description = "A dependency-free control plane and worker runtime for heterogeneous edge AI systems"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "EdgeForge contributors" }]
+
+[project.scripts]
+edgeforge = "edgeforge.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

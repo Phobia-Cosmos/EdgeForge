@@ -1,0 +1,13 @@
+{
+  "control_plane": {
+    "host": "edgeforge-control",
+    "port": 8080
+  },
+  "workers": [
+    {"id": "worker-4070s", "ssh_host": "localhost", "role": "gpu"},
+    {"id": "worker-orangepi", "ssh_host": "orangepi", "role": "edge-npu"},
+    {"id": "worker-p550", "ssh_host": "p550", "role": "control-riscv"},
+    {"id": "worker-meles", "ssh_host": "meles", "role": "riscv-compat"}
+  ]
+}
+
