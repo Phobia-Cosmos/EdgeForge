@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.5.0` 在 V4 Compiler Pipeline 之上增加了 Triton MatMul Auto Tuning、完整候选历史和最佳配置回写。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.6.0` 使用 Performance Database、Kernel Registry 与 Worker 实时状态自动选择 Kernel、Backend 和硬件执行路径。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 
@@ -86,6 +86,8 @@ python3 -m edgeforge operator-benchmark \
 | `GET /api/v1/regressions` | 查询相邻 Benchmark 性能回归 |
 | `GET/POST /api/v1/artifacts` | 查询或写入内容寻址 Artifact |
 | `GET /api/v1/tuning-runs` | 查询 Auto Tuning 搜索历史和最佳配置 |
+| `POST /api/v1/plans` | 生成可解释的 Kernel/Worker 执行计划 |
+| `GET /api/v1/schedule-decisions` | 查询已执行任务的调度决策快照 |
 
 除 `/healthz` 外，所有接口都要求 `Authorization: Bearer <token>`。
 
@@ -95,7 +97,7 @@ python3 -m edgeforge operator-benchmark \
 
 ```text
 logs/
-└── v0.4.0/
+└── v0.6.0/
     ├── control/<UTC-run-id>.jsonl
     ├── worker/<UTC-run-id>.jsonl
     └── cli/<UTC-run-id>.jsonl
@@ -105,10 +107,11 @@ logs/
 
 ```sh
 python3 -m edgeforge releases --token "$EDGEFORGE_TOKEN"
-python3 -m edgeforge events --token "$EDGEFORGE_TOKEN" --version 0.4.0
+python3 -m edgeforge events --token "$EDGEFORGE_TOKEN" --version 0.6.0
 python3 -m edgeforge benchmarks --token "$EDGEFORGE_TOKEN" --operator matmul
 python3 -m edgeforge artifacts --token "$EDGEFORGE_TOKEN" --kind compiler-manifest
 python3 -m edgeforge tuning-runs --token "$EDGEFORGE_TOKEN" --operator matmul
+python3 -m edgeforge schedule-decisions --token "$EDGEFORGE_TOKEN"
 ```
 
 Operator IR 当前支持 `matmul`、`softmax`、`rmsnorm` 和 `silu`。`python-reference` Backend 用于跨架构 correctness 基线，不宣称模拟 FP16/BF16 舍入，也不用于替代后续 CUDA、Triton、RKNN 或 RVV Kernel。
@@ -170,6 +173,27 @@ python3 -m edgeforge kernel-autotune \
 ```
 
 可重复传入 `--candidate '{"block_m":64,"block_n":64,"block_k":32,"num_warps":4,"num_stages":3}'` 覆盖默认搜索空间。只有 correctness 通过的候选会参与最佳配置选择。
+
+让 V6 Cost Model 解释并执行最佳路径：
+
+```sh
+python3 -m edgeforge compiler-plan \
+  --token "$EDGEFORGE_TOKEN" \
+  --operator matmul \
+  --shape 64,64,64 \
+  --dtype fp16
+
+python3 -m edgeforge compiler-run \
+  --token "$EDGEFORGE_TOKEN" \
+  --operator matmul \
+  --shape 64,64,64 \
+  --dtype fp16 \
+  --repeats 5 \
+  --warmup 5 \
+  --wait
+```
+
+可以使用 `--backend`、`--kernel-id`、`--arch` 和 `--worker-id` 限制候选，并通过 `--compile-weight`、`--load-weight-ms` 与 `--unknown-latency-ms` 调整成本策略。
 
 ## 测试
 

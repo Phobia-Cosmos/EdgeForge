@@ -226,7 +226,7 @@ class Worker:
         payload = task["payload"]
         if task["kind"] == "kernel_autotune":
             return run_kernel_autotune(payload)
-        if task["kind"] == "kernel_pipeline":
+        if task["kind"] in {"kernel_pipeline", "compiler_run"}:
             return run_kernel_pipeline(payload)
         if task["kind"] == "operator_benchmark":
             spec = OperatorSpec.from_payload(payload.get("operator") or {})

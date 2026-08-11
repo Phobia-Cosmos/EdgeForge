@@ -12,7 +12,7 @@ from typing import Any
 
 from edgeforge import __version__
 from edgeforge.kernel import KernelSpec, kernel_supports_operator, kernel_supports_worker
-from edgeforge.scheduler import select_worker
+from edgeforge.scheduler import build_execution_plan, select_worker
 
 
 TERMINAL_TASK_STATES = {"succeeded", "failed", "cancelled"}
@@ -169,6 +169,20 @@ class Store:
                 CREATE INDEX IF NOT EXISTS tuning_runs_lookup_idx
                 ON tuning_runs(operator, architecture, created_at DESC);
 
+                CREATE TABLE IF NOT EXISTS schedule_decisions (
+                    task_id TEXT PRIMARY KEY,
+                    version TEXT NOT NULL,
+                    operator TEXT NOT NULL,
+                    policy TEXT NOT NULL,
+                    candidates TEXT NOT NULL,
+                    selected TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS schedule_decisions_created_idx
+                ON schedule_decisions(created_at DESC);
+
                 CREATE INDEX IF NOT EXISTS tasks_queue_idx
                 ON tasks(status, priority DESC, created_at ASC);
 
@@ -303,14 +317,30 @@ class Store:
         now = time.time()
         task_id = uuid.uuid4().hex
         kind = data.get("kind") or "command"
-        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline", "kernel_autotune"}:
+        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline", "kernel_autotune", "compiler_run"}:
             raise ValueError(f"unsupported task kind: {kind}")
         payload = data.get("payload") or {}
-        if kind in {"operator_benchmark", "kernel_pipeline", "kernel_autotune"}:
+        requirements = dict(data.get("requirements") or {})
+        schedule_decision = None
+        if kind == "compiler_run":
+            schedule_decision = self.plan_execution(
+                payload.get("operator") or {},
+                requirements,
+                payload.get("policy") or {},
+            )
+            selected = schedule_decision["selected"]
+            kernel = self.get_kernel(selected["kernel_id"])
+            payload["operator"] = {**schedule_decision["operator"], "backend": kernel["backend"]}
+            payload["kernel_id"] = kernel["id"]
+            payload["kernel"] = kernel
+            payload["schedule_decision"] = schedule_decision
+            requirements["worker_ids"] = [selected["worker_id"]]
+            requirements["kernel_id"] = kernel["id"]
+        elif kind in {"operator_benchmark", "kernel_pipeline", "kernel_autotune"}:
             from edgeforge.operator import OperatorSpec
 
             OperatorSpec.from_payload(payload.get("operator") or {})
-            kernel_id = payload.get("kernel_id") or (data.get("requirements") or {}).get("kernel_id")
+            kernel_id = payload.get("kernel_id") or requirements.get("kernel_id")
             if kind == "kernel_pipeline" and not kernel_id:
                 raise ValueError("kernel_pipeline requires kernel_id")
             if kind == "kernel_autotune" and not kernel_id:
@@ -332,7 +362,6 @@ class Store:
             argv = payload.get("argv")
             if not isinstance(argv, list) or not argv or not all(isinstance(item, str) and item for item in argv):
                 raise ValueError("payload.argv must be a non-empty list of strings")
-        requirements = data.get("requirements") or {}
         max_attempts = min(10, max(1, int(data.get("max_attempts") or 1)))
         priority = min(100, max(-100, int(data.get("priority") or 0)))
         with self._lock, self._connect() as connection:
@@ -354,8 +383,33 @@ class Store:
                 ),
             )
         task = self.get_task(task_id)
+        if schedule_decision:
+            self._record_schedule_decision(task_id, schedule_decision)
         self.append_event("task.created", "control", "task", task_id, {"kind": kind, "requirements": requirements})
         return task
+
+    def plan_execution(
+        self,
+        operator_payload: dict[str, Any],
+        requirements: dict[str, Any] | None = None,
+        policy: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        from edgeforge.operator import OperatorSpec
+
+        spec = OperatorSpec.from_payload(operator_payload)
+        operator = {"name": spec.name, "shape": list(spec.shape), "dtype": spec.dtype, "attrs": spec.attrs}
+        if requirements is not None and not isinstance(requirements, dict):
+            raise ValueError("requirements must be an object")
+        if policy is not None and not isinstance(policy, dict):
+            raise ValueError("policy must be an object")
+        return build_execution_plan(
+            self.list_workers(),
+            self.list_kernels(limit=1000),
+            self.list_benchmarks(limit=1000),
+            operator,
+            requirements or {},
+            policy or {},
+        )
 
     def get_task(self, task_id: str) -> dict[str, Any]:
         with self._connect() as connection:
@@ -429,7 +483,7 @@ class Store:
                 candidates = online_workers
                 kernel_id = requirements.get("kernel_id") or (
                     json.loads(row["payload"]).get("kernel_id")
-                    if row["kind"] in {"operator_benchmark", "kernel_pipeline", "kernel_autotune"}
+                    if row["kind"] in {"operator_benchmark", "kernel_pipeline", "kernel_autotune", "compiler_run"}
                     else None
                 )
                 if kernel_id:
@@ -493,9 +547,9 @@ class Store:
             self._record_tuning_run(task, worker_id)
             if task["result"].get("best_config"):
                 self.update_kernel_tuning(kernel_id, task["result"]["best_config"], artifact.get("digest"))
-        if task["kind"] in {"operator_benchmark", "kernel_pipeline", "kernel_autotune"} and task["result"]:
+        if task["kind"] in {"operator_benchmark", "kernel_pipeline", "kernel_autotune", "compiler_run"} and task["result"]:
             self._record_benchmark(task, worker_id)
-        if task["kind"] == "kernel_pipeline" and task["result"]:
+        if task["kind"] in {"kernel_pipeline", "compiler_run"} and task["result"]:
             for stage in task["result"].get("pipeline") or []:
                 self.append_event(
                     f"pipeline.{stage.get('name', 'unknown')}",
@@ -747,6 +801,43 @@ class Store:
             item["search_space"] = json.loads(item["search_space"])
             item["candidates"] = json.loads(item["candidates"])
             item["best_config"] = json.loads(item["best_config"]) if item["best_config"] else None
+            result.append(item)
+        return result
+
+    def _record_schedule_decision(self, task_id: str, plan: dict[str, Any]) -> None:
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO schedule_decisions(task_id, version, operator, policy, candidates,
+                                               selected, reason, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    task_id,
+                    self.version,
+                    json.dumps(plan["operator"], separators=(",", ":")),
+                    json.dumps(plan["policy"], separators=(",", ":")),
+                    json.dumps(plan["candidates"], separators=(",", ":")),
+                    json.dumps(plan["selected"], separators=(",", ":")),
+                    plan["reason"],
+                    time.time(),
+                ),
+            )
+        self.append_event("scheduler.decision", "scheduler", "task", task_id, plan)
+
+    def list_schedule_decisions(self, limit: int = 100) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM schedule_decisions ORDER BY created_at DESC LIMIT ?", (limit,)
+            ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["operator"] = json.loads(item["operator"])
+            item["policy"] = json.loads(item["policy"])
+            item["candidates"] = json.loads(item["candidates"])
+            item["selected"] = json.loads(item["selected"])
             result.append(item)
         return result
 

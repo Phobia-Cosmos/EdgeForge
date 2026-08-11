@@ -149,6 +149,11 @@ class ControlHandler(BaseHTTPRequestHandler):
                 limit = int(query.get("limit", ["100"])[0])
                 self._send(HTTPStatus.OK, {"tuning_runs": self.server.store.list_tuning_runs(operator, limit)})
                 return
+            if parsed.path == "/api/v1/schedule-decisions":
+                query = parse_qs(parsed.query)
+                limit = int(query.get("limit", ["100"])[0])
+                self._send(HTTPStatus.OK, {"schedule_decisions": self.server.store.list_schedule_decisions(limit)})
+                return
             artifact_match = ARTIFACT_PATH.match(parsed.path)
             if artifact_match:
                 self._send(HTTPStatus.OK, self.server.store.get_artifact(artifact_match.group(1)))
@@ -181,6 +186,14 @@ class ControlHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/v1/tasks":
                 task = self.server.store.create_task(data)
                 self._send(HTTPStatus.CREATED, task)
+                return
+            if parsed.path == "/api/v1/plans":
+                plan = self.server.store.plan_execution(
+                    data.get("operator") or {},
+                    data.get("requirements") or {},
+                    data.get("policy") or {},
+                )
+                self._send(HTTPStatus.OK, plan)
                 return
             if parsed.path == "/api/v1/releases":
                 version = str(data.get("version", ""))

@@ -2,6 +2,20 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.6.0 - 2026-08-11
+
+### Added
+
+- 基于历史 latency、compile time 和 Worker load 的 Compiler-aware Cost Model。
+- 自动选择 Kernel、Backend 与 Worker 的 `compiler_run` 任务。
+- 可解释 Plan API/CLI、调度决策账本和 `scheduler.decision` 事件。
+
+### Validation
+
+- 40/40 自动化测试通过，V5 数据迁移验证通过。
+- 四节点建立 5 条同 shape 候选路径，Compiler-aware Scheduler 自动选择 tuned Triton + RTX 4070 SUPER。
+- `compiler_run` correctness 通过，执行结果回流后下一次 Plan 使用 2 个 exact-worker 样本重新估计成本。
+
 ## 0.5.0 - 2026-08-10
 
 ### Added

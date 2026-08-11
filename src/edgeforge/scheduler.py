@@ -1,11 +1,14 @@
-"""Hard-constraint filtering and deterministic worker scoring."""
+"""Hard constraints, worker scoring and compiler-aware execution planning."""
 
 from __future__ import annotations
 
+import statistics
 from typing import Any
 
+from edgeforge.kernel import kernel_supports_operator, kernel_supports_worker
 
-def _matches(worker: dict[str, Any], requirements: dict[str, Any]) -> bool:
+
+def worker_matches(worker: dict[str, Any], requirements: dict[str, Any]) -> bool:
     capabilities = worker.get("capabilities") or {}
     metrics = worker.get("metrics") or {}
 
@@ -54,8 +57,123 @@ def worker_score(worker: dict[str, Any], requirements: dict[str, Any]) -> float:
 def select_worker(
     workers: list[dict[str, Any]], requirements: dict[str, Any]
 ) -> dict[str, Any] | None:
-    candidates = [worker for worker in workers if _matches(worker, requirements)]
+    candidates = [worker for worker in workers if worker_matches(worker, requirements)]
     if not candidates:
         return None
     return max(candidates, key=lambda worker: (worker_score(worker, requirements), worker["id"]))
 
+
+def _history_estimate(
+    benchmarks: list[dict[str, Any]],
+    worker: dict[str, Any],
+    kernel: dict[str, Any],
+    operator: dict[str, Any],
+) -> tuple[float | None, float, str, int]:
+    capabilities = worker.get("capabilities") or {}
+    architecture = capabilities.get("architecture")
+    matching = [
+        item
+        for item in benchmarks
+        if item.get("correctness")
+        and item.get("operator") == operator.get("name")
+        and item.get("shape") == operator.get("shape")
+        and item.get("dtype") == operator.get("dtype", "fp32")
+        and item.get("kernel_id") == kernel.get("id")
+    ]
+    exact = [item for item in matching if item.get("worker_id") == worker.get("id")]
+    samples = exact or [item for item in matching if item.get("architecture") == architecture]
+    if not samples:
+        return None, 0.0, "unseen", 0
+    latencies = [
+        float(item.get("summary", {}).get("median_ms"))
+        for item in samples
+        if isinstance(item.get("summary", {}).get("median_ms"), (int, float))
+        and float(item["summary"]["median_ms"]) > 0
+    ]
+    if not latencies:
+        return None, 0.0, "unseen", 0
+    compile_times = [
+        float(item["compile_ms"])
+        for item in samples
+        if isinstance(item.get("compile_ms"), (int, float)) and float(item["compile_ms"]) >= 0
+    ]
+    return (
+        float(statistics.median(latencies)),
+        float(statistics.median(compile_times)) if compile_times else 0.0,
+        "exact-worker" if exact else "same-architecture",
+        len(latencies),
+    )
+
+
+def build_execution_plan(
+    workers: list[dict[str, Any]],
+    kernels: list[dict[str, Any]],
+    benchmarks: list[dict[str, Any]],
+    operator: dict[str, Any],
+    requirements: dict[str, Any] | None = None,
+    policy: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    requirements = requirements or {}
+    requested_policy = policy or {}
+    compile_weight = max(0.0, float(requested_policy.get("compile_weight", 0.05)))
+    load_weight_ms = max(0.0, float(requested_policy.get("load_weight_ms", 1.0)))
+    unknown_latency_ms = max(0.001, float(requested_policy.get("unknown_latency_ms", 1000.0)))
+    normalized_policy = {
+        "compile_weight": compile_weight,
+        "load_weight_ms": load_weight_ms,
+        "unknown_latency_ms": unknown_latency_ms,
+    }
+    allowed_kernel_ids = set(requirements.get("kernel_ids") or [])
+    allowed_backends = set(requirements.get("backends") or [])
+    candidates = []
+    for kernel in kernels:
+        if kernel.get("status") != "active":
+            continue
+        if allowed_kernel_ids and kernel.get("id") not in allowed_kernel_ids:
+            continue
+        if allowed_backends and kernel.get("backend") not in allowed_backends:
+            continue
+        if not kernel_supports_operator(kernel, operator):
+            continue
+        for worker in workers:
+            if worker.get("status") != "online":
+                continue
+            if not worker_matches(worker, requirements) or not kernel_supports_worker(kernel, worker):
+                continue
+            latency, compile_ms, source, sample_count = _history_estimate(benchmarks, worker, kernel, operator)
+            capabilities = worker.get("capabilities") or {}
+            metrics = worker.get("metrics") or {}
+            cpu_count = max(1, int(capabilities.get("cpu_count") or 1))
+            load_ratio = max(0.0, float(metrics.get("load_1m") or 0.0) / cpu_count)
+            active_tasks = max(0, int(worker.get("active_tasks") or 0))
+            load_penalty_ms = load_weight_ms * (load_ratio + active_tasks)
+            estimated_latency_ms = latency if latency is not None else unknown_latency_ms
+            objective_ms = estimated_latency_ms + compile_weight * compile_ms + load_penalty_ms
+            candidates.append(
+                {
+                    "worker_id": worker["id"],
+                    "kernel_id": kernel["id"],
+                    "architecture": capabilities.get("architecture", "unknown"),
+                    "backend": kernel.get("backend", "unknown"),
+                    "estimate_source": source,
+                    "sample_count": sample_count,
+                    "estimated_latency_ms": round(estimated_latency_ms, 6),
+                    "estimated_compile_ms": round(compile_ms, 6),
+                    "load_penalty_ms": round(load_penalty_ms, 6),
+                    "objective_ms": round(objective_ms, 6),
+                }
+            )
+    candidates.sort(key=lambda item: (item["objective_ms"], item["worker_id"], item["kernel_id"]))
+    if not candidates:
+        raise ValueError("no compatible online Worker and Kernel execution path")
+    selected = candidates[0]
+    return {
+        "operator": operator,
+        "policy": normalized_policy,
+        "selected": selected,
+        "candidates": candidates,
+        "reason": (
+            f"selected {selected['worker_id']} with {selected['kernel_id']} using "
+            f"{selected['estimate_source']} cost estimate ({selected['objective_ms']} ms objective)"
+        ),
+    }

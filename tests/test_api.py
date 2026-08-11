@@ -272,6 +272,87 @@ class APITests(unittest.TestCase):
         event_types = {item["event_type"] for item in self.client.request("GET", f"/api/v1/events?version={__version__}")["events"]}
         self.assertTrue({"autotune.candidate", "autotune.completed", "kernel.tuned"}.issubset(event_types))
 
+    def test_compiler_run_persists_explainable_decision(self):
+        for worker_id, architecture, load in (
+            ("planner-x86", "x86_64", 0.5),
+            ("planner-arm", "aarch64", 0.1),
+        ):
+            self.client.request(
+                "POST",
+                "/api/v1/workers/register",
+                {
+                    "id": worker_id,
+                    "hostname": worker_id,
+                    "capabilities": {
+                        "architecture": architecture,
+                        "accelerators": [],
+                        "cpu_count": 4,
+                        "memory_total_mb": 16000,
+                        "hardware_fingerprint": f"{worker_id}-fingerprint",
+                    },
+                    "metrics": {"load_1m": load, "memory_available_mb": 12000},
+                    "labels": {},
+                    "version": __version__,
+                },
+            )
+        kernel_id = "kernel-planner-softmax-v1"
+        self.client.request(
+            "POST",
+            "/api/v1/kernels",
+            {
+                "id": kernel_id,
+                "operator": "softmax",
+                "backend": "python-reference",
+                "version": "1",
+                "architectures": ["x86_64", "aarch64"],
+                "dtypes": ["fp32"],
+            },
+        )
+        plan_request = {
+            "operator": {"name": "softmax", "shape": [16], "dtype": "fp32"},
+            "requirements": {"kernel_ids": [kernel_id]},
+            "policy": {"unknown_latency_ms": 10.0, "load_weight_ms": 10.0},
+        }
+        dry_run = self.client.request("POST", "/api/v1/plans", plan_request)
+        self.assertEqual(dry_run["selected"]["worker_id"], "planner-arm")
+        task = self.client.request(
+            "POST",
+            "/api/v1/tasks",
+            {
+                "kind": "compiler_run",
+                "payload": {"operator": plan_request["operator"], "policy": plan_request["policy"], "repeats": 2},
+                "requirements": plan_request["requirements"],
+            },
+        )
+        self.assertEqual(task["requirements"]["worker_ids"], ["planner-arm"])
+        self.assertEqual(task["payload"]["kernel_id"], kernel_id)
+        self.assertEqual(task["payload"]["schedule_decision"]["selected"], dry_run["selected"])
+        decisions = self.client.request("GET", "/api/v1/schedule-decisions")["schedule_decisions"]
+        self.assertEqual(decisions[0]["task_id"], task["id"])
+        self.assertEqual(decisions[0]["selected"]["worker_id"], "planner-arm")
+        leased = self.client.request("POST", "/api/v1/workers/planner-arm/lease", {})["task"]
+        worker = Worker(
+            self.client,
+            "planner-arm",
+            {},
+            Path(self.temporary.name) / "planner-work",
+            1,
+            {"true"},
+            False,
+        )
+        result = worker.execute(leased)
+        completed = self.client.request(
+            "POST",
+            f"/api/v1/tasks/{task['id']}/complete",
+            {"worker_id": "planner-arm", "runtime_version": __version__, "status": "succeeded", "result": result},
+        )
+        self.assertTrue(completed["result"]["correctness"])
+        benchmarks = self.client.request("GET", "/api/v1/benchmarks?operator=softmax")["benchmarks"]
+        self.assertEqual(benchmarks[0]["worker_id"], "planner-arm")
+        self.assertEqual(benchmarks[0]["kernel_id"], kernel_id)
+        event_types = {item["event_type"] for item in self.client.request("GET", f"/api/v1/events?version={__version__}")["events"]}
+        self.assertIn("scheduler.decision", event_types)
+
 
 if __name__ == "__main__":
     unittest.main()

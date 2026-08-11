@@ -192,6 +192,18 @@ def build_parser() -> argparse.ArgumentParser:
     tuning_runs.add_argument("--operator")
     tuning_runs.add_argument("--limit", type=int, default=100)
 
+    compiler_plan = subparsers.add_parser("compiler-plan", help="explain the best Kernel and Worker path")
+    _add_client_options(compiler_plan)
+    _add_compiler_scheduler_options(compiler_plan, include_execution=False)
+
+    compiler_run = subparsers.add_parser("compiler-run", help="plan and execute on the selected Kernel and Worker")
+    _add_client_options(compiler_run)
+    _add_compiler_scheduler_options(compiler_run, include_execution=True)
+
+    decisions = subparsers.add_parser("schedule-decisions", help="list persisted compiler scheduling decisions")
+    _add_client_options(decisions)
+    decisions.add_argument("--limit", type=int, default=100)
+
     artifacts = subparsers.add_parser("artifacts", help="list content-addressed artifacts")
     _add_client_options(artifacts)
     artifacts.add_argument("--kind")
@@ -204,6 +216,23 @@ def build_parser() -> argparse.ArgumentParser:
     artifact_put.add_argument("--media-type", default="application/octet-stream")
     artifact_put.add_argument("--name")
     return parser
+
+
+def _add_compiler_scheduler_options(parser: argparse.ArgumentParser, *, include_execution: bool) -> None:
+    parser.add_argument("--operator", required=True, choices=("matmul", "softmax", "rmsnorm", "silu"))
+    parser.add_argument("--shape", required=True)
+    parser.add_argument("--dtype", default="fp32", choices=("fp32", "fp16", "bf16"))
+    parser.add_argument("--worker-id", action="append", default=[])
+    parser.add_argument("--arch", action="append", default=[])
+    parser.add_argument("--backend", action="append", default=[])
+    parser.add_argument("--kernel-id", action="append", default=[])
+    parser.add_argument("--compile-weight", type=float, default=0.05)
+    parser.add_argument("--load-weight-ms", type=float, default=1.0)
+    parser.add_argument("--unknown-latency-ms", type=float, default=1000.0)
+    if include_execution:
+        parser.add_argument("--repeats", type=int, default=5)
+        parser.add_argument("--warmup", type=int, default=5)
+        parser.add_argument("--wait", action="store_true")
 
 
 def _submit(args: argparse.Namespace) -> int:
@@ -390,6 +419,55 @@ def _autotune_submit(args: argparse.Namespace) -> int:
     return 0 if task["status"] == "succeeded" else 1
 
 
+def _compiler_scheduler_payload(args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        shape = [int(item.strip()) for item in args.shape.split(",") if item.strip()]
+    except ValueError as error:
+        raise ValueError("--shape must be comma-separated integers") from error
+    if not shape:
+        raise ValueError("--shape must not be empty")
+    return {
+        "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype},
+        "requirements": {
+            "worker_ids": args.worker_id,
+            "architectures": args.arch,
+            "backends": args.backend,
+            "kernel_ids": args.kernel_id,
+        },
+        "policy": {
+            "compile_weight": args.compile_weight,
+            "load_weight_ms": args.load_weight_ms,
+            "unknown_latency_ms": args.unknown_latency_ms,
+        },
+    }
+
+
+def _compiler_run(args: argparse.Namespace) -> int:
+    request = _compiler_scheduler_payload(args)
+    task = _client(args).request(
+        "POST",
+        "/api/v1/tasks",
+        {
+            "kind": "compiler_run",
+            "payload": {
+                "operator": request["operator"],
+                "policy": request["policy"],
+                "repeats": args.repeats,
+                "warmup": args.warmup,
+            },
+            "requirements": request["requirements"],
+        },
+    )
+    _print_json(task)
+    if not args.wait:
+        return 0
+    while task["status"] not in {"succeeded", "failed", "cancelled"}:
+        time.sleep(1)
+        task = _client(args).request("GET", f"/api/v1/tasks/{task['id']}")
+    _print_json(task)
+    return 0 if task["status"] == "succeeded" else 1
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -477,6 +555,14 @@ def main(argv: list[str] | None = None) -> None:
             if args.operator:
                 query += f"&operator={args.operator}"
             _print_json(_client(args).request("GET", f"/api/v1/tuning-runs{query}"))
+            return
+        if args.command == "compiler-plan":
+            _print_json(_client(args).request("POST", "/api/v1/plans", _compiler_scheduler_payload(args)))
+            return
+        if args.command == "compiler-run":
+            raise SystemExit(_compiler_run(args))
+        if args.command == "schedule-decisions":
+            _print_json(_client(args).request("GET", f"/api/v1/schedule-decisions?limit={args.limit}"))
             return
         if args.command == "artifacts":
             query = f"?limit={args.limit}"
