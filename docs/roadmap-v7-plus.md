@@ -1,55 +1,70 @@
-# EdgeForge V7+ 场景优先路线
+# EdgeForge V7+：AI Infra、Compiler 与推理优化路线
 
-## 调整原因
+## 方向调整
 
-V1–V6 已完成多节点控制、Operator IR、Kernel Registry、Artifact/Compiler Pipeline、Triton Auto Tuning 和 Compiler-aware Scheduler，证明了“测量 → 选择 → 执行 → 数据回流”的基础闭环。当前主要缺口不再是更多抽象 Compiler Pass，而是真实模型、Orange Pi NPU、推理引擎、端到端应用、安全与故障演练。
+V1–V6 已完成多节点控制、Operator IR、Kernel Registry、Artifact/Compiler Pipeline、Triton Auto Tuning 和 Compiler-aware Scheduler，证明了“测量 → 选择 → 执行 → 数据回流”的基础闭环。系统当前没有摄像头，长期目标也更偏向 AI Infra、AI Compiler 与推理优化，因此不再以工业视觉或嵌入式边缘部署作为主场景。
 
-因此暂停原定直接进入 Dynamic Shape/Fusion 的顺序，先建立一个真实业务闭环，再让实际 workload 数据决定后续 Compiler 优化优先级。
+新的主场景是“异构 AI Runtime 发布验证与推理优化平台”：一次模型、Kernel、Compiler 或 Runtime 变更，需要在 x86_64、ARM64 和两种 RISC-V 设备上自动构建与测试，在 RTX 4070 SUPER 上完成 GPU 推理与 Kernel 优化，通过差分正确性和性能回归检查形成可追溯的发布结论。
 
-## 主验证场景
+## 四节点组合方式与边界
 
-主场景为离线工业现场的视觉告警、解释与多架构软件发布：Orange Pi 使用 RK3588 NPU 做持续感知；RTX 4070 SUPER 处理异常事件的重模型/VLM/LLM；P550 运行低功耗常开控制面、任务账本和离线队列；Meles 执行规则校验、Watchdog、备用任务和第二种 RISC-V 兼容验证。
+| 节点 | 主角色 | 不应强行承担的角色 |
+|---|---|---|
+| RTX 4070 SUPER 主机 | Triton/CUDA Kernel 优化、真实 GPU 推理、Profiler、主要性能门禁 | 低功耗常开控制面 |
+| Orange Pi | ARM64 构建与 Runtime 验证、CPU Reference、小模型推理、可选 RKNN/NPU 探索 | 主线必须依赖的摄像头/NPU 节点 |
+| P550 | 可迁移控制面、第一种 RISC-V 编译与 Runtime 验证、CI Worker | 与 GPU 竞争大模型吞吐 |
+| Meles | 第二种独立 RISC-V 兼容性与性能验证、CI Worker、故障演练 | 为了“多机”而参与每次在线请求 |
 
-系统不要求每个推理请求强制经过所有节点。四节点共同价值来自角色分工、容错和发布门禁；任何单节点离线时都应有明确降级行为。
+四节点的主要交互链是 `build → correctness → benchmark → regression → release gate`，而不是要求一次在线推理依次经过四台设备。不同 ISA 和两种独立 RISC-V 平台能暴露工具链、ABI、依赖、数值结果和性能退化问题；4070S 则提供真正的 GPU 优化目标。若未来研究范围完全收缩为单一 NVIDIA GPU Kernel，三块板将成为辅助 CI 资源而不是核心算力，这一边界需要保留。
 
-## V7：场景契约与 Model/Service Registry
+## V7：AI Workload、Model 与 Runtime Registry
 
-- 定义图像/事件输入、告警输出、延迟目标、断网行为、数据保留和失败降级标准。
-- 增加 Model Registry、Service Registry 和结构化 `inference` 任务。
-- 记录模型格式、量化方式、Runtime、目标设备、Artifact digest、部署与加载状态。
-- 完成四节点软件能力探测，并让控制面可部署到 P550。
-- 验收：推理请求能按模型和 Runtime 能力被验证、调度、执行与审计。
+- 建立 Workload Registry，首批覆盖 MatMul、RMSNorm、RoPE、Softmax/Attention 和 KV Cache 等推理核心算子，并记录 shape、dtype、输入生成、正确性容差与性能目标。
+- 扩展 Model/Runtime/Toolchain Registry，记录模型或子图、Runtime、编译器、目标 ISA、依赖、Artifact digest 和复现参数。
+- 定义结构化 Experiment Spec，固定代码版本、输入、设备、Backend、编译参数、运行参数与随机种子。
+- 完成 x86_64、ARM64、P550 RISC-V 和 Meles RISC-V 的能力及工具链盘点。
+- 验收：同一个实验规格可以被提交、校验、调度、重放和审计，结果可精确关联软件与 Artifact 版本。
 
-## V8：Orange Pi RKNN/NPU Backend
+## V8：Multi-Architecture CI 与 Compiler/Runtime Validation Farm
 
-- 安装验证 RKNN Toolkit/Runtime，选择小型视觉模型完成转换与量化。
-- 实现 `rknn` Backend、模型 Artifact、板端缓存、correctness 和 benchmark。
-- 对照 Orange Pi CPU 与 NPU 的延迟、内存、功耗和算子覆盖。
-- 验收：真实图像在 RK3588 NPU 推理，结果进入统一 Performance Database。
+- 建立 x86_64、ARM64 和两种 RISC-V 的原生或交叉构建任务，保存 toolchain manifest、sysroot、产物和完整日志。
+- 对 Runtime、算子库和 Worker 变更执行差分正确性、ABI/依赖检查、基础性能测试与兼容矩阵生成。
+- 让 P550 承担可迁移控制面和任务账本角色，验证控制面与计算节点分离。
+- 组成 Release Gate：各架构通过自己的正确性与兼容标准，GPU 节点额外通过性能标准，不做无意义的 CPU/GPU 绝对速度竞争。
+- 验收：一次代码变更自动完成多架构构建、测试和报告，任一必需目标失败都会阻止版本被标记为可发布。
 
-## V9：端到端异构推理应用
+## V9：GPU 推理 Runtime 与 Kernel 优化
 
-- Orange Pi 做本地检测，仅上传结构化事件或必要裁剪图。
-- 4070S 对异常事件执行重模型分析和自然语言解释。
-- P550 编排持久任务与离线队列；Meles 做规则确认、Watchdog 或备用执行。
-- 增加 Inference Gateway、预热、缓存、超时、重试和 fallback。
-- 验收：完成“输入 → NPU 感知 → GPU 分析 → 规则确认 → 报告”，并演练节点离线降级。
+- 在 4070S 接入一条真实推理路径，优先从 PyTorch/Triton 或 llama.cpp CUDA 中选择与当前环境最容易复现的一条，再按模型需求评估 vLLM。
+- 将 V5 Auto Tuning 扩展到真实推理算子，记录 TTFT、TPOT、吞吐、显存、Kernel 延迟、首次编译与缓存命中。
+- 使用 V6 Scheduler 在 Reference、候选 Kernel 和不同 Runtime 配置间按能力与性能数据选择实验路径。
+- 验收：至少一个公开小模型或可复现子图完成端到端推理，优化前后具有正确性对照、稳定 Benchmark 与可定位 Artifact。
 
-## V10：安全、可靠性与可观测性
+## V10：性能回归与评测平台
 
-- 使用 Tailscale/WireGuard 或 mTLS 保护节点网络，轮换凭证并限制 Worker 权限。
-- 增加 trace ID、队列深度、阶段延迟、模型加载、温度和 GPU/NPU 指标。
-- 故障注入覆盖 Worker 断电、控制面重启、网络中断、任务超时、Artifact 缺失和模型加载失败。
-- 通过压测确认瓶颈后再选择 PostgreSQL、etcd、Redis 或消息队列，不预先堆叠组件。
+- 建立固定算子、子图和模型 Benchmark Suite，区分冷启动、热运行、批量、序列长度、动态 shape 与并发场景。
+- 为 Compiler、Runtime、Kernel 和模型版本保存 Baseline/Canary，以重复采样和明确阈值判定回归。
+- 增加按设备、版本、workload、artifact 和编译参数查询的对比报告，定位回归首次出现的版本。
+- 验收：给定两个版本，系统能回答结果是否一致、性能变化发生在哪个设备/算子/阶段，以及是否允许发布。
 
-## V11：Multi-Architecture CI / Debug Agent
+## V11：Inference Gateway 与实验编排可靠性
 
-- Worker/Runtime 发布必须在 x86、ARM、P550 和 Meles 完成构建、测试和兼容性报告。
-- Agent 关联编译错误、测试失败、硬件指纹和历史版本，生成解释与候选 Patch。
-- 所有 Patch 必须重新通过四节点门禁，不能绕过失败测试。
+- 增加模型/Runtime 感知的实验和推理入口，根据设备能力、模型驻留、队列、历史延迟与实验目标选择节点。
+- 增加任务优先级、并发限制、超时、重试、缓存、预热、断点恢复和 Worker 离线重调度。
+- 4070S 作为主要 GPU Serving/Benchmark 节点；板卡主要承担控制、CI、Reference 和兼容性任务，仅在适合的小模型 CPU/NPU 场景参与推理。
+- 将凭证轮换、最小权限、trace、温度/内存/队列指标和故障注入作为跨版本要求持续实施。
+- 验收：长时间实验队列与交互式推理共存，节点离线不会丢失任务账本，并能生成完整执行链路。
 
-## V12+：真实数据驱动的 Compiler 研究
+## V12：Compiler / Inference Optimization Agent
 
-- 使用真实推理 trace 决定 Dynamic Shape Kernel Variant、Operator Fusion、量化和 Cost Model 的顺序。
-- RKNN 转换/算子覆盖是瓶颈时优先做 Lowering；GPU shape 回退是瓶颈时再做 Dynamic Shape；数据传输占主导时再研究图切分与 placement。
-- 保留 V1–V6 的版本和验证数据，不为了新场景重写已经稳定的控制面协议。
+- Agent 读取 IR、编译日志、正确性失败、Profiler、历史 Benchmark 与硬件指纹，提出 Kernel 参数、布局、融合、量化或 Runtime 配置候选。
+- 每个候选都必须经过 `compile → correctness → benchmark → regression gate`，Agent 不能绕过失败测试或覆盖已发布 Artifact。
+- Dynamic Shape、Operator Fusion、量化和完整 Cost Model 的顺序由 V9–V11 的真实瓶颈决定。
+- 验收：Agent 至少对一个真实回归或热点生成可解释候选，并通过自动验证证明收益或明确拒绝候选。
+
+## 可选并行探索：Orange Pi RKNN/NPU
+
+- 不依赖摄像头，使用公开模型、离线输入或合成张量验证模型转换、量化、算子覆盖与板端 Runtime。
+- 只有稳定跑通真实 RKNN 环境后，才将其注册为正式 Backend 并纳入 Release Gate；此探索不阻塞 V7–V12 主线。
+
+V1–V6 的历史版本、验证数据库和日志继续保留。后续每个版本仍按既有版本规则归档，路线调整不覆盖历史事实。
