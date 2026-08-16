@@ -1,0 +1,27 @@
+{
+  "id": "raeeg-aligned-capability-v1",
+  "version": "1",
+  "workload": "raeeg",
+  "protocol": "eeg-cl-v1-aligned",
+  "comparison_group": "aligned-full49",
+  "rules": [
+    {
+      "metric": "summary.final_old_acc",
+      "operator": ">=",
+      "threshold": 0.7,
+      "step": null
+    },
+    {
+      "metric": "summary.final_seen_acc",
+      "operator": ">=",
+      "threshold": 0.64,
+      "step": null
+    },
+    {
+      "metric": "summary.bwt_acc",
+      "operator": ">=",
+      "threshold": -0.02,
+      "step": null
+    }
+  ]
+}

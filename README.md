@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.7.0` 在既有 Operator/Kernel/Compiler 路径上增加 RA-EEG 模型实验、研究指标和版本化 Experiment Bundle。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.8.0` 在 V7 RA-EEG 实验证据链上增加 Model Registry、不可变 Capability Gate 与显式生产回滚状态机。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 
@@ -90,6 +90,10 @@ python3 -m edgeforge operator-benchmark \
 | `GET /api/v1/schedule-decisions` | 查询已执行任务的调度决策快照 |
 | `GET /api/v1/experiments` | 查询模型实验、协议、方法、seed、摘要与 Bundle Artifact |
 | `GET /api/v1/experiment-metrics` | 查询 Plasticity、Forgetting、BWT、Spectrum 等结构化指标 |
+| `GET/POST /api/v1/models` | 查询或注册绑定来源实验的模型 candidate |
+| `GET/POST /api/v1/gate-policies` | 查询或创建不可变 Capability Gate Policy |
+| `GET/POST /api/v1/gate-evaluations` | 查询或执行不可变 Gate Evaluation |
+| `POST /api/v1/models/{id}/promote\|reject\|rollback` | 执行带原因的显式模型状态动作 |
 
 除 `/healthz` 外，所有接口都要求 `Authorization: Bearer <token>`。
 
@@ -99,7 +103,7 @@ python3 -m edgeforge operator-benchmark \
 
 ```text
 logs/
-└── v0.7.0/
+└── v0.8.0/
     ├── control/<UTC-run-id>.jsonl
     ├── worker/<UTC-run-id>.jsonl
     └── cli/<UTC-run-id>.jsonl
@@ -116,6 +120,8 @@ python3 -m edgeforge tuning-runs --token "$EDGEFORGE_TOKEN" --operator matmul
 python3 -m edgeforge schedule-decisions --token "$EDGEFORGE_TOKEN"
 python3 -m edgeforge experiments --token "$EDGEFORGE_TOKEN" --workload raeeg
 python3 -m edgeforge experiment-metrics --token "$EDGEFORGE_TOKEN" --name plasticity.acc_gain
+python3 -m edgeforge models --token "$EDGEFORGE_TOKEN" --workload raeeg
+python3 -m edgeforge gate-evaluations --token "$EDGEFORGE_TOKEN"
 ```
 
 ## RA-EEG 实验
@@ -152,6 +158,17 @@ PYTHONPATH=src python3 scripts/import-raeeg-catalog.py \
 ```
 
 Catalog 将 `aligned-full49` 和 `method-transfer` 标记为不同 comparison group；SPR/PuriDivER 不会被错误地混入 BrainUICL/正则化六方法公平对比。原始 EEG 不上传，Experiment Bundle 只保存配置、环境、结果 digest、摘要和归一化指标。
+
+用固定 aligned 策略评估已注册 candidate；PASS 只进入 accepted，随后仍需显式 Operator promote：
+
+```sh
+python3 -m edgeforge gate-policy-put --token "$EDGEFORGE_TOKEN" \
+  --policy config/raeeg-aligned-gate-v1.json
+python3 -m edgeforge gate-evaluate --token "$EDGEFORGE_TOKEN" \
+  --model-id model-brainuicl-aligned --policy-id raeeg-aligned-capability-v1
+python3 -m edgeforge model-promote --token "$EDGEFORGE_TOKEN" \
+  model-brainuicl-aligned --reason 'V8 release approval'
+```
 
 Operator IR 当前支持 `matmul`、`softmax`、`rmsnorm` 和 `silu`。`python-reference` Backend 用于跨架构 correctness 基线，不宣称模拟 FP16/BF16 舍入，也不用于替代后续 CUDA、Triton、RKNN 或 RVV Kernel。
 

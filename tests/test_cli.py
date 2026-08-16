@@ -4,6 +4,31 @@ from edgeforge.cli import build_parser
 
 
 class CLITests(unittest.TestCase):
+    def test_capability_gate_cli_preserves_explicit_operator_actions(self):
+        parser = build_parser()
+        register = parser.parse_args(
+            [
+                "model-register",
+                "--name",
+                "BrainUICL",
+                "--workload",
+                "raeeg",
+                "--protocol",
+                "eeg-cl-v1-aligned",
+                "--comparison-group",
+                "aligned-full49",
+                "--source-experiment-id",
+                "brainuicl-exp",
+            ]
+        )
+        self.assertEqual(register.comparison_group, "aligned-full49")
+        promote = parser.parse_args(["model-promote", "brainuicl", "--reason", "approved"])
+        self.assertEqual(promote.model_id, "brainuicl")
+        rollback = parser.parse_args(
+            ["model-rollback", "si", "--target-model-id", "brainuicl", "--reason", "regression"]
+        )
+        self.assertEqual(rollback.target_model_id, "brainuicl")
+
     def test_experiment_cli_accepts_hardware_constraints(self):
         parser = build_parser()
         args = parser.parse_args(

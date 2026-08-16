@@ -23,6 +23,7 @@ COMPLETE_PATH = re.compile(r"^/api/v1/tasks/([0-9a-f]+)/complete$")
 HEARTBEAT_PATH = re.compile(r"^/api/v1/workers/([^/]+)/heartbeat$")
 LEASE_PATH = re.compile(r"^/api/v1/workers/([^/]+)/lease$")
 ARTIFACT_PATH = re.compile(r"^/api/v1/artifacts/([0-9a-f]{64})$")
+MODEL_ACTION_PATH = re.compile(r"^/api/v1/models/([^/]+)/(promote|reject|rollback)$")
 
 
 class ControlServer(ThreadingHTTPServer):
@@ -174,6 +175,31 @@ class ControlHandler(BaseHTTPRequestHandler):
                     {"metrics": self.server.store.list_experiment_metrics(experiment_id, name, limit)},
                 )
                 return
+            if parsed.path == "/api/v1/models":
+                query = parse_qs(parsed.query)
+                workload = query.get("workload", [None])[0]
+                status = query.get("status", [None])[0]
+                limit = int(query.get("limit", ["100"])[0])
+                self._send(HTTPStatus.OK, {"models": self.server.store.list_models(workload, status, limit)})
+                return
+            if parsed.path == "/api/v1/gate-policies":
+                query = parse_qs(parsed.query)
+                workload = query.get("workload", [None])[0]
+                limit = int(query.get("limit", ["100"])[0])
+                self._send(
+                    HTTPStatus.OK,
+                    {"gate_policies": self.server.store.list_gate_policies(workload, limit)},
+                )
+                return
+            if parsed.path == "/api/v1/gate-evaluations":
+                query = parse_qs(parsed.query)
+                model_id = query.get("model_id", [None])[0]
+                limit = int(query.get("limit", ["100"])[0])
+                self._send(
+                    HTTPStatus.OK,
+                    {"gate_evaluations": self.server.store.list_gate_evaluations(model_id, limit)},
+                )
+                return
             artifact_match = ARTIFACT_PATH.match(parsed.path)
             if artifact_match:
                 self._send(HTTPStatus.OK, self.server.store.get_artifact(artifact_match.group(1)))
@@ -230,6 +256,37 @@ class ControlHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/v1/artifacts":
                 artifact = self._store_artifact_upload(data)
                 self._send(HTTPStatus.CREATED, artifact)
+                return
+            if parsed.path == "/api/v1/models":
+                model = self.server.store.register_model(data)
+                self._send(HTTPStatus.CREATED, model)
+                return
+            if parsed.path == "/api/v1/gate-policies":
+                policy = self.server.store.create_gate_policy(data)
+                self._send(HTTPStatus.CREATED, policy)
+                return
+            if parsed.path == "/api/v1/gate-evaluations":
+                model_id = str(data.get("model_id") or "")
+                policy_id = str(data.get("policy_id") or "")
+                if not model_id or not policy_id:
+                    raise ValueError("model_id and policy_id are required")
+                evaluation = self.server.store.evaluate_gate(model_id, policy_id, data.get("experiment_id"))
+                self._send(HTTPStatus.CREATED, evaluation)
+                return
+            model_action = MODEL_ACTION_PATH.match(parsed.path)
+            if model_action:
+                model_id, action = model_action.groups()
+                reason = str(data.get("reason") or "")
+                if action == "promote":
+                    result = self.server.store.promote_model(model_id, reason)
+                elif action == "reject":
+                    result = self.server.store.reject_model(model_id, reason)
+                else:
+                    target_model_id = str(data.get("target_model_id") or "")
+                    if not target_model_id:
+                        raise ValueError("target_model_id is required")
+                    result = self.server.store.rollback_model(model_id, target_model_id, reason)
+                self._send(HTTPStatus.OK, result)
                 return
             match = HEARTBEAT_PATH.match(parsed.path)
             if match:

@@ -10,7 +10,7 @@
 - 不要求每次实验使用所有设备。4070S 是主线计算节点，Orange Pi 和 RISC-V 板只在相应部署、Runtime 或兼容目标中参与。
 - 不先做攻击和自动优化 Agent。自然 LoP、可塑性指标和可复现实验链未稳定前，不扩大研究面。
 
-## V7：Experiment Contract 与 RA-EEG Adapter
+## V7：Experiment Contract 与 RA-EEG Adapter（已完成）
 
 - 增加版本化 `ExperimentSpec`、`ExperimentBundle`、Metric envelope 和环境快照 schema。
 - 新增受约束的 `experiment_run` 任务，不依赖通用 command 的 stdout 解析来表达实验结果。
@@ -19,7 +19,7 @@
 - RA-EEG 侧先完成真实 BrainUICL Adapter、可移植 fixture、嵌套 ISRUC manifest 和正式 experiment CLI。
 - 验收：4070S 根据同一份 ExperimentSpec 重放一个真实 ISRUC smoke/probe，EdgeForge 能查询任务、Bundle、Artifact、Metric 和完整版本日志。
 
-## V8：Model Registry 与 Capability Gate
+## V8：Model Registry 与 Capability Gate（已完成）
 
 - 增加 Model/Checkpoint Registry，状态包括 candidate、accepted、rejected、production 和 rollback。
 - 保存 accuracy、MF1、forgetting、BWT、plasticity curve、learning gain、AULC、layer-wise rank/spectrum 和 norm 等研究指标时序。
@@ -70,4 +70,4 @@ RA-EEG 的科研节奏不与 EdgeForge 版本号绑定：先对齐 BrainUICL 协
 - 与当前 EEG workload 无关的 RoPE/KV Cache、llama.cpp/vLLM Serving 和 HAMi 多租户 GPU 方向。
 - 为了匹配上游 Issue 而提前实现没有内部需求的 Compiler 功能。
 
-EdgeForge v0.1.0–v0.6.0 的发布说明、验证数据库和日志保持不变。V7 开发不会覆盖旧 schema 事实，正式发布仍必须完成 Changelog、`releases/vX.Y.Z.md`、自动化测试、真实硬件验证、日志归档和 Git tag。
+EdgeForge v0.1.0–v0.8.0 的发布说明、验证数据库和日志按版本保持独立。下一阶段进入 V9 真实模型 Compiler Pipeline；任何新版本仍必须完成 Changelog、`releases/vX.Y.Z.md`、自动化测试、真实 workload 验证、日志归档和 Git tag。

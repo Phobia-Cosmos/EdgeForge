@@ -224,6 +224,60 @@ class Store:
                 CREATE INDEX IF NOT EXISTS experiment_metrics_lookup_idx
                 ON experiment_metrics(experiment_id, name, step, created_at DESC);
 
+                CREATE TABLE IF NOT EXISTS models (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    workload TEXT NOT NULL,
+                    protocol TEXT NOT NULL,
+                    comparison_group TEXT NOT NULL,
+                    source_experiment_id TEXT NOT NULL,
+                    checkpoint_digest TEXT,
+                    descriptor TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    created_at REAL NOT NULL,
+                    updated_at REAL NOT NULL,
+                    registered_by_version TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS models_lookup_idx
+                ON models(workload, protocol, comparison_group, status, created_at DESC);
+
+                CREATE UNIQUE INDEX IF NOT EXISTS models_production_idx
+                ON models(workload, protocol, comparison_group)
+                WHERE status = 'production';
+
+                CREATE TABLE IF NOT EXISTS gate_policies (
+                    id TEXT PRIMARY KEY,
+                    version TEXT NOT NULL,
+                    workload TEXT NOT NULL,
+                    protocol TEXT NOT NULL,
+                    comparison_group TEXT NOT NULL,
+                    rules TEXT NOT NULL,
+                    created_at REAL NOT NULL,
+                    created_by_version TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS gate_policies_lookup_idx
+                ON gate_policies(workload, protocol, comparison_group, created_at DESC);
+
+                CREATE TABLE IF NOT EXISTS gate_evaluations (
+                    id TEXT PRIMARY KEY,
+                    model_id TEXT NOT NULL,
+                    experiment_id TEXT NOT NULL,
+                    policy_id TEXT NOT NULL,
+                    policy_snapshot TEXT NOT NULL,
+                    metric_snapshot TEXT NOT NULL,
+                    rule_results TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    created_at REAL NOT NULL,
+                    created_by_version TEXT NOT NULL,
+                    FOREIGN KEY(model_id) REFERENCES models(id),
+                    FOREIGN KEY(policy_id) REFERENCES gate_policies(id)
+                );
+
+                CREATE INDEX IF NOT EXISTS gate_evaluations_lookup_idx
+                ON gate_evaluations(model_id, created_at DESC);
+
                 CREATE INDEX IF NOT EXISTS tasks_queue_idx
                 ON tasks(status, priority DESC, created_at ASC);
 
@@ -784,6 +838,419 @@ class Store:
             item["context"] = json.loads(item["context"])
             result.append(item)
         return result
+
+    @staticmethod
+    def _decode_model(row: sqlite3.Row) -> dict[str, Any]:
+        item = dict(row)
+        item["descriptor"] = json.loads(item["descriptor"])
+        return item
+
+    @staticmethod
+    def _decode_gate_policy(row: sqlite3.Row) -> dict[str, Any]:
+        item = dict(row)
+        item["rules"] = json.loads(item["rules"])
+        return item
+
+    @staticmethod
+    def _decode_gate_evaluation(row: sqlite3.Row) -> dict[str, Any]:
+        item = dict(row)
+        for field in ("policy_snapshot", "metric_snapshot", "rule_results"):
+            item[field] = json.loads(item[field])
+        return item
+
+    def _get_experiment_run(self, experiment_id: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM experiment_runs WHERE experiment_id = ? ORDER BY created_at DESC LIMIT 1",
+                (experiment_id,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(experiment_id)
+        item = dict(row)
+        for field in ("dataset", "model", "spec", "summary"):
+            item[field] = json.loads(item[field])
+        return item
+
+    @staticmethod
+    def _experiment_comparison_group(experiment: dict[str, Any]) -> str:
+        spec = experiment.get("spec") or {}
+        metadata = spec.get("metadata") or {}
+        return str(metadata.get("comparison_group") or spec.get("comparison_group") or "").strip()
+
+    def register_model(self, data: dict[str, Any]) -> dict[str, Any]:
+        from edgeforge.gate import normalize_model
+
+        model = normalize_model(data)
+        experiment = self._get_experiment_run(model["source_experiment_id"])
+        experiment_group = self._experiment_comparison_group(experiment)
+        expected = (experiment["workload"], experiment["protocol"], experiment_group)
+        actual = (model["workload"], model["protocol"], model["comparison_group"])
+        if not experiment_group:
+            raise ValueError("source experiment has no comparison_group")
+        if actual != expected:
+            raise ValueError("model workload, protocol and comparison_group must match the source experiment")
+        now = time.time()
+        try:
+            with self._lock, self._connect() as connection:
+                connection.execute(
+                    """
+                    INSERT INTO models(
+                        id, name, workload, protocol, comparison_group, source_experiment_id,
+                        checkpoint_digest, descriptor, status, created_at, updated_at, registered_by_version
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'candidate', ?, ?, ?)
+                    """,
+                    (
+                        model["id"],
+                        model["name"],
+                        model["workload"],
+                        model["protocol"],
+                        model["comparison_group"],
+                        model["source_experiment_id"],
+                        model["checkpoint_digest"],
+                        json.dumps(model["descriptor"], ensure_ascii=False, separators=(",", ":")),
+                        now,
+                        now,
+                        self.version,
+                    ),
+                )
+        except sqlite3.IntegrityError as error:
+            raise RuntimeError(f"model id already exists: {model['id']}") from error
+        registered = self.get_model(model["id"])
+        self.append_event("model.registered", "control", "model", model["id"], {"model": registered})
+        return registered
+
+    def get_model(self, model_id: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM models WHERE id = ?", (model_id,)).fetchone()
+        if row is None:
+            raise KeyError(model_id)
+        return self._decode_model(row)
+
+    def list_models(
+        self,
+        workload: str | None = None,
+        status: str | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        clauses = []
+        parameters: list[Any] = []
+        if workload:
+            clauses.append("workload = ?")
+            parameters.append(workload)
+        if status:
+            clauses.append("status = ?")
+            parameters.append(status)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._connect() as connection:
+            rows = connection.execute(
+                f"SELECT * FROM models{where} ORDER BY created_at DESC LIMIT ?", (*parameters, limit)
+            ).fetchall()
+        return [self._decode_model(row) for row in rows]
+
+    def create_gate_policy(self, data: dict[str, Any]) -> dict[str, Any]:
+        from edgeforge.gate import normalize_policy
+
+        policy = normalize_policy(data)
+        try:
+            with self._lock, self._connect() as connection:
+                connection.execute(
+                    """
+                    INSERT INTO gate_policies(
+                        id, version, workload, protocol, comparison_group, rules, created_at, created_by_version
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        policy["id"],
+                        policy["version"],
+                        policy["workload"],
+                        policy["protocol"],
+                        policy["comparison_group"],
+                        json.dumps(policy["rules"], ensure_ascii=False, separators=(",", ":")),
+                        time.time(),
+                        self.version,
+                    ),
+                )
+        except sqlite3.IntegrityError as error:
+            raise RuntimeError(f"gate policy id already exists and policies are immutable: {policy['id']}") from error
+        created = self.get_gate_policy(policy["id"])
+        self.append_event("gate.policy.created", "control", "gate_policy", policy["id"], {"policy": created})
+        return created
+
+    def get_gate_policy(self, policy_id: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM gate_policies WHERE id = ?", (policy_id,)).fetchone()
+        if row is None:
+            raise KeyError(policy_id)
+        return self._decode_gate_policy(row)
+
+    def list_gate_policies(
+        self,
+        workload: str | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        with self._connect() as connection:
+            if workload:
+                rows = connection.execute(
+                    "SELECT * FROM gate_policies WHERE workload = ? ORDER BY created_at DESC LIMIT ?",
+                    (workload, limit),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT * FROM gate_policies ORDER BY created_at DESC LIMIT ?", (limit,)
+                ).fetchall()
+        return [self._decode_gate_policy(row) for row in rows]
+
+    @staticmethod
+    def _summary_metric(summary: dict[str, Any], path: str) -> float:
+        value: Any = summary
+        for component in path.split("."):
+            if not component or not isinstance(value, dict) or component not in value:
+                raise ValueError(f"summary metric not found: summary.{path}")
+            value = value[component]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"summary metric must be numeric: summary.{path}")
+        return float(value)
+
+    def _resolve_gate_metric(
+        self,
+        connection: sqlite3.Connection,
+        experiment: dict[str, Any],
+        rule: dict[str, Any],
+    ) -> dict[str, Any]:
+        metric = rule["metric"]
+        if metric.startswith("summary."):
+            value = self._summary_metric(experiment["summary"], metric.removeprefix("summary."))
+            return {"metric": metric, "source": "summary", "step": None, "value": value, "unit": "scalar"}
+        clauses = ["task_id = ?", "name = ?"]
+        parameters: list[Any] = [experiment["task_id"], metric]
+        if rule.get("namespace"):
+            clauses.append("namespace = ?")
+            parameters.append(rule["namespace"])
+        if rule.get("step") is None:
+            clauses.append("step IS NULL")
+        else:
+            clauses.append("step = ?")
+            parameters.append(rule["step"])
+        rows = connection.execute(
+            f"SELECT * FROM experiment_metrics WHERE {' AND '.join(clauses)} ORDER BY id", parameters
+        ).fetchall()
+        if not rows:
+            raise ValueError(f"experiment metric not found or step is ambiguous: {metric}")
+        if len(rows) != 1:
+            raise ValueError(f"gate metric must resolve to exactly one value: {metric}")
+        row = dict(rows[0])
+        return {
+            "metric": metric,
+            "source": "experiment_metrics",
+            "namespace": row["namespace"],
+            "step": row["step"],
+            "value": float(row["value"]),
+            "unit": row["unit"],
+            "context": json.loads(row["context"]),
+        }
+
+    def evaluate_gate(self, model_id: str, policy_id: str, experiment_id: str | None = None) -> dict[str, Any]:
+        from edgeforge.gate import compare
+
+        model = self.get_model(model_id)
+        policy = self.get_gate_policy(policy_id)
+        bound_experiment_id = experiment_id or model["source_experiment_id"]
+        if bound_experiment_id != model["source_experiment_id"]:
+            raise ValueError("gate evaluation must use the model source experiment")
+        experiment = self._get_experiment_run(bound_experiment_id)
+        experiment_group = self._experiment_comparison_group(experiment)
+        model_scope = (model["workload"], model["protocol"], model["comparison_group"])
+        policy_scope = (policy["workload"], policy["protocol"], policy["comparison_group"])
+        experiment_scope = (experiment["workload"], experiment["protocol"], experiment_group)
+        if model_scope != policy_scope or model_scope != experiment_scope:
+            raise ValueError("model, policy and experiment must share workload, protocol and comparison_group")
+        if model["status"] != "candidate":
+            raise RuntimeError("only candidate models can be evaluated")
+        metric_snapshot = []
+        rule_results = []
+        with self._lock, self._connect() as connection:
+            for index, rule in enumerate(policy["rules"]):
+                snapshot = self._resolve_gate_metric(connection, experiment, rule)
+                passed = compare(snapshot["value"], rule["operator"], rule["threshold"])
+                metric_snapshot.append(snapshot)
+                rule_results.append(
+                    {
+                        "index": index,
+                        "metric": rule["metric"],
+                        "operator": rule["operator"],
+                        "threshold": rule["threshold"],
+                        "actual": snapshot["value"],
+                        "passed": passed,
+                    }
+                )
+            status = "PASS" if all(result["passed"] for result in rule_results) else "FAIL"
+            model_status = "accepted" if status == "PASS" else "rejected"
+            evaluation_id = f"evaluation-{uuid.uuid4().hex}"
+            policy_snapshot = dict(policy)
+            policy_snapshot["experiment_task_id"] = experiment["task_id"]
+            now = time.time()
+            cursor = connection.execute(
+                "UPDATE models SET status = ?, updated_at = ? WHERE id = ? AND status = 'candidate'",
+                (model_status, now, model_id),
+            )
+            if cursor.rowcount != 1:
+                raise RuntimeError("model is no longer a candidate")
+            connection.execute(
+                """
+                INSERT INTO gate_evaluations(
+                    id, model_id, experiment_id, policy_id, policy_snapshot, metric_snapshot,
+                    rule_results, status, created_at, created_by_version
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    evaluation_id,
+                    model_id,
+                    bound_experiment_id,
+                    policy_id,
+                    json.dumps(policy_snapshot, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(metric_snapshot, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(rule_results, ensure_ascii=False, separators=(",", ":")),
+                    status,
+                    now,
+                    self.version,
+                ),
+            )
+        evaluation = self.get_gate_evaluation(evaluation_id)
+        self.append_event(
+            "gate.evaluated",
+            "control",
+            "gate_evaluation",
+            evaluation_id,
+            {"model_id": model_id, "policy_id": policy_id, "status": status, "model_status": model_status},
+        )
+        return evaluation
+
+    def get_gate_evaluation(self, evaluation_id: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM gate_evaluations WHERE id = ?", (evaluation_id,)
+            ).fetchone()
+        if row is None:
+            raise KeyError(evaluation_id)
+        return self._decode_gate_evaluation(row)
+
+    def list_gate_evaluations(
+        self,
+        model_id: str | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        with self._connect() as connection:
+            if model_id:
+                rows = connection.execute(
+                    "SELECT * FROM gate_evaluations WHERE model_id = ? ORDER BY created_at DESC LIMIT ?",
+                    (model_id, limit),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT * FROM gate_evaluations ORDER BY created_at DESC LIMIT ?", (limit,)
+                ).fetchall()
+        return [self._decode_gate_evaluation(row) for row in rows]
+
+    @staticmethod
+    def _transition_reason(reason: str) -> str:
+        normalized = str(reason or "").strip()
+        if not normalized:
+            raise ValueError("a non-empty transition reason is required")
+        return normalized
+
+    def promote_model(self, model_id: str, reason: str) -> dict[str, Any]:
+        reason = self._transition_reason(reason)
+        model = self.get_model(model_id)
+        if model["status"] != "accepted":
+            raise RuntimeError("only accepted models can be promoted")
+        now = time.time()
+        with self._lock, self._connect() as connection:
+            previous = connection.execute(
+                """
+                SELECT id FROM models
+                WHERE workload = ? AND protocol = ? AND comparison_group = ? AND status = 'production'
+                """,
+                (model["workload"], model["protocol"], model["comparison_group"]),
+            ).fetchone()
+            previous_id = previous["id"] if previous else None
+            if previous_id:
+                connection.execute(
+                    "UPDATE models SET status = 'rolled_back', updated_at = ? WHERE id = ?",
+                    (now, previous_id),
+                )
+            cursor = connection.execute(
+                "UPDATE models SET status = 'production', updated_at = ? WHERE id = ? AND status = 'accepted'",
+                (now, model_id),
+            )
+            if cursor.rowcount != 1:
+                raise RuntimeError("model is no longer accepted")
+        promoted = self.get_model(model_id)
+        self.append_event(
+            "model.promoted",
+            "operator",
+            "model",
+            model_id,
+            {"reason": reason, "previous_production_id": previous_id, "model": promoted},
+        )
+        return promoted
+
+    def reject_model(self, model_id: str, reason: str) -> dict[str, Any]:
+        reason = self._transition_reason(reason)
+        with self._lock, self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE models SET status = 'rejected', updated_at = ? WHERE id = ? AND status = 'candidate'",
+                (time.time(), model_id),
+            )
+            if cursor.rowcount != 1:
+                if connection.execute("SELECT 1 FROM models WHERE id = ?", (model_id,)).fetchone() is None:
+                    raise KeyError(model_id)
+                raise RuntimeError("only candidate models can be explicitly rejected")
+        rejected = self.get_model(model_id)
+        self.append_event("model.rejected", "operator", "model", model_id, {"reason": reason, "model": rejected})
+        return rejected
+
+    def rollback_model(self, model_id: str, target_model_id: str, reason: str) -> dict[str, Any]:
+        reason = self._transition_reason(reason)
+        if model_id == target_model_id:
+            raise ValueError("rollback target must differ from the production model")
+        current = self.get_model(model_id)
+        target = self.get_model(target_model_id)
+        if current["status"] != "production":
+            raise RuntimeError("rollback source must be the production model")
+        if target["status"] not in {"accepted", "rolled_back"}:
+            raise RuntimeError("rollback target must have passed a gate")
+        scope = ("workload", "protocol", "comparison_group")
+        if any(current[field] != target[field] for field in scope):
+            raise ValueError("rollback models must share workload, protocol and comparison_group")
+        now = time.time()
+        with self._lock, self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE models SET status = 'rolled_back', updated_at = ? WHERE id = ? AND status = 'production'",
+                (now, model_id),
+            )
+            if cursor.rowcount != 1:
+                raise RuntimeError("production model changed before rollback")
+            cursor = connection.execute(
+                """
+                UPDATE models SET status = 'production', updated_at = ?
+                WHERE id = ? AND status IN ('accepted', 'rolled_back')
+                """,
+                (now, target_model_id),
+            )
+            if cursor.rowcount != 1:
+                raise RuntimeError("rollback target changed before rollback")
+        restored = self.get_model(target_model_id)
+        self.append_event(
+            "model.rolled_back",
+            "operator",
+            "model",
+            model_id,
+            {"reason": reason, "target_model_id": target_model_id, "restored_model": restored},
+        )
+        return {"rolled_back": self.get_model(model_id), "production": restored}
 
     def register_kernel(self, data: dict[str, Any]) -> dict[str, Any]:
         spec = KernelSpec.from_payload(data)

@@ -2,6 +2,24 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.8.0 - 2026-08-16
+
+### Added
+
+- Model Registry，保存 candidate、accepted、rejected、production 与 rolled_back 状态及来源实验身份。
+- 不可变 Capability Gate Policy/Evaluation，保存 policy、metric 和逐规则结果快照。
+- Model/Gate API 与 CLI，以及显式 promote、reject、production switch 和 rollback 操作。
+- `raeeg / eeg-cl-v1-aligned / aligned-full49` 的首个固定验收策略。
+
+### Safety
+
+- Model、Policy 与 Experiment 必须具有完全相同的 workload、protocol 和 comparison group，禁止 SPR/PuriDivER 与 aligned-full49 跨协议门禁。
+- Gate PASS 只进入 accepted；Worker、实验事件与 Agent 均不会自动 promote，生产状态动作必须带 Operator reason。
+
+### Validation
+
+- 自动化、V7 数据库迁移和真实 EEG 指标 PASS/FAIL、生产切换、rollback 验证见 `releases/v0.8.0.md`。
+
 ## 0.7.0 - 2026-08-16
 
 ### Added

@@ -228,6 +228,59 @@ def build_parser() -> argparse.ArgumentParser:
     experiment_metrics.add_argument("--name")
     experiment_metrics.add_argument("--limit", type=int, default=1000)
 
+    models = subparsers.add_parser("models", help="list registered model candidates and production models")
+    _add_client_options(models)
+    models.add_argument("--workload")
+    models.add_argument("--status", choices=("candidate", "accepted", "rejected", "production", "rolled_back"))
+    models.add_argument("--limit", type=int, default=100)
+
+    model_register = subparsers.add_parser("model-register", help="register a model candidate from an experiment")
+    _add_client_options(model_register)
+    model_register.add_argument("--id")
+    model_register.add_argument("--name", required=True)
+    model_register.add_argument("--workload", required=True)
+    model_register.add_argument("--protocol", required=True)
+    model_register.add_argument("--comparison-group", required=True)
+    model_register.add_argument("--source-experiment-id", required=True)
+    model_register.add_argument("--checkpoint-digest")
+    model_register.add_argument("--descriptor", default="{}", help="JSON object")
+
+    gate_policies = subparsers.add_parser("gate-policies", help="list immutable capability gate policies")
+    _add_client_options(gate_policies)
+    gate_policies.add_argument("--workload")
+    gate_policies.add_argument("--limit", type=int, default=100)
+
+    gate_policy_put = subparsers.add_parser("gate-policy-put", help="create an immutable gate policy from JSON")
+    _add_client_options(gate_policy_put)
+    gate_policy_put.add_argument("--policy", required=True, help="path to a gate policy JSON file")
+
+    gate_evaluate = subparsers.add_parser("gate-evaluate", help="evaluate a candidate against an immutable policy")
+    _add_client_options(gate_evaluate)
+    gate_evaluate.add_argument("--model-id", required=True)
+    gate_evaluate.add_argument("--policy-id", required=True)
+    gate_evaluate.add_argument("--experiment-id")
+
+    gate_evaluations = subparsers.add_parser("gate-evaluations", help="list immutable gate evaluation snapshots")
+    _add_client_options(gate_evaluations)
+    gate_evaluations.add_argument("--model-id")
+    gate_evaluations.add_argument("--limit", type=int, default=100)
+
+    model_promote = subparsers.add_parser("model-promote", help="explicitly promote an accepted model")
+    _add_client_options(model_promote)
+    model_promote.add_argument("model_id")
+    model_promote.add_argument("--reason", required=True)
+
+    model_reject = subparsers.add_parser("model-reject", help="explicitly reject a candidate model")
+    _add_client_options(model_reject)
+    model_reject.add_argument("model_id")
+    model_reject.add_argument("--reason", required=True)
+
+    model_rollback = subparsers.add_parser("model-rollback", help="roll production back to a gate-approved model")
+    _add_client_options(model_rollback)
+    model_rollback.add_argument("model_id", help="current production model id")
+    model_rollback.add_argument("--target-model-id", required=True)
+    model_rollback.add_argument("--reason", required=True)
+
     artifacts = subparsers.add_parser("artifacts", help="list content-addressed artifacts")
     _add_client_options(artifacts)
     artifacts.add_argument("--kind")
@@ -639,6 +692,85 @@ def main(argv: list[str] | None = None) -> None:
             if args.name:
                 query += f"&name={args.name}"
             _print_json(_client(args).request("GET", f"/api/v1/experiment-metrics{query}"))
+            return
+        if args.command == "models":
+            query = f"?limit={args.limit}"
+            if args.workload:
+                query += f"&workload={args.workload}"
+            if args.status:
+                query += f"&status={args.status}"
+            _print_json(_client(args).request("GET", f"/api/v1/models{query}"))
+            return
+        if args.command == "model-register":
+            try:
+                descriptor = json.loads(args.descriptor)
+            except json.JSONDecodeError as error:
+                raise ValueError("--descriptor must be valid JSON") from error
+            if not isinstance(descriptor, dict):
+                raise ValueError("--descriptor must be a JSON object")
+            _print_json(
+                _client(args).request(
+                    "POST",
+                    "/api/v1/models",
+                    {
+                        "id": args.id,
+                        "name": args.name,
+                        "workload": args.workload,
+                        "protocol": args.protocol,
+                        "comparison_group": args.comparison_group,
+                        "source_experiment_id": args.source_experiment_id,
+                        "checkpoint_digest": args.checkpoint_digest,
+                        "descriptor": descriptor,
+                    },
+                )
+            )
+            return
+        if args.command == "gate-policies":
+            query = f"?limit={args.limit}"
+            if args.workload:
+                query += f"&workload={args.workload}"
+            _print_json(_client(args).request("GET", f"/api/v1/gate-policies{query}"))
+            return
+        if args.command == "gate-policy-put":
+            policy = json.loads(Path(args.policy).read_text(encoding="utf-8"))
+            if not isinstance(policy, dict):
+                raise ValueError("--policy must contain a JSON object")
+            _print_json(_client(args).request("POST", "/api/v1/gate-policies", policy))
+            return
+        if args.command == "gate-evaluate":
+            payload = {"model_id": args.model_id, "policy_id": args.policy_id}
+            if args.experiment_id:
+                payload["experiment_id"] = args.experiment_id
+            _print_json(_client(args).request("POST", "/api/v1/gate-evaluations", payload))
+            return
+        if args.command == "gate-evaluations":
+            query = f"?limit={args.limit}"
+            if args.model_id:
+                query += f"&model_id={args.model_id}"
+            _print_json(_client(args).request("GET", f"/api/v1/gate-evaluations{query}"))
+            return
+        if args.command == "model-promote":
+            _print_json(
+                _client(args).request(
+                    "POST", f"/api/v1/models/{args.model_id}/promote", {"reason": args.reason}
+                )
+            )
+            return
+        if args.command == "model-reject":
+            _print_json(
+                _client(args).request(
+                    "POST", f"/api/v1/models/{args.model_id}/reject", {"reason": args.reason}
+                )
+            )
+            return
+        if args.command == "model-rollback":
+            _print_json(
+                _client(args).request(
+                    "POST",
+                    f"/api/v1/models/{args.model_id}/rollback",
+                    {"target_model_id": args.target_model_id, "reason": args.reason},
+                )
+            )
             return
         if args.command == "artifacts":
             query = f"?limit={args.limit}"
