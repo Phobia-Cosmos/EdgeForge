@@ -1,70 +1,73 @@
-# EdgeForge V7+：AI Infra、Compiler 与推理优化路线
+# EdgeForge V7+：RA-EEG 驱动的可靠性、Compiler 与 Infra 路线
 
-## 方向调整
+详细的方向审计、代码现状和系统边界见 [system-direction-2026-08-16.md](system-direction-2026-08-16.md)。路线从通用 LLM/边缘推理平台调整为“使用 RA-EEG 真实 workload 建设持续适应模型的评测、编译验证与发布基础设施”。
 
-V1–V6 已完成多节点控制、Operator IR、Kernel Registry、Artifact/Compiler Pipeline、Triton Auto Tuning 和 Compiler-aware Scheduler，证明了“测量 → 选择 → 执行 → 数据回流”的基础闭环。系统当前没有摄像头，长期目标也更偏向 AI Infra、AI Compiler 与推理优化，因此不再以工业视觉或嵌入式边缘部署作为主场景。
+## 路线约束
 
-新的主场景是“异构 AI Runtime 发布验证与推理优化平台”：一次模型、Kernel、Compiler 或 Runtime 变更，需要在 x86_64、ARM64 和两种 RISC-V 设备上自动构建与测试，在 RTX 4070 SUPER 上完成 GPU 推理与 Kernel 优化，通过差分正确性和性能回归检查形成可追溯的发布结论。
+- EdgeForge 和 RA-EEG 保持独立版本：EdgeForge 管执行与证据，RA-EEG 管数据、模型、持续学习协议和研究指标。
+- `/home/undefined/Desktop/bci/code/tta_security/BrainUICL/` 是当前已用真实数据运行的实现来源；`raeeg-v0.2.zip` 是待整合的 SDK 骨架，不直接替代现有实验代码。
+- 不上传原始 EEG 到控制面；只保存数据 manifest digest、版本和 Worker 数据访问能力。
+- 不要求每次实验使用所有设备。4070S 是主线计算节点，Orange Pi 和 RISC-V 板只在相应部署、Runtime 或兼容目标中参与。
+- 不先做攻击和自动优化 Agent。自然 LoP、可塑性指标和可复现实验链未稳定前，不扩大研究面。
 
-## 四节点组合方式与边界
+## V7：Experiment Contract 与 RA-EEG Adapter
 
-| 节点 | 主角色 | 不应强行承担的角色 |
-|---|---|---|
-| RTX 4070 SUPER 主机 | Triton/CUDA Kernel 优化、真实 GPU 推理、Profiler、主要性能门禁 | 低功耗常开控制面 |
-| Orange Pi | ARM64 构建与 Runtime 验证、CPU Reference、小模型推理、可选 RKNN/NPU 探索 | 主线必须依赖的摄像头/NPU 节点 |
-| P550 | 可迁移控制面、第一种 RISC-V 编译与 Runtime 验证、CI Worker | 与 GPU 竞争大模型吞吐 |
-| Meles | 第二种独立 RISC-V 兼容性与性能验证、CI Worker、故障演练 | 为了“多机”而参与每次在线请求 |
+- 增加版本化 `ExperimentSpec`、`ExperimentBundle`、Metric envelope 和环境快照 schema。
+- 新增受约束的 `experiment_run` 任务，不依赖通用 command 的 stdout 解析来表达实验结果。
+- 保存 dataset/manifest、model、checkpoint、CL protocol/method、seed、code revision、Runner 版本、设备需求和父实验关系。
+- 允许 Worker 上传配置、指标、日志、checkpoint/manifest 等 Artifact；原始 EEG 不进入 Artifact Store。
+- RA-EEG 侧先完成真实 BrainUICL Adapter、可移植 fixture、嵌套 ISRUC manifest 和正式 experiment CLI。
+- 验收：4070S 根据同一份 ExperimentSpec 重放一个真实 ISRUC smoke/probe，EdgeForge 能查询任务、Bundle、Artifact、Metric 和完整版本日志。
 
-四节点的主要交互链是 `build → correctness → benchmark → regression → release gate`，而不是要求一次在线推理依次经过四台设备。不同 ISA 和两种独立 RISC-V 平台能暴露工具链、ABI、依赖、数值结果和性能退化问题；4070S 则提供真正的 GPU 优化目标。若未来研究范围完全收缩为单一 NVIDIA GPU Kernel，三块板将成为辅助 CI 资源而不是核心算力，这一边界需要保留。
+## V8：Model Registry 与 Capability Gate
 
-## V7：AI Workload、Model 与 Runtime Registry
+- 增加 Model/Checkpoint Registry，状态包括 candidate、accepted、rejected、production 和 rollback。
+- 保存 accuracy、MF1、forgetting、BWT、plasticity curve、learning gain、AULC、layer-wise rank/spectrum 和 norm 等研究指标时序。
+- 增加版本化 Gate Policy 与逐规则 GateEvaluation，输入和结果都绑定 digest，禁止覆盖历史判断。
+- 区分 supervised FineTune baseline 与 BrainUICL 无监督持续适应协议，不能在同一 baseline 中混合比较。
+- 验收：至少一个 candidate 能依据固定 policy 产生可解释 PASS/FAIL；失败 candidate 不进入 Compiler 发布阶段，已接受版本可以 rollback。
 
-- 建立 Workload Registry，首批覆盖 MatMul、RMSNorm、RoPE、Softmax/Attention 和 KV Cache 等推理核心算子，并记录 shape、dtype、输入生成、正确性容差与性能目标。
-- 扩展 Model/Runtime/Toolchain Registry，记录模型或子图、Runtime、编译器、目标 ISA、依赖、Artifact digest 和复现参数。
-- 定义结构化 Experiment Spec，固定代码版本、输入、设备、Backend、编译参数、运行参数与随机种子。
-- 完成 x86_64、ARM64、P550 RISC-V 和 Meles RISC-V 的能力及工具链盘点。
-- 验收：同一个实验规格可以被提交、校验、调度、重放和审计，结果可精确关联软件与 Artifact 版本。
+## V9：4070S 真实模型 Compiler Pipeline
 
-## V8：Multi-Architecture CI 与 Compiler/Runtime Validation Farm
+- 第一条路径只比较 PyTorch eager 与 `torch.compile`，先验证可复现性、数值正确性和模型能力等价，再扩大 Backend。
+- 保存 graph break、编译日志、compile time、first-call latency、steady latency、峰值显存、accuracy/MF1 差异和编译 Artifact。
+- 使用 Profiler 确认实际热点后，再决定是否为 Conv1d、Attention、LayerNorm 或其他算子增加 Triton Kernel；不以现有 MatMul Demo 代替模型级结论。
+- 将研究 Gate 和 Compiler Gate 串联，任何更快但能力回退超阈值的 Artifact 都不能 promote。
+- 验收：一个真实 RA-EEG checkpoint 完成 `export/compile → numerical correctness → capability regression → performance benchmark`，并可从 Artifact 与版本记录重放。
 
-- 建立 x86_64、ARM64 和两种 RISC-V 的原生或交叉构建任务，保存 toolchain manifest、sysroot、产物和完整日志。
-- 对 Runtime、算子库和 Worker 变更执行差分正确性、ABI/依赖检查、基础性能测试与兼容矩阵生成。
-- 让 P550 承担可迁移控制面和任务账本角色，验证控制面与计算节点分离。
-- 组成 Release Gate：各架构通过自己的正确性与兼容标准，GPU 节点额外通过性能标准，不做无意义的 CPU/GPU 绝对速度竞争。
-- 验收：一次代码变更自动完成多架构构建、测试和报告，任一必需目标失败都会阻止版本被标记为可发布。
+## V10：Orange Pi 部署目标与条件性 IREE
 
-## V9：GPU 推理 Runtime 与 Kernel 优化
+- 先探测并记录 Orange Pi 的 ARM64 CPU、驱动、Vulkan、内存和可用 Runtime，选取真实可运行路径，不预设 NPU 已可用。
+- 在模型可稳定导出后，比较 LLVM CPU、条件性 IREE Vulkan 和 PyTorch/ONNX 可用路径的正确性、冷启动、steady latency、内存与 Artifact size。
+- RKNN/NPU 是并行实验：只有工具链、算子覆盖和量化正确性真实通过后才注册为正式 Backend。
+- P550/Meles 在这一阶段运行 Agent、CLI/API、Artifact 校验和 RISC-V 构建 smoke；仅在 Runtime 真实可构建时增加模型执行门禁。
+- 验收：至少一个非 x86 目标加载真实模型 Artifact 并完成离线 EEG inference；不能用 Python Reference Operator 代替模型部署成功。
 
-- 在 4070S 接入一条真实推理路径，优先从 PyTorch/Triton 或 llama.cpp CUDA 中选择与当前环境最容易复现的一条，再按模型需求评估 vLLM。
-- 将 V5 Auto Tuning 扩展到真实推理算子，记录 TTFT、TPOT、吞吐、显存、Kernel 延迟、首次编译与缓存命中。
-- 使用 V6 Scheduler 在 Reference、候选 Kernel 和不同 Runtime 配置间按能力与性能数据选择实验路径。
-- 验收：至少一个公开小模型或可复现子图完成端到端推理，优化前后具有正确性对照、稳定 Benchmark 与可定位 Artifact。
+## V11：模型级回归、调度与多架构 CI
 
-## V10：性能回归与评测平台
+- 将 V6 的算子 Cost Model 扩展为 workload/model/runtime 级候选，不把不同能力或不同精度的路径当作可互换候选。
+- 对 checkpoint、Compiler、Runtime 和目标设备建立 Baseline/Canary，使用重复采样与明确阈值判断回归。
+- 建立适配不同目标的发布矩阵：4070S 执行能力与性能门禁，Orange Pi 执行部署门禁，P550/Meles 执行协议与可移植性门禁。
+- 增加长实验优先级、资源配额、断点恢复、Worker 离线重调度和 checkpoint 安全恢复。
+- 验收：给定两个候选版本，系统能回答研究能力、编译正确性和性能在哪个阶段发生变化，并自动阻止不满足目标 profile 的发布。
 
-- 建立固定算子、子图和模型 Benchmark Suite，区分冷启动、热运行、批量、序列长度、动态 shape 与并发场景。
-- 为 Compiler、Runtime、Kernel 和模型版本保存 Baseline/Canary，以重复采样和明确阈值判定回归。
-- 增加按设备、版本、workload、artifact 和编译参数查询的对比报告，定位回归首次出现的版本。
-- 验收：给定两个版本，系统能回答结果是否一致、性能变化发生在哪个设备/算子/阶段，以及是否允许发布。
+## V12：可靠性与 Compiler Optimization Agent
 
-## V11：Inference Gateway 与实验编排可靠性
+- Agent 读取 ExperimentSpec、IR/graph、Profiler、编译日志、研究指标、Gate 失败和历史 Benchmark，提出实验诊断或优化候选。
+- 所有候选必须进入隔离分支和不可绕过的 `experiment → capability gate → compile → correctness → performance gate`。
+- Dynamic Shape、Operator Fusion、布局、量化和 Kernel 参数优化由真实热点与回归数据决定。
+- 验收：Agent 对至少一个真实失败或热点生成可解释候选，并由完整 Gate 链证明接受或拒绝；Agent 无权直接修改 production 状态。
 
-- 增加模型/Runtime 感知的实验和推理入口，根据设备能力、模型驻留、队列、历史延迟与实验目标选择节点。
-- 增加任务优先级、并发限制、超时、重试、缓存、预热、断点恢复和 Worker 离线重调度。
-- 4070S 作为主要 GPU Serving/Benchmark 节点；板卡主要承担控制、CI、Reference 和兼容性任务，仅在适合的小模型 CPU/NPU 场景参与推理。
-- 将凭证轮换、最小权限、trace、温度/内存/队列指标和故障注入作为跨版本要求持续实施。
-- 验收：长时间实验队列与交互式推理共存，节点离线不会丢失任务账本，并能生成完整执行链路。
+## 独立研究里程碑
 
-## V12：Compiler / Inference Optimization Agent
+RA-EEG 的科研节奏不与 EdgeForge 版本号绑定：先对齐 BrainUICL 协议与已有 CL 方法，再运行 ISRUC 自然 LoP 多 seed 基线，随后分析 `ER(t-1) → Plasticity(t)`，之后才决定攻击、归因、防御和 FACED 扩展。科研结论失败或不显著也必须被完整记录，不能为了基础设施演示预设 LoP 必然存在。
 
-- Agent 读取 IR、编译日志、正确性失败、Profiler、历史 Benchmark 与硬件指纹，提出 Kernel 参数、布局、融合、量化或 Runtime 配置候选。
-- 每个候选都必须经过 `compile → correctness → benchmark → regression gate`，Agent 不能绕过失败测试或覆盖已发布 Artifact。
-- Dynamic Shape、Operator Fusion、量化和完整 Cost Model 的顺序由 V9–V11 的真实瓶颈决定。
-- 验收：Agent 至少对一个真实回归或热点生成可解释候选，并通过自动验证证明收益或明确拒绝候选。
+## 暂缓项
 
-## 可选并行探索：Orange Pi RKNN/NPU
+- 摄像头或工业视觉主场景。
+- 让 P550/Meles 承担 PyTorch 训练或大模型推理。
+- 没有真实可用性验证前承诺 Orange Pi NPU。
+- 与当前 EEG workload 无关的 RoPE/KV Cache、llama.cpp/vLLM Serving 和 HAMi 多租户 GPU 方向。
+- 为了匹配上游 Issue 而提前实现没有内部需求的 Compiler 功能。
 
-- 不依赖摄像头，使用公开模型、离线输入或合成张量验证模型转换、量化、算子覆盖与板端 Runtime。
-- 只有稳定跑通真实 RKNN 环境后，才将其注册为正式 Backend 并纳入 Release Gate；此探索不阻塞 V7–V12 主线。
-
-V1–V6 的历史版本、验证数据库和日志继续保留。后续每个版本仍按既有版本规则归档，路线调整不覆盖历史事实。
+EdgeForge v0.1.0–v0.6.0 的发布说明、验证数据库和日志保持不变。V7 开发不会覆盖旧 schema 事实，正式发布仍必须完成 Changelog、`releases/vX.Y.Z.md`、自动化测试、真实硬件验证、日志归档和 Git tag。
