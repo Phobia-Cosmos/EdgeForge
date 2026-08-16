@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 from edgeforge.client import Client
@@ -44,6 +45,14 @@ class WorkerExecutionTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "not allowed"):
             self.worker.execute({"kind": "command", "payload": {"argv": ["uname"]}})
 
+    def test_allowed_virtualenv_symlink_is_preserved(self):
+        target = self.root / "python-target"
+        target.write_text("placeholder", encoding="utf-8")
+        launcher = self.root / "venv-python"
+        launcher.symlink_to(target)
+        self.worker.allowed_commands.add(str(launcher))
+        self.assertEqual(self.worker._resolve_command(str(launcher)), str(launcher))
+
     def test_cwd_cannot_escape_work_root(self):
         with self.assertRaisesRegex(RuntimeError, "escapes"):
             self.worker.execute(
@@ -76,6 +85,53 @@ class WorkerExecutionTests(unittest.TestCase):
         )
         self.assertEqual(result["kernel_id"], "kernel-softmax-v1")
         self.assertEqual(result["kernel_version"], "1")
+
+    def test_experiment_import_builds_normalized_bundle(self):
+        result_dir = self.root / "results"
+        result_dir.mkdir()
+        (result_dir / "metrics.json").write_text(
+            json.dumps(
+                {
+                    "summary": {"final_old_acc": 0.71},
+                    "tasks": [
+                        {
+                            "task": 1,
+                            "subject": 64,
+                            "current_before": {"acc": 0.60},
+                            "current_after": {"acc": 0.65},
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        result = self.worker.execute(
+            {
+                "kind": "experiment_run",
+                "payload": {
+                    "spec": {
+                        "schema_version": 1,
+                        "experiment_id": "worker-import-test",
+                        "workload": "raeeg",
+                        "dataset": {"name": "ISRUC"},
+                        "model": {"name": "BrainUICL"},
+                        "protocol": "eeg-cl-v1",
+                        "method": "finetune",
+                        "seed": 4321,
+                        "runner": {
+                            "mode": "import",
+                            "result_path": "results/metrics.json",
+                            "adapter": "raeeg-metrics-v1",
+                        },
+                    }
+                },
+            }
+        )
+        bundle = result["experiment_bundle"]
+        self.assertEqual(result["exit_code"], 0)
+        self.assertEqual(bundle["experiment_id"], "worker-import-test")
+        self.assertTrue(any(item["name"] == "plasticity.acc_gain" for item in bundle["metrics"]))
+        self.assertEqual(result["artifact_upload"]["kind"], "experiment-bundle")
 
 
 if __name__ == "__main__":

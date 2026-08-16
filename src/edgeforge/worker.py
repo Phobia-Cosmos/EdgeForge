@@ -20,6 +20,7 @@ from typing import Any
 from edgeforge import __version__
 from edgeforge.client import APIError, Client
 from edgeforge.compiler import run_kernel_autotune, run_kernel_pipeline
+from edgeforge.experiment import ExperimentSpec, build_experiment_bundle, bundle_artifact_upload
 from edgeforge.operator import OperatorSpec, benchmark_operator
 
 
@@ -209,11 +210,15 @@ class Worker:
         executable = command if os.path.isabs(command) else shutil.which(command)
         if not executable:
             raise RuntimeError(f"executable not found: {command}")
-        resolved = str(Path(executable).resolve())
+        executable_path = Path(executable).absolute()
+        resolved = str(executable_path.resolve())
         names = {command, Path(command).name, resolved, Path(resolved).name}
         if not self.allow_any_command and not names.intersection(self.allowed_commands):
             raise RuntimeError(f"command is not allowed on this worker: {command}")
-        return resolved
+        # Preserve a virtual environment or registry symlink as argv[0].  The
+        # resolved target is used for allow-list verification, but executing
+        # /usr/bin/python directly would discard the venv's sys.path.
+        return str(executable_path)
 
     def _resolve_cwd(self, value: str | None) -> Path:
         path = (self.work_root / value).resolve() if value else self.work_root
@@ -222,8 +227,70 @@ class Worker:
         path.mkdir(parents=True, exist_ok=True)
         return path
 
+    def _resolve_result_path(self, value: str) -> Path:
+        path = (self.work_root / value).resolve()
+        if not path.is_relative_to(self.work_root):
+            raise RuntimeError("experiment result_path escapes the configured work root")
+        return path
+
+    def _execute_experiment(self, payload: dict[str, Any]) -> dict[str, Any]:
+        spec = ExperimentSpec.from_payload(payload.get("spec"))
+        runner = spec.runner
+        if runner["mode"] == "command":
+            command_payload = {
+                "argv": list(runner["argv"]),
+                "cwd": runner.get("cwd"),
+                "timeout_seconds": runner.get("timeout_seconds", 86_400.0),
+                "env": runner.get("env") or {},
+            }
+            execution = self.execute({"kind": "command", "payload": command_payload})
+            if execution["exit_code"] != 0:
+                return {**execution, "experiment_id": spec.experiment_id, "workload": spec.workload}
+        else:
+            execution = {
+                "exit_code": 0,
+                "stdout": "",
+                "stderr": "",
+                "elapsed_ms": 0.0,
+                "timings_ms": [],
+                "summary": {"runs": 0},
+            }
+
+        result_path = self._resolve_result_path(runner["result_path"])
+        if not result_path.is_file():
+            raise RuntimeError(f"experiment result does not exist: {runner['result_path']}")
+        source_bytes = result_path.read_bytes()
+        if len(source_bytes) > 16 * 1024 * 1024:
+            raise RuntimeError("experiment result exceeds 16 MiB normalization limit")
+        try:
+            raw = json.loads(source_bytes)
+        except json.JSONDecodeError as error:
+            raise RuntimeError("experiment result is not valid JSON") from error
+        if not isinstance(raw, dict):
+            raise RuntimeError("experiment result must be a JSON object")
+        bundle = build_experiment_bundle(
+            spec,
+            raw,
+            source_path=str(result_path.relative_to(self.work_root)),
+            source_bytes=source_bytes,
+            environment={
+                "edgeforge_version": __version__,
+                "worker_id": self.worker_id,
+                "capabilities": collect_capabilities(),
+            },
+        )
+        return {
+            **execution,
+            "experiment_id": spec.experiment_id,
+            "workload": spec.workload,
+            "experiment_bundle": bundle,
+            "artifact_upload": bundle_artifact_upload(bundle),
+        }
+
     def execute(self, task: dict[str, Any]) -> dict[str, Any]:
         payload = task["payload"]
+        if task["kind"] == "experiment_run":
+            return self._execute_experiment(payload)
         if task["kind"] == "kernel_autotune":
             return run_kernel_autotune(payload)
         if task["kind"] in {"kernel_pipeline", "compiler_run"}:

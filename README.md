@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.6.0` 使用 Performance Database、Kernel Registry 与 Worker 实时状态自动选择 Kernel、Backend 和硬件执行路径。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.7.0` 在既有 Operator/Kernel/Compiler 路径上增加 RA-EEG 模型实验、研究指标和版本化 Experiment Bundle。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)。2026-08-16 的 RA-EEG/硬件方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，对应 V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 
@@ -88,6 +88,8 @@ python3 -m edgeforge operator-benchmark \
 | `GET /api/v1/tuning-runs` | 查询 Auto Tuning 搜索历史和最佳配置 |
 | `POST /api/v1/plans` | 生成可解释的 Kernel/Worker 执行计划 |
 | `GET /api/v1/schedule-decisions` | 查询已执行任务的调度决策快照 |
+| `GET /api/v1/experiments` | 查询模型实验、协议、方法、seed、摘要与 Bundle Artifact |
+| `GET /api/v1/experiment-metrics` | 查询 Plasticity、Forgetting、BWT、Spectrum 等结构化指标 |
 
 除 `/healthz` 外，所有接口都要求 `Authorization: Bearer <token>`。
 
@@ -97,7 +99,7 @@ python3 -m edgeforge operator-benchmark \
 
 ```text
 logs/
-└── v0.6.0/
+└── v0.7.0/
     ├── control/<UTC-run-id>.jsonl
     ├── worker/<UTC-run-id>.jsonl
     └── cli/<UTC-run-id>.jsonl
@@ -112,7 +114,44 @@ python3 -m edgeforge benchmarks --token "$EDGEFORGE_TOKEN" --operator matmul
 python3 -m edgeforge artifacts --token "$EDGEFORGE_TOKEN" --kind compiler-manifest
 python3 -m edgeforge tuning-runs --token "$EDGEFORGE_TOKEN" --operator matmul
 python3 -m edgeforge schedule-decisions --token "$EDGEFORGE_TOKEN"
+python3 -m edgeforge experiments --token "$EDGEFORGE_TOKEN" --workload raeeg
+python3 -m edgeforge experiment-metrics --token "$EDGEFORGE_TOKEN" --name plasticity.acc_gain
 ```
+
+## RA-EEG 实验
+
+4070S Worker 需要把工作根目录设为现有 BrainUICL 仓库，并只允许受信任的 BrainUICL Python 环境：
+
+```sh
+python3 -m edgeforge worker \
+  --control-url http://127.0.0.1:8080 \
+  --worker-id worker-4070s \
+  --work-root /home/undefined/Desktop/bci/code/tta_security/BrainUICL \
+  --allow-command /home/undefined/Disk/python-envs/brainuicl/bin/python \
+  --label workload=raeeg
+```
+
+运行真实 ISRUC LoP smoke：
+
+```sh
+python3 -m edgeforge experiment-run \
+  --token "$EDGEFORGE_TOKEN" \
+  --spec config/raeeg-lop-smoke.json \
+  --worker-id worker-4070s \
+  --accelerator nvidia-gpu \
+  --wait
+```
+
+批量导入本机已有八组 EEG 实验结果：
+
+```sh
+PYTHONPATH=src python3 scripts/import-raeeg-catalog.py \
+  --token "$EDGEFORGE_TOKEN" \
+  --worker-id worker-4070s \
+  --wait
+```
+
+Catalog 将 `aligned-full49` 和 `method-transfer` 标记为不同 comparison group；SPR/PuriDivER 不会被错误地混入 BrainUICL/正则化六方法公平对比。原始 EEG 不上传，Experiment Bundle 只保存配置、环境、结果 digest、摘要和归一化指标。
 
 Operator IR 当前支持 `matmul`、`softmax`、`rmsnorm` 和 `silu`。`python-reference` Backend 用于跨架构 correctness 基线，不宣称模拟 FP16/BF16 舍入，也不用于替代后续 CUDA、Triton、RKNN 或 RVV Kernel。
 

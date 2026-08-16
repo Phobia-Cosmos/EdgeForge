@@ -2,6 +2,27 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.7.0 - 2026-08-16
+
+### Added
+
+- 版本化 `ExperimentSpec` 与 `ExperimentBundle`，支持执行新实验或导入已有结果。
+- `experiment_run` 任务、RA-EEG 指标归一化、`experiment_runs` 和 `experiment_metrics` 数据库。
+- `experiments`、`experiment-metrics`、`experiment-run` API/CLI 和 `experiment.completed` 事件。
+- 本地 RA-EEG 八实验 Catalog，覆盖 aligned BrainUICL、Finetune、EWC、Online EWC、SI、MAS、SPR-EEG 和 PuriDivER-EEG。
+- 基于真实 BrainUICL checkpoint 的固定预算 Plasticity、Effective Rank、Stable Rank 和 Weight Norm 后验 Probe。
+
+### Changed
+
+- V7 主 workload 从通用 LLM 算子扩展调整为 RA-EEG 持续适应模型；既有 Operator/Kernel/Compiler 路径保持兼容。
+- 数据集只通过名称、路径能力和 manifest digest 引用，原始 EEG 不上传中央 Artifact Store。
+
+### Validation
+
+- 46/46 EdgeForge 自动化测试与 2/2 BrainUICL LoP Probe 测试通过。
+- 8 组历史实验和 2 组真实 checkpoint LoP smoke 共写入 10 个 Experiment Bundle、8421 条指标与 10 个 Artifact。
+- V6 验证数据库迁移、虚拟环境入口回归和版本日志归档通过；详情见 `releases/v0.7.0.md`。
+
 ## 0.6.0 - 2026-08-11
 
 ### Added

@@ -183,6 +183,47 @@ class Store:
                 CREATE INDEX IF NOT EXISTS schedule_decisions_created_idx
                 ON schedule_decisions(created_at DESC);
 
+                CREATE TABLE IF NOT EXISTS experiment_runs (
+                    task_id TEXT PRIMARY KEY,
+                    experiment_id TEXT NOT NULL,
+                    version TEXT NOT NULL,
+                    runtime_version TEXT,
+                    worker_id TEXT NOT NULL,
+                    workload TEXT NOT NULL,
+                    dataset TEXT NOT NULL,
+                    model TEXT NOT NULL,
+                    protocol TEXT NOT NULL,
+                    method TEXT NOT NULL,
+                    seed INTEGER NOT NULL,
+                    spec TEXT NOT NULL,
+                    summary TEXT NOT NULL,
+                    artifact_digest TEXT,
+                    source_digest TEXT,
+                    created_at REAL NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS experiment_runs_lookup_idx
+                ON experiment_runs(workload, method, created_at DESC);
+
+                CREATE INDEX IF NOT EXISTS experiment_runs_id_idx
+                ON experiment_runs(experiment_id, created_at DESC);
+
+                CREATE TABLE IF NOT EXISTS experiment_metrics (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_id TEXT NOT NULL,
+                    experiment_id TEXT NOT NULL,
+                    namespace TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    value REAL NOT NULL,
+                    step INTEGER,
+                    unit TEXT NOT NULL,
+                    context TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS experiment_metrics_lookup_idx
+                ON experiment_metrics(experiment_id, name, step, created_at DESC);
+
                 CREATE INDEX IF NOT EXISTS tasks_queue_idx
                 ON tasks(status, priority DESC, created_at ASC);
 
@@ -317,7 +358,7 @@ class Store:
         now = time.time()
         task_id = uuid.uuid4().hex
         kind = data.get("kind") or "command"
-        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline", "kernel_autotune", "compiler_run"}:
+        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline", "kernel_autotune", "compiler_run", "experiment_run"}:
             raise ValueError(f"unsupported task kind: {kind}")
         payload = data.get("payload") or {}
         requirements = dict(data.get("requirements") or {})
@@ -358,6 +399,11 @@ class Store:
                 payload["operator"] = {**payload["operator"], "backend": kernel["backend"]}
                 payload["kernel_id"] = str(kernel_id)
                 payload["kernel"] = kernel
+        elif kind == "experiment_run":
+            from edgeforge.experiment import ExperimentSpec
+
+            spec = ExperimentSpec.from_payload(payload.get("spec"))
+            payload["spec"] = spec.to_dict()
         else:
             argv = payload.get("argv")
             if not isinstance(argv, list) or not argv or not all(isinstance(item, str) and item for item in argv):
@@ -574,6 +620,22 @@ class Store:
                 task_id,
                 {"worker_id": worker_id, "best_config": task["result"].get("best_config")},
             )
+        if task["kind"] == "experiment_run" and task["status"] == "succeeded" and task["result"]:
+            self._record_experiment_run(task, worker_id)
+            experiment_bundle = task["result"].get("experiment_bundle") or {}
+            self.append_event(
+                "experiment.completed",
+                "worker",
+                "experiment",
+                str(task["result"].get("experiment_id") or task_id),
+                {
+                    "task_id": task_id,
+                    "worker_id": worker_id,
+                    "workload": task["result"].get("workload"),
+                    "artifact_digest": (task["result"].get("artifact") or {}).get("digest"),
+                    "metric_count": len(task["result"].get("metrics") or experiment_bundle.get("metrics") or []),
+                },
+            )
         self.append_event(
             "task.completed",
             "worker",
@@ -582,6 +644,146 @@ class Store:
             {"worker_id": worker_id, "status": status, "error": error, "runtime_version": data.get("runtime_version")},
         )
         return task
+
+    def _record_experiment_run(self, task: dict[str, Any], worker_id: str) -> None:
+        from edgeforge.experiment import ExperimentSpec
+
+        spec = ExperimentSpec.from_payload((task.get("payload") or {}).get("spec"))
+        result = task.get("result") or {}
+        bundle = result.get("experiment_bundle") or {}
+        if bundle.get("experiment_id") != spec.experiment_id:
+            raise ValueError("experiment result id does not match submitted spec")
+        metrics = result.get("metrics") or bundle.get("metrics") or []
+        if not isinstance(metrics, list) or len(metrics) > 20_000:
+            raise ValueError("experiment metrics must be an array with at most 20000 entries")
+        summary = bundle.get("summary") or result.get("summary") or {}
+        if not isinstance(summary, dict):
+            raise ValueError("experiment summary must be an object")
+        artifact_digest = (result.get("artifact") or {}).get("digest")
+        source_digest = (bundle.get("source_result") or {}).get("digest")
+        now = time.time()
+        normalized_metrics = []
+        for metric in metrics:
+            if not isinstance(metric, dict):
+                raise ValueError("each experiment metric must be an object")
+            namespace = str(metric.get("namespace") or "")
+            name = str(metric.get("name") or "")
+            unit = str(metric.get("unit") or "scalar")
+            context = metric.get("context") or {}
+            value = metric.get("value")
+            step = metric.get("step")
+            if not namespace or not name or not isinstance(context, dict):
+                raise ValueError("experiment metric namespace, name and context are required")
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError("experiment metric value must be numeric")
+            if step is not None and (isinstance(step, bool) or not isinstance(step, int)):
+                raise ValueError("experiment metric step must be an integer or null")
+            normalized_metrics.append(
+                (
+                    task["id"],
+                    spec.experiment_id,
+                    namespace,
+                    name,
+                    float(value),
+                    step,
+                    unit,
+                    json.dumps(context, ensure_ascii=False, separators=(",", ":")),
+                    now,
+                )
+            )
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO experiment_runs(
+                    task_id, experiment_id, version, runtime_version, worker_id,
+                    workload, dataset, model, protocol, method, seed, spec,
+                    summary, artifact_digest, source_digest, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    task["id"],
+                    spec.experiment_id,
+                    task["version"],
+                    task.get("runtime_version"),
+                    worker_id,
+                    spec.workload,
+                    json.dumps(spec.dataset, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(spec.model, ensure_ascii=False, separators=(",", ":")),
+                    spec.protocol,
+                    spec.method,
+                    spec.seed,
+                    json.dumps(spec.to_dict(), ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(summary, ensure_ascii=False, separators=(",", ":")),
+                    artifact_digest,
+                    source_digest,
+                    now,
+                ),
+            )
+            connection.executemany(
+                """
+                INSERT INTO experiment_metrics(
+                    task_id, experiment_id, namespace, name, value, step, unit, context, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                normalized_metrics,
+            )
+
+    def list_experiment_runs(
+        self,
+        workload: str | None = None,
+        method: str | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        clauses = []
+        parameters: list[Any] = []
+        if workload:
+            clauses.append("workload = ?")
+            parameters.append(workload)
+        if method:
+            clauses.append("method = ?")
+            parameters.append(method)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._connect() as connection:
+            rows = connection.execute(
+                f"SELECT * FROM experiment_runs{where} ORDER BY created_at DESC LIMIT ?",
+                (*parameters, limit),
+            ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            for field in ("dataset", "model", "spec", "summary"):
+                item[field] = json.loads(item[field])
+            result.append(item)
+        return result
+
+    def list_experiment_metrics(
+        self,
+        experiment_id: str | None = None,
+        name: str | None = None,
+        limit: int = 1000,
+    ) -> list[dict[str, Any]]:
+        limit = min(20_000, max(1, int(limit)))
+        clauses = []
+        parameters: list[Any] = []
+        if experiment_id:
+            clauses.append("experiment_id = ?")
+            parameters.append(experiment_id)
+        if name:
+            clauses.append("name = ?")
+            parameters.append(name)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._connect() as connection:
+            rows = connection.execute(
+                f"SELECT * FROM experiment_metrics{where} ORDER BY created_at DESC, id DESC LIMIT ?",
+                (*parameters, limit),
+            ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["context"] = json.loads(item["context"])
+            result.append(item)
+        return result
 
     def register_kernel(self, data: dict[str, Any]) -> dict[str, Any]:
         spec = KernelSpec.from_payload(data)

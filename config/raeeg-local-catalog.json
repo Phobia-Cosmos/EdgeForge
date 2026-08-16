@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "worker_work_root": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL",
+  "defaults": {
+    "schema_version": 1,
+    "workload": "raeeg",
+    "dataset": {
+      "name": "ISRUC-Group-I",
+      "processed_root": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32",
+      "split_manifest_digest": "5344651092da22c1fa3dc068064e6c3c8f5ef9e87178fe8f77f2fb89d67d5346"
+    },
+    "model": {
+      "name": "BrainUICL",
+      "checkpoint_seed": 4321,
+      "checkpoint_components": {
+        "feature_encoder": "bcb2b4924a7b79396a6f5ed0e01b0894a3f4d687878a59ca2c3714245090d219",
+        "feature_extractor": "70d7d07f989eb18438d82c6600eade88a74ce908e0353be302c9b7c73bf3ba4c",
+        "sleep_classifier": "a9ac72fc5e848f5fc9aa96df8849ebb9cf0b0ac0b1d7705ef1234fc661927ef9"
+      }
+    },
+    "seed": 4321,
+    "runner": {
+      "mode": "import",
+      "adapter": "raeeg-metrics-v1"
+    }
+  },
+  "experiments": [
+    {
+      "experiment_id": "isruc-brainuicl-aligned-full49-seed4321",
+      "protocol": "eeg-cl-v1-aligned",
+      "method": "brainuicl",
+      "runner": {
+        "result_path": "experiments/rttdp_brainuicl_runs/aligned_full49_bn_frozen_lr1e6_seed4321/clean/metrics.json"
+      },
+      "metadata": {
+        "comparison_group": "aligned-full49",
+        "replay": true,
+        "target_labels_used_for_training": false
+      }
+    },
+    {
+      "experiment_id": "isruc-finetune-aligned-full49-seed4321",
+      "protocol": "eeg-cl-v1-aligned",
+      "method": "finetune",
+      "runner": {
+        "result_path": "experiments/regularization_cl_eeg_runs/clean49_bn_frozen_e10_lr1e6_seed4321/finetune/metrics.json"
+      },
+      "metadata": {
+        "comparison_group": "aligned-full49",
+        "replay": false,
+        "target_labels_used_for_training": false
+      }
+    },
+    {
+      "experiment_id": "isruc-ewc-aligned-full49-seed4321",
+      "protocol": "eeg-cl-v1-aligned",
+      "method": "ewc",
+      "runner": {
+        "result_path": "experiments/regularization_cl_eeg_runs/clean49_bn_frozen_e10_lr1e6_seed4321/ewc/metrics.json"
+      },
+      "metadata": {
+        "comparison_group": "aligned-full49",
+        "replay": false,
+        "target_labels_used_for_training": false
+      }
+    },
+    {
+      "experiment_id": "isruc-online-ewc-aligned-full49-seed4321",
+      "protocol": "eeg-cl-v1-aligned",
+      "method": "online_ewc",
+      "runner": {
+        "result_path": "experiments/regularization_cl_eeg_runs/clean49_bn_frozen_e10_lr1e6_seed4321/online_ewc/metrics.json"
+      },
+      "metadata": {
+        "comparison_group": "aligned-full49",
+        "replay": false,
+        "target_labels_used_for_training": false
+      }
+    },
+    {
+      "experiment_id": "isruc-si-aligned-full49-seed4321",
+      "protocol": "eeg-cl-v1-aligned",
+      "method": "si",
+      "runner": {
+        "result_path": "experiments/regularization_cl_eeg_runs/clean49_bn_frozen_e10_lr1e6_seed4321/si/metrics.json"
+      },
+      "metadata": {
+        "comparison_group": "aligned-full49",
+        "replay": false,
+        "target_labels_used_for_training": false
+      }
+    },
+    {
+      "experiment_id": "isruc-mas-aligned-full49-seed4321",
+      "protocol": "eeg-cl-v1-aligned",
+      "method": "mas",
+      "runner": {
+        "result_path": "experiments/regularization_cl_eeg_runs/clean49_bn_frozen_e10_lr1e6_seed4321/mas/metrics.json"
+      },
+      "metadata": {
+        "comparison_group": "aligned-full49",
+        "replay": false,
+        "target_labels_used_for_training": false
+      }
+    },
+    {
+      "experiment_id": "isruc-spr-unlabeled-full49-seed4321",
+      "protocol": "spr-unlabeled-full49-v1",
+      "method": "spr_eeg",
+      "model": {
+        "name": "SPR-EEG",
+        "source_checkpoint_family": "BrainUICL-ISRUC-seed4321"
+      },
+      "runner": {
+        "result_path": "experiments/rttdp_brainuicl_runs/spr_unlabeled_full49_e10_seed4321/metrics.json"
+      },
+      "metadata": {
+        "comparison_group": "method-transfer",
+        "directly_comparable_to_aligned_full49": false,
+        "replay": true,
+        "target_labels_used_for_training": false
+      }
+    },
+    {
+      "experiment_id": "isruc-puridiver-unlabeled-full49-seed4321",
+      "protocol": "puridiver-unlabeled-70-30-v1",
+      "method": "puridiver_eeg",
+      "model": {
+        "name": "PuriDivER-EEG-Compact",
+        "checkpoint_seed": null,
+        "checkpoint_components": null,
+        "guide_checkpoint_digest": "79b454a0b2715f0f86994c56b8ca9e7201cf00a7ada1bad492893e11ab1821f5"
+      },
+      "runner": {
+        "result_path": "experiments/rttdp_brainuicl_runs/full49_unlabeled_pseudo_puridiver_seed4321/metrics.json"
+      },
+      "metadata": {
+        "comparison_group": "method-transfer",
+        "directly_comparable_to_aligned_full49": false,
+        "replay": true,
+        "target_labels_used_for_training": false
+      }
+    }
+  ]
+}

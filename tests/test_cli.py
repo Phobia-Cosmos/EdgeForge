@@ -4,6 +4,22 @@ from edgeforge.cli import build_parser
 
 
 class CLITests(unittest.TestCase):
+    def test_experiment_cli_accepts_hardware_constraints(self):
+        parser = build_parser()
+        args = parser.parse_args(
+            [
+                "experiment-run",
+                "--spec",
+                "spec.json",
+                "--worker-id",
+                "worker-4070s",
+                "--accelerator",
+                "nvidia-gpu",
+            ]
+        )
+        self.assertEqual(args.worker_id, ["worker-4070s"])
+        self.assertEqual(args.accelerator, ["nvidia-gpu"])
+
     def test_kernel_register_uses_only_explicit_dtypes(self):
         parser = build_parser()
         args = parser.parse_args(

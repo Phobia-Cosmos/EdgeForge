@@ -204,6 +204,30 @@ def build_parser() -> argparse.ArgumentParser:
     _add_client_options(decisions)
     decisions.add_argument("--limit", type=int, default=100)
 
+    experiment_run = subparsers.add_parser("experiment-run", help="run or import a versioned model experiment")
+    _add_client_options(experiment_run)
+    experiment_run.add_argument("--spec", required=True, help="path to an ExperimentSpec JSON file")
+    experiment_run.add_argument("--worker-id", action="append", default=[])
+    experiment_run.add_argument("--arch", action="append", default=[])
+    experiment_run.add_argument("--accelerator", action="append", default=[])
+    experiment_run.add_argument("--label", action="append", default=[], metavar="KEY=VALUE")
+    experiment_run.add_argument("--min-memory-mb", type=int, default=0)
+    experiment_run.add_argument("--priority", type=int, default=0)
+    experiment_run.add_argument("--max-attempts", type=int, default=1)
+    experiment_run.add_argument("--wait", action="store_true")
+
+    experiments = subparsers.add_parser("experiments", help="list persisted model experiments")
+    _add_client_options(experiments)
+    experiments.add_argument("--workload")
+    experiments.add_argument("--method")
+    experiments.add_argument("--limit", type=int, default=100)
+
+    experiment_metrics = subparsers.add_parser("experiment-metrics", help="list normalized experiment metrics")
+    _add_client_options(experiment_metrics)
+    experiment_metrics.add_argument("--experiment-id")
+    experiment_metrics.add_argument("--name")
+    experiment_metrics.add_argument("--limit", type=int, default=1000)
+
     artifacts = subparsers.add_parser("artifacts", help="list content-addressed artifacts")
     _add_client_options(artifacts)
     artifacts.add_argument("--kind")
@@ -468,6 +492,40 @@ def _compiler_run(args: argparse.Namespace) -> int:
     return 0 if task["status"] == "succeeded" else 1
 
 
+def _experiment_run(args: argparse.Namespace) -> int:
+    try:
+        spec = json.loads(Path(args.spec).read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise ValueError("--spec must contain valid JSON") from error
+    if not isinstance(spec, dict):
+        raise ValueError("--spec must contain a JSON object")
+    task = _client(args).request(
+        "POST",
+        "/api/v1/tasks",
+        {
+            "kind": "experiment_run",
+            "payload": {"spec": spec},
+            "requirements": {
+                "worker_ids": args.worker_id,
+                "architectures": args.arch,
+                "accelerators": args.accelerator,
+                "labels": _labels(args.label),
+                "min_memory_mb": args.min_memory_mb,
+            },
+            "priority": args.priority,
+            "max_attempts": args.max_attempts,
+        },
+    )
+    _print_json(task)
+    if not args.wait:
+        return 0
+    while task["status"] not in {"succeeded", "failed", "cancelled"}:
+        time.sleep(1)
+        task = _client(args).request("GET", f"/api/v1/tasks/{task['id']}")
+    _print_json(task)
+    return 0 if task["status"] == "succeeded" else 1
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -563,6 +621,24 @@ def main(argv: list[str] | None = None) -> None:
             raise SystemExit(_compiler_run(args))
         if args.command == "schedule-decisions":
             _print_json(_client(args).request("GET", f"/api/v1/schedule-decisions?limit={args.limit}"))
+            return
+        if args.command == "experiment-run":
+            raise SystemExit(_experiment_run(args))
+        if args.command == "experiments":
+            query = f"?limit={args.limit}"
+            if args.workload:
+                query += f"&workload={args.workload}"
+            if args.method:
+                query += f"&method={args.method}"
+            _print_json(_client(args).request("GET", f"/api/v1/experiments{query}"))
+            return
+        if args.command == "experiment-metrics":
+            query = f"?limit={args.limit}"
+            if args.experiment_id:
+                query += f"&experiment_id={args.experiment_id}"
+            if args.name:
+                query += f"&name={args.name}"
+            _print_json(_client(args).request("GET", f"/api/v1/experiment-metrics{query}"))
             return
         if args.command == "artifacts":
             query = f"?limit={args.limit}"

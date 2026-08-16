@@ -154,6 +154,26 @@ class ControlHandler(BaseHTTPRequestHandler):
                 limit = int(query.get("limit", ["100"])[0])
                 self._send(HTTPStatus.OK, {"schedule_decisions": self.server.store.list_schedule_decisions(limit)})
                 return
+            if parsed.path == "/api/v1/experiments":
+                query = parse_qs(parsed.query)
+                limit = int(query.get("limit", ["100"])[0])
+                workload = query.get("workload", [None])[0]
+                method = query.get("method", [None])[0]
+                self._send(
+                    HTTPStatus.OK,
+                    {"experiments": self.server.store.list_experiment_runs(workload, method, limit)},
+                )
+                return
+            if parsed.path == "/api/v1/experiment-metrics":
+                query = parse_qs(parsed.query)
+                limit = int(query.get("limit", ["1000"])[0])
+                experiment_id = query.get("experiment_id", [None])[0]
+                name = query.get("name", [None])[0]
+                self._send(
+                    HTTPStatus.OK,
+                    {"metrics": self.server.store.list_experiment_metrics(experiment_id, name, limit)},
+                )
+                return
             artifact_match = ARTIFACT_PATH.match(parsed.path)
             if artifact_match:
                 self._send(HTTPStatus.OK, self.server.store.get_artifact(artifact_match.group(1)))

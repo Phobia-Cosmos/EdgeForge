@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "experiment_id": "isruc-lop-multistage-smoke-seed4321",
+  "workload": "raeeg-lop",
+  "dataset": {
+    "name": "ISRUC-Group-I",
+    "processed_root": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32",
+    "split_manifest_digest": "5344651092da22c1fa3dc068064e6c3c8f5ef9e87178fe8f77f2fb89d67d5346"
+  },
+  "model": {
+    "name": "BrainUICL",
+    "checkpoint_stages": [0, 10, 25],
+    "checkpoint_seed": 4321,
+    "checkpoint_components": {
+      "feature_encoder": "bcb2b4924a7b79396a6f5ed0e01b0894a3f4d687878a59ca2c3714245090d219",
+      "feature_extractor": "70d7d07f989eb18438d82c6600eade88a74ce908e0353be302c9b7c73bf3ba4c",
+      "sleep_classifier": "a9ac72fc5e848f5fc9aa96df8849ebb9cf0b0ac0b1d7705ef1234fc661927ef9"
+    }
+  },
+  "protocol": "raeeg-lop-posthoc-v1",
+  "method": "finetune_probe",
+  "seed": 4321,
+  "runner": {
+    "mode": "command",
+    "argv": [
+      "/home/undefined/Disk/python-envs/brainuicl/bin/python",
+      "experiments/raeeg_lop_probe.py",
+      "--method",
+      "finetune",
+      "--stages",
+      "0,10,25",
+      "--probe-steps",
+      "0,1",
+      "--max-sequences",
+      "4",
+      "--batch",
+      "2",
+      "--monitor-max-batches",
+      "1",
+      "--eval-max-batches",
+      "1",
+      "--freeze-bn-stats",
+      "--output",
+      "experiments/edgeforge_runs/lop-multistage-smoke-v0.7.0/metrics.json"
+    ],
+    "cwd": ".",
+    "timeout_seconds": 600,
+    "env": {
+      "PYTHONUNBUFFERED": "1"
+    },
+    "result_path": "experiments/edgeforge_runs/lop-multistage-smoke-v0.7.0/metrics.json",
+    "adapter": "raeeg-metrics-v1"
+  },
+  "metadata": {
+    "scope": "release-multistage-smoke",
+    "probe_protocol": "supervised-oracle-fixed-budget-heldout",
+    "scientific_conclusion_allowed": false,
+    "note": "This run validates milestone checkpoint loading and correlation plumbing; increase data, steps and seeds before scientific interpretation."
+  }
+}
