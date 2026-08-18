@@ -28,6 +28,16 @@ class OperatorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             OperatorSpec.from_payload({"name": "softmax", "shape": [4], "dtype": "int4"})
 
+    def test_conv_nchwc_accumulate_is_boolean(self):
+        with self.assertRaisesRegex(ValueError, "accumulate must be a boolean"):
+            OperatorSpec.from_payload(
+                {
+                    "name": "conv_nchwc",
+                    "shape": [1, 1, 3, 5, 1, 3, 3, 16, 16],
+                    "attrs": {"accumulate": "false"},
+                }
+            )
+
     def test_small_sample_p95_uses_the_upper_observation(self):
         result = benchmark_operator(OperatorSpec.from_payload({"name": "softmax", "shape": [8]}), repeats=2)
         self.assertEqual(result["summary"]["p95_ms"], max(result["timings_ms"]))

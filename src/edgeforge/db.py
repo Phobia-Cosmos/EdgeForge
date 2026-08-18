@@ -435,6 +435,11 @@ class Store:
             from edgeforge.operator import OperatorSpec
 
             OperatorSpec.from_payload(payload.get("operator") or {})
+            requested_backend = str((payload.get("operator") or {}).get("backend") or "python-reference")
+            if kind == "operator_benchmark" and requested_backend != "python-reference":
+                raise ValueError(
+                    "operator_benchmark only supports python-reference; use kernel_pipeline for a registered backend"
+                )
             kernel_id = payload.get("kernel_id") or requirements.get("kernel_id")
             if kind == "kernel_pipeline" and not kernel_id:
                 raise ValueError("kernel_pipeline requires kernel_id")
@@ -444,6 +449,10 @@ class Store:
                 kernel = self.get_kernel(str(kernel_id))
                 if not kernel_supports_operator(kernel, payload.get("operator") or {}):
                     raise ValueError(f"kernel {kernel_id} does not support this operator or dtype")
+                if kind == "operator_benchmark" and kernel.get("backend") != "python-reference":
+                    raise ValueError(
+                        "operator_benchmark only supports python-reference; use kernel_pipeline for a registered backend"
+                    )
                 if kind == "kernel_autotune":
                     from edgeforge.autotune import normalize_triton_matmul_candidates
 

@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.8.0` 在 V7 RA-EEG 实验证据链上增加 Model Registry、不可变 Capability Gate 与显式生产回滚状态机。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.9.0` 在 V8 Model Registry/Capability Gate 之上增加受信任的 IREE `conv_nchwc` dilation runtime-only Pipeline。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 

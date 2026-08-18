@@ -54,6 +54,10 @@ class OperatorSpec:
                 if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 64:
                     raise ValueError(f"conv_nchwc {key} must be an integer between 1 and 64")
                 attrs[key] = value
+            accumulate = attrs.get("accumulate", False)
+            if not isinstance(accumulate, bool):
+                raise ValueError("conv_nchwc accumulate must be a boolean")
+            attrs["accumulate"] = accumulate
             n, oc_outer, oh, ow, ic_outer, fh, fw, k0, c0 = shape
             operations = n * oc_outer * oh * ow * ic_outer * fh * fw * k0 * c0
             if operations > 8_000_000:

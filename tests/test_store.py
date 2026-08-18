@@ -112,6 +112,33 @@ class StoreTests(unittest.TestCase):
         events = self.store.list_events(version=__version__)
         self.assertTrue(any(event["event_type"] == "task.completed" for event in events))
 
+    def test_non_reference_backend_requires_kernel_pipeline(self):
+        kernel = self.store.register_kernel(
+            {
+                "id": "kernel-iree-conv-store-v1",
+                "operator": "conv_nchwc",
+                "backend": "iree-ukernel",
+                "version": "issue-24760-dilated-conv",
+                "architectures": ["aarch64"],
+                "dtypes": ["fp32"],
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "use kernel_pipeline"):
+            self.store.create_task(
+                {
+                    "kind": "operator_benchmark",
+                    "payload": {
+                        "operator": {
+                            "name": "conv_nchwc",
+                            "shape": [1, 1, 3, 5, 1, 3, 3, 16, 16],
+                            "dtype": "fp32",
+                        },
+                        "kernel_id": kernel["id"],
+                    },
+                    "requirements": {"worker_ids": ["arm"], "kernel_id": kernel["id"]},
+                }
+            )
+
     def test_kernel_registry_filters_architecture_and_detects_regression(self):
         kernel = self.store.register_kernel(
             {

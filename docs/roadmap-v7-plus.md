@@ -27,9 +27,10 @@
 - 区分 supervised FineTune baseline 与 BrainUICL 无监督持续适应协议，不能在同一 baseline 中混合比较。
 - 验收：至少一个 candidate 能依据固定 policy 产生可解释 PASS/FAIL；失败 candidate 不进入 Compiler 发布阶段，已接受版本可以 rollback。
 
-## V9：4070S 真实模型 Compiler Pipeline
+## V9：4070S 真实模型 Compiler Pipeline（进行中；0.9.0 完成 IREE 算子路径）
 
 - 第一条路径只比较 PyTorch eager 与 `torch.compile`，先验证可复现性、数值正确性和模型能力等价，再扩大 Backend。
+- 0.9.0 先完成独立的 IREE `conv_nchwc` dilation runtime-only Pipeline：以真实注册的预构建 binary 完成 correctness/benchmark/manifest 闭环；这不是模型级 `torch.compile` 验收。
 - 保存 graph break、编译日志、compile time、first-call latency、steady latency、峰值显存、accuracy/MF1 差异和编译 Artifact。
 - 使用 Profiler 确认实际热点后，再决定是否为 Conv1d、Attention、LayerNorm 或其他算子增加 Triton Kernel；不以现有 MatMul Demo 代替模型级结论。
 - 将研究 Gate 和 Compiler Gate 串联，任何更快但能力回退超阈值的 Artifact 都不能 promote。
@@ -70,4 +71,4 @@ RA-EEG 的科研节奏不与 EdgeForge 版本号绑定：先对齐 BrainUICL 协
 - 与当前 EEG workload 无关的 RoPE/KV Cache、llama.cpp/vLLM Serving 和 HAMi 多租户 GPU 方向。
 - 为了匹配上游 Issue 而提前实现没有内部需求的 Compiler 功能。
 
-EdgeForge v0.1.0–v0.8.0 的发布说明、验证数据库和日志按版本保持独立。下一阶段进入 V9 真实模型 Compiler Pipeline；任何新版本仍必须完成 Changelog、`releases/vX.Y.Z.md`、自动化测试、真实 workload 验证、日志归档和 Git tag。
+EdgeForge v0.1.0–v0.9.0 的发布说明、验证数据库和日志按版本保持独立。V9 后续仍需完成真实 BrainUICL eager/`torch.compile` 模型级验证；任何新版本仍必须完成 Changelog、`releases/vX.Y.Z.md`、自动化测试、真实 workload 验证、日志归档和 Git tag。

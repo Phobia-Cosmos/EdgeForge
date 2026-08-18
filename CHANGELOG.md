@@ -2,6 +2,25 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.9.0 - 2026-08-18
+
+### Added
+
+- packed `conv_nchwc` Operator IR，支持 stride、dilation 和 accumulate 属性。
+- 受信任的 IREE `iree-ukernel` runtime-only `compile → correctness → benchmark` Pipeline。
+- IREE compiler manifest Artifact，记录 IREE repository、commit、patch digest、packed shape 和 benchmark 输出。
+- x86_64 与 aarch64 的 kernel registration 配置和 Orange Pi 运行说明。
+
+### Safety
+
+- IREE test/benchmark command 必须来自 Worker allow-list，并受 work-root/workdir 边界约束；所有执行使用 `shell=False`。
+- `operator_benchmark` 不再接受非 reference backend，避免把 Python fallback 误记为 IREE 证据；IREE 必须使用 `kernel_pipeline`。
+- 当前只验证预构建 runtime/ukernel binary，不宣称已构建 IREE compiler 或完成 Orange Pi 验证。
+
+### Validation
+
+- 见 `releases/v0.9.0.md`；V8 的 Model Registry 与 Capability Gate 记录保持不变。
+
 ## 0.8.0 - 2026-08-16
 
 ### Added
