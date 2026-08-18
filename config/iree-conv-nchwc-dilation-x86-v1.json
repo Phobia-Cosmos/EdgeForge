@@ -1,0 +1,38 @@
+{
+  "id": "kernel-iree-conv-nchwc-dilation-x86-v1",
+  "operator": "conv_nchwc",
+  "backend": "iree-ukernel",
+  "version": "issue-24760-dilated-conv",
+  "architectures": [
+    "x86_64"
+  ],
+  "dtypes": [
+    "fp32"
+  ],
+  "shape_constraints": {
+    "k0": 16,
+    "c0": 16
+  },
+  "metadata": {
+    "trusted": true,
+    "test_command": [
+      "iree-build-runtime/runtime/src/iree/builtins/ukernel/tools/conv_nchwc_test"
+    ],
+    "benchmark_command": [
+      "iree-build-runtime/runtime/src/iree/builtins/ukernel/tools/conv_nchwc_benchmark",
+      "--benchmark_min_time=0s"
+    ],
+    "workdir": "iree-build-runtime",
+    "k0": 16,
+    "c0": 16,
+    "compiler": "iree-runtime",
+    "validation_status": "x86-runtime-validated",
+    "iree_repository": "https://github.com/iree-org/iree.git",
+    "iree_commit": "a82330a3343d84211e71d2596725c8185227b29f",
+    "patch_sha256": "22ff9075b947e9b232b546381b899d35e50e02b794e1ac7f651c06a54681ac33"
+  },
+  "compiler": {
+    "name": "iree",
+    "mode": "runtime-only-prebuilt"
+  }
+}

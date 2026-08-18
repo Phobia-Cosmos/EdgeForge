@@ -10,6 +10,11 @@ class OperatorTests(unittest.TestCase):
             {"name": "softmax", "shape": [16]},
             {"name": "rmsnorm", "shape": [16]},
             {"name": "silu", "shape": [16]},
+            {
+                "name": "conv_nchwc",
+                "shape": [1, 1, 3, 5, 1, 3, 3, 16, 16],
+                "attrs": {"dilation_h": 2, "dilation_w": 3},
+            },
         )
         for payload in specs:
             result = benchmark_operator(OperatorSpec.from_payload(payload), repeats=2)

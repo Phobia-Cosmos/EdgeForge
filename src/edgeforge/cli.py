@@ -14,6 +14,7 @@ from edgeforge import __version__
 from edgeforge.api import serve
 from edgeforge.client import APIError, Client
 from edgeforge.logging_utils import configure_logging
+from edgeforge.operator import SUPPORTED_OPERATORS
 from edgeforge.worker import Worker, default_worker_id
 
 
@@ -48,6 +49,16 @@ def _client(args: argparse.Namespace) -> Client:
 
 def _print_json(value: Any) -> None:
     print(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True))
+
+
+def _attrs(value: str) -> dict[str, Any]:
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as error:
+        raise ValueError("--attrs must be a JSON object") from error
+    if not isinstance(parsed, dict):
+        raise ValueError("--attrs must be a JSON object")
+    return parsed
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -108,10 +119,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     operator = subparsers.add_parser("operator-benchmark", help="run an Operator IR benchmark")
     _add_client_options(operator)
-    operator.add_argument("--operator", required=True, choices=("matmul", "softmax", "rmsnorm", "silu"))
-    operator.add_argument("--shape", required=True, help="comma-separated dimensions; matmul uses M,K,N")
+    operator.add_argument("--operator", required=True, choices=tuple(sorted(SUPPORTED_OPERATORS)))
+    operator.add_argument("--shape", required=True, help="comma-separated dimensions; matmul uses M,K,N and conv_nchwc uses N,OC_outer,OH,OW,IC_outer,FH,FW,k0,c0")
     operator.add_argument("--dtype", default="fp32", choices=("fp32", "fp16", "bf16"))
     operator.add_argument("--backend", default="python-reference")
+    operator.add_argument("--attrs", default="{}", help="JSON operator attributes")
     operator.add_argument("--kernel-id")
     operator.add_argument("--arch", action="append", default=[])
     operator.add_argument("--worker-id", action="append", default=[])
@@ -165,9 +177,10 @@ def build_parser() -> argparse.ArgumentParser:
     pipeline = subparsers.add_parser("kernel-pipeline", help="run compile, correctness and benchmark stages")
     _add_client_options(pipeline)
     pipeline.add_argument("--kernel-id", required=True)
-    pipeline.add_argument("--operator", required=True, choices=("matmul", "softmax", "rmsnorm", "silu"))
+    pipeline.add_argument("--operator", required=True, choices=tuple(sorted(SUPPORTED_OPERATORS)))
     pipeline.add_argument("--shape", required=True)
     pipeline.add_argument("--dtype", default="fp32", choices=("fp32", "fp16", "bf16"))
+    pipeline.add_argument("--attrs", default="{}", help="JSON operator attributes")
     pipeline.add_argument("--worker-id", action="append", default=[])
     pipeline.add_argument("--arch", action="append", default=[])
     pipeline.add_argument("--repeats", type=int, default=5)
@@ -296,9 +309,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _add_compiler_scheduler_options(parser: argparse.ArgumentParser, *, include_execution: bool) -> None:
-    parser.add_argument("--operator", required=True, choices=("matmul", "softmax", "rmsnorm", "silu"))
+    parser.add_argument("--operator", required=True, choices=tuple(sorted(SUPPORTED_OPERATORS)))
     parser.add_argument("--shape", required=True)
     parser.add_argument("--dtype", default="fp32", choices=("fp32", "fp16", "bf16"))
+    parser.add_argument("--attrs", default="{}", help="JSON operator attributes")
     parser.add_argument("--worker-id", action="append", default=[])
     parser.add_argument("--arch", action="append", default=[])
     parser.add_argument("--backend", action="append", default=[])
@@ -369,6 +383,7 @@ def _operator_submit(args: argparse.Namespace) -> int:
                     "shape": shape,
                     "dtype": args.dtype,
                     "backend": args.backend,
+                    "attrs": _attrs(args.attrs),
                 },
                 "repeats": args.repeats,
             },
@@ -431,7 +446,7 @@ def _pipeline_submit(args: argparse.Namespace) -> int:
         {
             "kind": "kernel_pipeline",
             "payload": {
-                "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype},
+                "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype, "attrs": _attrs(args.attrs)},
                 "kernel_id": args.kernel_id,
                 "repeats": args.repeats,
                 "warmup": args.warmup,
@@ -504,7 +519,7 @@ def _compiler_scheduler_payload(args: argparse.Namespace) -> dict[str, Any]:
     if not shape:
         raise ValueError("--shape must not be empty")
     return {
-        "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype},
+        "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype, "attrs": _attrs(args.attrs)},
         "requirements": {
             "worker_ids": args.worker_id,
             "architectures": args.arch,

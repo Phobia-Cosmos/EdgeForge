@@ -170,7 +170,7 @@ python3 -m edgeforge model-promote --token "$EDGEFORGE_TOKEN" \
   model-brainuicl-aligned --reason 'V8 release approval'
 ```
 
-Operator IR 当前支持 `matmul`、`softmax`、`rmsnorm` 和 `silu`。`python-reference` Backend 用于跨架构 correctness 基线，不宣称模拟 FP16/BF16 舍入，也不用于替代后续 CUDA、Triton、RKNN 或 RVV Kernel。
+Operator IR 当前支持 `matmul`、`softmax`、`rmsnorm`、`silu` 和 packed `conv_nchwc`。`python-reference` Backend 用于跨架构 correctness 基线，不宣称模拟 FP16/BF16 舍入，也不用于替代后续 CUDA、Triton、RKNN 或 RVV Kernel。IREE `conv_nchwc` dilation 的 runtime-only 接入、信任边界和 Orange Pi 运行步骤见 [docs/integration-iree-conv-nchwc.md](docs/integration-iree-conv-nchwc.md)。
 
 注册一个只允许 ARM64 的 Kernel，并用它提交任务：
 

@@ -295,7 +295,12 @@ class Worker:
         if task["kind"] == "kernel_autotune":
             return run_kernel_autotune(payload)
         if task["kind"] in {"kernel_pipeline", "compiler_run"}:
-            return run_kernel_pipeline(payload)
+            pipeline_payload = {
+                **payload,
+                "_worker_work_root": str(self.work_root),
+                "_allowed_commands": sorted(self.allowed_commands),
+            }
+            return run_kernel_pipeline(pipeline_payload)
         if task["kind"] == "operator_benchmark":
             spec = OperatorSpec.from_payload(payload.get("operator") or {})
             result = benchmark_operator(spec, int(payload.get("repeats") or 3))
