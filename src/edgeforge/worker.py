@@ -25,6 +25,7 @@ from edgeforge.operator import OperatorSpec, benchmark_operator
 
 
 LOG = logging.getLogger("edgeforge.worker")
+# TODO：这里输出到哪里？
 MAX_OUTPUT_CHARS = 1_000_000
 
 
