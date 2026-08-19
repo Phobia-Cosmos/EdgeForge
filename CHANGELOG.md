@@ -20,6 +20,7 @@
 
 - 66/66 EdgeForge 自动化测试通过。
 - 全量 catalog 扫描发现 817 个结果文件，生成约 1.2 MiB catalog。
+- 8 组 curated ISRUC 结果迁移成功，并完成 1 个 EdgeForge 三阶段 LoP smoke；任务、8396 条指标、9 个 Artifact 和 WAL checkpoint 数据库已归档。
 
 ## 0.10.0 - 2026-08-19
 

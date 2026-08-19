@@ -56,3 +56,15 @@ python3 scripts/build-raeeg-catalog.py --root /home/undefined/Desktop/bci/code/t
 ```
 
 迁移后的 `experiment_run` 负责历史结果归档和指标规范化；后续需要模型编译时，再从同一个实验的 checkpoint/config 生成 `model_pipeline` manifest。历史结果本身不能伪造 compile、runtime 或硬件 benchmark。
+
+完成迁移后，可用 `config/raeeg-lop-edgeforge-v0.10.1.json` 重放一个不覆盖旧结果的三阶段 LoP smoke：
+
+```sh
+python3 -m edgeforge experiment-run \
+  --token "$EDGEFORGE_TOKEN" \
+  --spec config/raeeg-lop-edgeforge-v0.10.1.json \
+  --worker-id worker-4070s-lop \
+  --wait
+python3 -m edgeforge experiments --token "$EDGEFORGE_TOKEN" --workload raeeg-lop
+python3 -m edgeforge experiment-metrics --token "$EDGEFORGE_TOKEN" --name plasticity.acc_gain
+```
