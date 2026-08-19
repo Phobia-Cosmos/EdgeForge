@@ -76,6 +76,7 @@ python3 -m edgeforge operator-benchmark \
 | `POST /api/v1/workers/{id}/heartbeat` | 上报动态指标 |
 | `POST /api/v1/workers/{id}/lease` | 领取一个匹配任务 |
 | `GET /api/v1/workers` | 查询节点注册表 |
+| `GET /api/v1/backend-capabilities` | 查询显式 Backend/Target 能力契约 |
 | `POST /api/v1/tasks` | 创建命令或 Benchmark 任务 |
 | `GET /api/v1/tasks/{id}` | 查询任务与结果 |
 | `POST /api/v1/tasks/{id}/complete` | Worker 回传结果 |
@@ -139,6 +140,12 @@ python3 -m edgeforge model-runs --token "$EDGEFORGE_TOKEN" --model brainuicl
 BrainUICL 历史结果迁移和 LoP smoke 验证记录见 [docs/raeeg-migration.md](docs/raeeg-migration.md) 与 [docs/raeeg-lop-validation-20260819.md](docs/raeeg-lop-validation-20260819.md)。
 
 扩大 sequence/eval 预算后的单 seed LoP 验证见 [docs/raeeg-lop-expanded-validation-20260820.md](docs/raeeg-lop-expanded-validation-20260820.md)；多 seed 当前明确标记为 `blocked-by-checkpoint`。
+
+查询模型 Backend 与 Target 约束：
+
+```sh
+python3 -m edgeforge backend-capabilities --token "$EDGEFORGE_TOKEN"
+```
 
 4070S Worker 需要把工作根目录设为现有 BrainUICL 仓库，并只允许受信任的 BrainUICL Python 环境：
 

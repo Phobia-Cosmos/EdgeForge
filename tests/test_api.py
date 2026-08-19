@@ -32,6 +32,12 @@ class APITests(unittest.TestCase):
         with self.assertRaisesRegex(APIError, "HTTP 401"):
             bad_client.request("GET", "/api/v1/workers")
 
+    def test_backend_capabilities_endpoint(self):
+        response = self.client.request("GET", "/api/v1/backend-capabilities")
+        names = {item["name"] for item in response["backends"]}
+        self.assertIn("iree", names)
+        self.assertIn("rknn", names)
+
     def test_full_task_protocol(self):
         registration = {
             "id": "worker-test",

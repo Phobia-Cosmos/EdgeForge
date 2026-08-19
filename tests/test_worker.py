@@ -154,6 +154,7 @@ class WorkerExecutionTests(unittest.TestCase):
         self.assertTrue(result["correctness"])
         self.assertEqual(len(result["pipeline"]), 6)
         self.assertEqual(result["manifest"]["compiler"]["backend"], "torch-compile")
+        self.assertEqual(result["manifest"]["backend_spec"]["name"], "torch-compile")
         self.assertEqual(len(result["manifest"]["transform_digest"]), 64)
         self.assertEqual(result["artifact_upload"]["kind"], "model-compiler-manifest")
 

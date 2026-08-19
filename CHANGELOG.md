@@ -2,6 +2,25 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.10.2 - 2026-08-20
+
+### Added
+
+- Explicit Backend/Target Registry，统一描述 architecture、device、accelerator 和 Worker advertised backends。
+- `GET /api/v1/backend-capabilities` 与 `backend-capabilities` CLI。
+- IREE explicit architecture/device 校验、RKNN ARM64/NPU 校验、custom backend target 校验。
+- 上游贡献准备文档，明确 IREE explicit target 和 runtime manifest 两个小型 PR 边界。
+
+### Safety
+
+- 模型任务不再允许非 reference Backend 隐式继承 host target；缺少 target 时在控制面拒绝。
+- Worker 默认只广告 `python-reference`，其余 Backend 必须由真实环境显式声明。
+
+### Validation
+
+- 72/72 EdgeForge 自动化测试通过。
+- 该版本不修改 IREE 源码，也不声称实现 IREE #24760；上游工作仍需由真实模型 reproducer 驱动。
+
 ## 0.10.1 - 2026-08-19
 
 ### Added

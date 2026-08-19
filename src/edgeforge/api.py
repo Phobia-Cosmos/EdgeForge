@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlparse
 
 from edgeforge import __version__
 from edgeforge.artifact import ArtifactStore
+from edgeforge.backend_registry import backend_capabilities
 from edgeforge.db import Store
 
 
@@ -105,6 +106,9 @@ class ControlHandler(BaseHTTPRequestHandler):
         try:
             if parsed.path == "/api/v1/workers":
                 self._send(HTTPStatus.OK, {"workers": self.server.store.list_workers()})
+                return
+            if parsed.path == "/api/v1/backend-capabilities":
+                self._send(HTTPStatus.OK, {"backends": backend_capabilities()})
                 return
             if parsed.path == "/api/v1/tasks":
                 query = parse_qs(parsed.query)

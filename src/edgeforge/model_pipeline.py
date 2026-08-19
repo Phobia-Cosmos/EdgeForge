@@ -14,6 +14,8 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
+from edgeforge.backend_registry import validate_backend_target
+
 
 SCHEMA_VERSION = 1
 STAGES = ("export", "transform", "compile", "run", "correctness", "benchmark")
@@ -105,6 +107,7 @@ def normalize_model_manifest(payload: Any) -> dict[str, Any]:
     }
     if normalized["schema_version"] != SCHEMA_VERSION:
         raise ValueError(f"unsupported model pipeline schema_version: {normalized['schema_version']}")
+    normalized["backend_spec"] = validate_backend_target(str(compiler.get("backend") or ""), target)
     normalized["transform_digest"] = _digest(clean_transforms)
     normalized["manifest_digest"] = _digest({k: normalized[k] for k in normalized if k not in {"manifest_digest"}})
     return normalized

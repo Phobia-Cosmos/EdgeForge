@@ -109,6 +109,19 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(runs[0]["transform_digest"], leased["payload"]["transform_digest"])
         self.assertEqual(runs[0]["compiler_backend"], "python-reference")
 
+    def test_model_pipeline_rejects_iree_without_explicit_device(self):
+        with self.assertRaisesRegex(ValueError, "requires explicit target"):
+            self.store.create_task(
+                {
+                    "kind": "model_pipeline",
+                    "payload": {
+                        "model": {"name": "tiny"},
+                        "dataset": {"name": "synthetic"},
+                        "compiler": {"backend": "iree"},
+                    },
+                }
+            )
+
     def test_release_update_preserves_original_timestamp(self):
         first = self.store.record_release("test-version", "first", {"step": 1}, status="active")
         second = self.store.record_release("test-version", "updated", {"step": 2}, status="retired")

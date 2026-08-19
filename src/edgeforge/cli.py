@@ -92,6 +92,9 @@ def build_parser() -> argparse.ArgumentParser:
     workers = subparsers.add_parser("workers", help="list registered workers")
     _add_client_options(workers)
 
+    backend_capabilities = subparsers.add_parser("backend-capabilities", help="list model backend target contracts")
+    _add_client_options(backend_capabilities)
+
     tasks = subparsers.add_parser("tasks", help="list recent tasks")
     _add_client_options(tasks)
     tasks.add_argument("--limit", type=int, default=100)
@@ -669,6 +672,9 @@ def main(argv: list[str] | None = None) -> None:
             return
         if args.command == "workers":
             _print_json(_client(args).request("GET", "/api/v1/workers"))
+            return
+        if args.command == "backend-capabilities":
+            _print_json(_client(args).request("GET", "/api/v1/backend-capabilities"))
             return
         if args.command == "tasks":
             _print_json(_client(args).request("GET", f"/api/v1/tasks?limit={args.limit}"))
