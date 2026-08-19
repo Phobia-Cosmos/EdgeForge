@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.10.0` 在 V8/V9 能力之上增加模型级 frontend → transform → compile → runtime → correctness → benchmark Pipeline；模型框架通过受控外部命令接入，IREE 仍是可插拔后端而非系统依赖。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.10.1` 在 V8/V9 能力之上提供模型级 frontend → transform → compile → runtime → correctness → benchmark Pipeline，以及 BrainUICL/RA-EEG 历史结果迁移；模型框架通过受控外部命令接入，IREE 仍是可插拔后端而非系统依赖。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)，V10 Model Pipeline 见 [docs/design-v10.md](docs/design-v10.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)，V10 Model Pipeline 见 [docs/design-v10.md](docs/design-v10.md)，BrainUICL/RA-EEG 迁移见 [docs/raeeg-migration.md](docs/raeeg-migration.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 
@@ -11,7 +11,7 @@ EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compile
 | RTX 4070S 主机 | x86_64 | 16 CPU，32 GB，RTX 4070 SUPER 12 GB | RA-EEG 实验、GPU Compiler/Profiler、控制面 |
 | Orange Pi 5 Ultra | aarch64 | 8 CPU，16 GB，RK3588 | ARM64 部署验证；Vulkan/RKNN 仅在真实可用后启用 |
 | P550 | riscv64 | 4 CPU，26 GB | RISC-V Agent/Runtime 兼容、构建与协议 smoke |
-| Meles | riscv64 | 4 CPU，16 GB，TH1520/C910 | 第二种 RISC-V 差分验证、版本混跑与故障测试 |
+| Meles | riscv64 | 当前下线 | 暂不纳入调度和验证；恢复后再作为第二种 RISC-V 差分节点 |
 
 ## 本机快速启动
 

@@ -503,6 +503,8 @@ class Store:
             target_arch = (manifest.get("target") or {}).get("architecture")
             if target_arch:
                 requirements.setdefault("architectures", [target_arch])
+            backend = str((manifest.get("compiler") or {}).get("backend") or "python-reference")
+            requirements.setdefault("worker_backends", [backend])
         else:
             argv = payload.get("argv")
             if not isinstance(argv, list) or not argv or not all(isinstance(item, str) and item for item in argv):

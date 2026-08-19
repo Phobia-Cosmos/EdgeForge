@@ -78,6 +78,9 @@ def _accelerators() -> list[str]:
 def collect_capabilities() -> dict[str, Any]:
     memory = _memory_info()
     runtimes = [name for name in ("python3", "git", "cmake", "ninja", "gcc", "clang", "nvidia-smi") if shutil.which(name)]
+    advertised_backends = {"python-reference"}
+    configured_backends = os.environ.get("EDGEFORGE_BACKENDS", "")
+    advertised_backends.update(item.strip() for item in configured_backends.split(",") if item.strip())
     capabilities = {
         "architecture": _architecture(),
         "os": platform.system().lower(),
@@ -88,6 +91,7 @@ def collect_capabilities() -> dict[str, Any]:
         "accelerators": _accelerators(),
         "runtimes": runtimes,
         "python": platform.python_version(),
+        "backends": sorted(advertised_backends),
     }
     identity = {
         "architecture": capabilities["architecture"],
@@ -95,6 +99,7 @@ def collect_capabilities() -> dict[str, Any]:
         "cpu_count": capabilities["cpu_count"],
         "memory_total_mb": capabilities["memory_total_mb"],
         "accelerators": capabilities["accelerators"],
+        "backends": capabilities["backends"],
     }
     capabilities["hardware_fingerprint"] = hashlib.sha256(
         json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")

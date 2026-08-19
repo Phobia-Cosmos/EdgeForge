@@ -2,6 +2,25 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.10.1 - 2026-08-19
+
+### Added
+
+- BrainUICL/RA-EEG 历史结果迁移模块和 `build-raeeg-catalog.py`。
+- 支持扫描 `metrics.json` 与 `RESULTS.json`，保存源文件 SHA-256、相对路径、seed、方法、协议和 comparison group。
+- 为 817 个本地结果提供可重放的 catalog 生成能力，不复制 EEG、checkpoint 或研究源码。
+- 增加 Backend × Target 说明和 RA-EEG 分批迁移文档。
+
+### Safety
+
+- 自动迁移结果统一标记为 historical import，默认 `scientific_conclusion_allowed=false`。
+- `aligned-full49`、`method-transfer` 和 `historical-unclassified` 分组隔离，未完成 protocol review 的结果不能直接进入 Capability Gate。
+
+### Validation
+
+- 66/66 EdgeForge 自动化测试通过。
+- 全量 catalog 扫描发现 817 个结果文件，生成约 1.2 MiB catalog。
+
 ## 0.10.0 - 2026-08-19
 
 ### Added
