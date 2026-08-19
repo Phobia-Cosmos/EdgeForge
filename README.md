@@ -138,6 +138,8 @@ python3 -m edgeforge model-runs --token "$EDGEFORGE_TOKEN" --model brainuicl
 
 BrainUICL 历史结果迁移和 LoP smoke 验证记录见 [docs/raeeg-migration.md](docs/raeeg-migration.md) 与 [docs/raeeg-lop-validation-20260819.md](docs/raeeg-lop-validation-20260819.md)。
 
+扩大 sequence/eval 预算后的单 seed LoP 验证见 [docs/raeeg-lop-expanded-validation-20260820.md](docs/raeeg-lop-expanded-validation-20260820.md)；多 seed 当前明确标记为 `blocked-by-checkpoint`。
+
 4070S Worker 需要把工作根目录设为现有 BrainUICL 仓库，并只允许受信任的 BrainUICL Python 环境：
 
 ```sh
