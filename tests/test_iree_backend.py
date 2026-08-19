@@ -23,15 +23,14 @@ class IreeBackendTests(unittest.TestCase):
             )
             kernel = {
                 "id": "kernel-iree-conv-test-v1",
-                "version": "issue-24760-dilated-conv",
+                "version": "contract-only-fake-executable",
                 "backend": "iree-ukernel",
                 "metadata": {
                     "trusted": True,
                     "test_command": [sys.executable, str(script), "test"],
                     "benchmark_command": [sys.executable, str(script), "benchmark"],
                     "workdir": str(root),
-                    "iree_commit": "a82330a3",
-                    "patch_sha256": "test-digest",
+                    "validation_status": "contract-only-not-real-iree",
                 },
             }
             spec = OperatorSpec.from_payload(
@@ -75,6 +74,7 @@ class IreeBackendTests(unittest.TestCase):
                     "test_command": [str(tool)],
                     "benchmark_command": [str(tool)],
                     "workdir": str(root),
+                    "validation_status": "contract-only-not-real-iree",
                 },
             }
             with self.assertRaisesRegex(RuntimeError, "not allowed"):
@@ -86,6 +86,63 @@ class IreeBackendTests(unittest.TestCase):
                         "_allowed_commands": [],
                     }
                 )
+
+    def test_iree_backend_rejects_blocked_upstream_status(self):
+        with self.assertRaisesRegex(ValueError, "blocked-upstream-issue-24760-open"):
+            run_kernel_pipeline(
+                {
+                    "operator": {"name": "conv_nchwc", "shape": [1, 1, 1, 1, 1, 1, 1, 16, 16]},
+                    "kernel": {
+                        "id": "blocked-upstream",
+                        "backend": "iree-ukernel",
+                        "metadata": {
+                            "trusted": True,
+                            "validation_status": "blocked-upstream-issue-24760-open",
+                        },
+                    },
+                }
+            )
+
+    def test_iree_backend_rejects_unverified_real_source_identity(self):
+        cases = (
+            ({"iree_commit": "a" * 40, "patch_sha256": "b" * 64}, "non-empty iree_repository"),
+            (
+                {
+                    "iree_repository": "https://github.com/iree-org/iree.git",
+                    "iree_commit": "a82330a3",
+                    "patch_sha256": "b" * 64,
+                },
+                "40-hex iree_commit",
+            ),
+            (
+                {
+                    "iree_repository": "https://github.com/iree-org/iree.git",
+                    "iree_commit": "a" * 40,
+                    "patch_sha256": "test-digest",
+                },
+                "64-hex patch_sha256",
+            ),
+        )
+        for source, expected_error in cases:
+            with self.subTest(expected_error=expected_error):
+                with self.assertRaisesRegex(ValueError, expected_error):
+                    run_kernel_pipeline(
+                        {
+                            "operator": {
+                                "name": "conv_nchwc",
+                                "shape": [1, 1, 1, 1, 1, 1, 1, 16, 16],
+                            },
+                            "kernel": {
+                                "id": "unverified-source",
+                                "backend": "iree-ukernel",
+                                "metadata": {
+                                    "trusted": True,
+                                    "validation_status": "runtime-validated",
+                                    **source,
+                                },
+                            },
+                        },
+                    )
 
     def test_iree_backend_requires_trusted_kernel_metadata(self):
         with self.assertRaisesRegex(ValueError, "trusted=true"):

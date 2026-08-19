@@ -118,7 +118,7 @@ class StoreTests(unittest.TestCase):
                 "id": "kernel-iree-conv-store-v1",
                 "operator": "conv_nchwc",
                 "backend": "iree-ukernel",
-                "version": "issue-24760-dilated-conv",
+                "version": "issue-24760-adapter-scaffold",
                 "architectures": ["aarch64"],
                 "dtypes": ["fp32"],
             }

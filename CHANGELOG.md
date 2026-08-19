@@ -15,7 +15,8 @@
 
 - IREE test/benchmark command 必须来自 Worker allow-list，并受 work-root/workdir 边界约束；所有执行使用 `shell=False`。
 - `operator_benchmark` 不再接受非 reference backend，避免把 Python fallback 误记为 IREE 证据；IREE 必须使用 `kernel_pipeline`。
-- 当前只验证预构建 runtime/ukernel binary，不宣称已构建 IREE compiler 或完成 Orange Pi 验证。
+- `blocked-*` source 状态禁止执行；真实状态必须绑定 repository、完整 commit 与 patch SHA-256；fake 合同测试必须显式标记为 `contract-only-not-real-iree`。
+- IREE #24760 仍是开放 issue；当前双节点只完成 adapter contract validation，不宣称已构建 IREE compiler、验证真实 IREE binary 或取得硬件性能结果。
 
 ### Validation
 

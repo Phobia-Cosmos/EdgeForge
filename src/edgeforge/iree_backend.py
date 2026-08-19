@@ -25,6 +25,8 @@ from edgeforge.operator import OperatorSpec
 
 _REAL_TIME_RE = re.compile(r"real_time\s+([0-9]+(?:\.[0-9]+)?)\s*(ns|us|ms|s)\b")
 _THROUGHPUT_RE = re.compile(r"items_per_second=([0-9]+(?:\.[0-9]+)?)([KMG]?)?/s")
+_IREE_COMMIT_RE = re.compile(r"[0-9a-fA-F]{40}")
+_SHA256_RE = re.compile(r"[0-9a-fA-F]{64}")
 _MAX_OUTPUT_CHARS = 1_000_000
 
 
@@ -41,6 +43,27 @@ def _artifact_upload(manifest: dict[str, Any], name: str) -> dict[str, Any]:
         "metadata": {"backend": "iree-ukernel", "runtime_version": __version__},
         "content_base64": base64.b64encode(content).decode("ascii"),
     }
+
+
+def _validate_source_identity(metadata: dict[str, Any]) -> str:
+    status = metadata.get("validation_status")
+    if not isinstance(status, str) or not status:
+        raise ValueError("IREE kernel metadata requires a non-empty validation_status")
+    if status.startswith("blocked-"):
+        raise ValueError(f"IREE kernel execution is blocked by validation_status={status}")
+    if status == "contract-only-not-real-iree":
+        return status
+
+    repository = metadata.get("iree_repository")
+    commit = metadata.get("iree_commit")
+    patch_sha256 = metadata.get("patch_sha256")
+    if not isinstance(repository, str) or not repository.strip():
+        raise ValueError("real IREE execution requires a non-empty iree_repository")
+    if not isinstance(commit, str) or _IREE_COMMIT_RE.fullmatch(commit) is None:
+        raise ValueError("real IREE execution requires a 40-hex iree_commit")
+    if not isinstance(patch_sha256, str) or _SHA256_RE.fullmatch(patch_sha256) is None:
+        raise ValueError("real IREE execution requires a 64-hex patch_sha256")
+    return status
 
 
 def _resolve_command(
@@ -176,6 +199,7 @@ def run_iree_conv_nchwc_pipeline(
     metadata = kernel.get("metadata") or {}
     if metadata.get("trusted") is not True:
         raise ValueError("iree-ukernel kernels require metadata.trusted=true")
+    validation_status = _validate_source_identity(metadata)
     root = Path(work_root).resolve() if work_root else None
     allowed = set(allowed_commands) if allowed_commands is not None else None
     test_argv = _resolve_command(metadata.get("test_command"), work_root=root, allowed_commands=allowed)
@@ -216,6 +240,7 @@ def run_iree_conv_nchwc_pipeline(
             "repository": metadata.get("iree_repository"),
             "commit": metadata.get("iree_commit"),
             "patch_sha256": metadata.get("patch_sha256"),
+            "validation_status": validation_status,
         },
     }
     artifact_upload = _artifact_upload(manifest, f"{kernel.get('id', spec.name)}-manifest.json")
