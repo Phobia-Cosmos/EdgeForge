@@ -2,6 +2,26 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.10.0 - 2026-08-19
+
+### Added
+
+- Model/Dataset/Transform manifest 与 transform digest。
+- `model_pipeline` 任务，覆盖 frontend export、dataset transform、compile、runtime、correctness 和 model benchmark stage。
+- 受控外部 Backend 接口，可接入 Python reference、PyTorch eager/compile、ONNX Runtime、Triton 或 IREE。
+- `model_runs` 持久化表、model compiler manifest Artifact、Model Pipeline API/CLI 和版本化完成事件。
+
+### Safety
+
+- Stage command 使用 argv、Worker allow-list、work-root containment、`shell=False`、超时和输出上限。
+- 未提供的 stage 显式记录为 skipped；没有真实 Runtime 或编译器时不会伪造性能证据。
+- IREE 仍是可插拔 backend，#24760 不属于本版本的必做实现。
+
+### Validation
+
+- 63/63 EdgeForge 自动化测试通过（含模型流水线成功、失败、API 和持久化测试）。
+- 验证记录见 `releases/v0.10.0.md`。
+
 ## 0.9.0 - 2026-08-18
 
 ### Added

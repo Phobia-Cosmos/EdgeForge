@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.9.0` 在 V8 Model Registry/Capability Gate 之上增加受信任的 IREE `conv_nchwc` dilation runtime-only Pipeline。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.10.0` 在 V8/V9 能力之上增加模型级 frontend → transform → compile → runtime → correctness → benchmark Pipeline；模型框架通过受控外部命令接入，IREE 仍是可插拔后端而非系统依赖。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)，V10 Model Pipeline 见 [docs/design-v10.md](docs/design-v10.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 
@@ -89,6 +89,8 @@ python3 -m edgeforge operator-benchmark \
 | `POST /api/v1/plans` | 生成可解释的 Kernel/Worker 执行计划 |
 | `GET /api/v1/schedule-decisions` | 查询已执行任务的调度决策快照 |
 | `GET /api/v1/experiments` | 查询模型实验、协议、方法、seed、摘要与 Bundle Artifact |
+| `POST /api/v1/model-pipelines` | 创建模型 frontend/transform/compile/runtime/correctness/benchmark 任务 |
+| `GET /api/v1/model-runs` | 查询模型级编译、正确性和性能结果 |
 | `GET /api/v1/experiment-metrics` | 查询 Plasticity、Forgetting、BWT、Spectrum 等结构化指标 |
 | `GET/POST /api/v1/models` | 查询或注册绑定来源实验的模型 candidate |
 | `GET/POST /api/v1/gate-policies` | 查询或创建不可变 Capability Gate Policy |
@@ -125,6 +127,14 @@ python3 -m edgeforge gate-evaluations --token "$EDGEFORGE_TOKEN"
 ```
 
 ## RA-EEG 实验
+
+模型级流水线使用一个 JSON manifest 描述模型、数据集、变换和后端命令。[config/model-pipeline-synthetic.json](config/model-pipeline-synthetic.json) 是可运行的标准库 reference baseline，覆盖六个 stage；真实 BrainUICL 接入时只需替换对应 argv，并将 Worker 的 `--work-root` 指向受信任工作区：
+
+```sh
+python3 -m edgeforge model-pipeline --token "$EDGEFORGE_TOKEN" \
+  --spec config/model-pipeline-synthetic.json --worker-id worker-4070s --wait
+python3 -m edgeforge model-runs --token "$EDGEFORGE_TOKEN" --model brainuicl
+```
 
 4070S Worker 需要把工作根目录设为现有 BrainUICL 仓库，并只允许受信任的 BrainUICL Python 环境：
 

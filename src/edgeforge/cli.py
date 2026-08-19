@@ -229,6 +229,23 @@ def build_parser() -> argparse.ArgumentParser:
     experiment_run.add_argument("--max-attempts", type=int, default=1)
     experiment_run.add_argument("--wait", action="store_true")
 
+    model_pipeline = subparsers.add_parser("model-pipeline", help="run frontend, transform, compile, runtime and benchmark stages")
+    _add_client_options(model_pipeline)
+    model_pipeline.add_argument("--spec", required=True, help="path to a model pipeline manifest JSON file")
+    model_pipeline.add_argument("--worker-id", action="append", default=[])
+    model_pipeline.add_argument("--arch", action="append", default=[])
+    model_pipeline.add_argument("--accelerator", action="append", default=[])
+    model_pipeline.add_argument("--label", action="append", default=[], metavar="KEY=VALUE")
+    model_pipeline.add_argument("--min-memory-mb", type=int, default=0)
+    model_pipeline.add_argument("--priority", type=int, default=0)
+    model_pipeline.add_argument("--max-attempts", type=int, default=1)
+    model_pipeline.add_argument("--wait", action="store_true")
+
+    model_runs = subparsers.add_parser("model-runs", help="list persisted model pipeline runs")
+    _add_client_options(model_runs)
+    model_runs.add_argument("--model")
+    model_runs.add_argument("--limit", type=int, default=100)
+
     experiments = subparsers.add_parser("experiments", help="list persisted model experiments")
     _add_client_options(experiments)
     experiments.add_argument("--workload")
@@ -361,6 +378,39 @@ def _submit(args: argparse.Namespace) -> int:
     while task["status"] not in {"succeeded", "failed", "cancelled"}:
         time.sleep(1)
         task = client.request("GET", f"/api/v1/tasks/{task['id']}")
+    _print_json(task)
+    return 0 if task["status"] == "succeeded" else 1
+
+
+def _model_pipeline_submit(args: argparse.Namespace) -> int:
+    try:
+        spec = json.loads(Path(args.spec).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"unable to read model pipeline spec: {error}") from error
+    if not isinstance(spec, dict):
+        raise ValueError("model pipeline spec must be a JSON object")
+    task = _client(args).request(
+        "POST",
+        "/api/v1/model-pipelines",
+        {
+            **spec,
+            "requirements": {
+                "architectures": args.arch,
+                "accelerators": args.accelerator,
+                "worker_ids": args.worker_id,
+                "labels": _labels(args.label),
+                "min_memory_mb": args.min_memory_mb,
+            },
+            "priority": args.priority,
+            "max_attempts": args.max_attempts,
+        },
+    )
+    _print_json(task)
+    if not args.wait:
+        return 0
+    while task["status"] not in {"succeeded", "failed", "cancelled"}:
+        time.sleep(1)
+        task = _client(args).request("GET", f"/api/v1/tasks/{task['id']}")
     _print_json(task)
     return 0 if task["status"] == "succeeded" else 1
 
@@ -692,6 +742,14 @@ def main(argv: list[str] | None = None) -> None:
             return
         if args.command == "experiment-run":
             raise SystemExit(_experiment_run(args))
+        if args.command == "model-pipeline":
+            raise SystemExit(_model_pipeline_submit(args))
+        if args.command == "model-runs":
+            query = f"?limit={args.limit}"
+            if args.model:
+                query += f"&model={args.model}"
+            _print_json(_client(args).request("GET", f"/api/v1/model-runs{query}"))
+            return
         if args.command == "experiments":
             query = f"?limit={args.limit}"
             if args.workload:

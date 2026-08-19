@@ -78,6 +78,37 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.store.create_task({"kind": "shell", "payload": {"argv": ["true"]}})
 
+    def test_model_pipeline_persists_model_run(self):
+        task = self.store.create_task(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "tiny"},
+                    "dataset": {"name": "synthetic", "manifest_digest": "sha256:data"},
+                    "transforms": [{"name": "window", "version": "v1", "config": {"length": 8}}],
+                    "frontend": {"name": "python"},
+                    "compiler": {"backend": "python-reference", "identity": "test"},
+                    "target": {"architecture": "aarch64"},
+                },
+                "requirements": {"worker_ids": ["arm"]},
+            }
+        )
+        leased = self.store.lease_task("arm")
+        self.assertEqual(leased["id"], task["id"])
+        result = {
+            "exit_code": 0,
+            "manifest": leased["payload"],
+            "correctness": True,
+            "compile_ms": 2.5,
+            "benchmark": {"steady_latency_ms": 3.1},
+            "artifact": {"digest": "a" * 64},
+        }
+        self.store.complete_task(task["id"], "arm", {"status": "succeeded", "runtime_version": __version__, "result": result})
+        runs = self.store.list_model_runs("tiny")
+        self.assertEqual(len(runs), 1)
+        self.assertEqual(runs[0]["transform_digest"], leased["payload"]["transform_digest"])
+        self.assertEqual(runs[0]["compiler_backend"], "python-reference")
+
     def test_release_update_preserves_original_timestamp(self):
         first = self.store.record_release("test-version", "first", {"step": 1}, status="active")
         second = self.store.record_release("test-version", "updated", {"step": 2}, status="retired")

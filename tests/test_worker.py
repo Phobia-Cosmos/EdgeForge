@@ -133,6 +133,43 @@ class WorkerExecutionTests(unittest.TestCase):
         self.assertTrue(any(item["name"] == "plasticity.acc_gain" for item in bundle["metrics"]))
         self.assertEqual(result["artifact_upload"]["kind"], "experiment-bundle")
 
+    def test_model_pipeline_runs_external_stages_and_records_digests(self):
+        result = self.worker.execute(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "tiny", "format": "pytorch"},
+                    "dataset": {"name": "synthetic", "manifest_digest": "sha256:test"},
+                    "transforms": [{"name": "normalize", "version": "v1", "config": {"mean": 0.0}}],
+                    "frontend": {"name": "pytorch", "command": ["python3", "-c", "print('{}')"]},
+                    "compiler": {"backend": "torch-compile", "identity": "test", "command": ["python3", "-c", "print('{}')"]},
+                    "runtime": {"command": ["python3", "-c", "print('{}')"]},
+                    "correctness": {"command": ["python3", "-c", "print('{\"correctness\": true}')"]},
+                    "benchmark": {"command": ["python3", "-c", "print('{\"steady_latency_ms\": 1.2}')"], "repeats": 1},
+                    "target": {"architecture": "x86_64"},
+                },
+            }
+        )
+        self.assertEqual(result["exit_code"], 0)
+        self.assertTrue(result["correctness"])
+        self.assertEqual(len(result["pipeline"]), 6)
+        self.assertEqual(result["manifest"]["compiler"]["backend"], "torch-compile")
+        self.assertEqual(len(result["manifest"]["transform_digest"]), 64)
+        self.assertEqual(result["artifact_upload"]["kind"], "model-compiler-manifest")
+
+    def test_model_pipeline_rejects_unlisted_stage_command(self):
+        with self.assertRaisesRegex(RuntimeError, "not allowed"):
+            self.worker.execute(
+                {
+                    "kind": "model_pipeline",
+                    "payload": {
+                        "model": {"name": "tiny"},
+                        "dataset": {"name": "synthetic"},
+                        "frontend": {"command": ["uname", "-m"]},
+                    },
+                }
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

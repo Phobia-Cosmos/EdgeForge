@@ -224,6 +224,34 @@ class Store:
                 CREATE INDEX IF NOT EXISTS experiment_metrics_lookup_idx
                 ON experiment_metrics(experiment_id, name, step, created_at DESC);
 
+                CREATE TABLE IF NOT EXISTS model_runs (
+                    task_id TEXT PRIMARY KEY,
+                    version TEXT NOT NULL,
+                    runtime_version TEXT,
+                    worker_id TEXT NOT NULL,
+                    model_name TEXT NOT NULL,
+                    dataset_name TEXT NOT NULL,
+                    dataset_manifest_digest TEXT,
+                    transform_digest TEXT NOT NULL,
+                    frontend TEXT NOT NULL,
+                    compiler_backend TEXT NOT NULL,
+                    compiler_identity TEXT NOT NULL,
+                    target_architecture TEXT,
+                    correctness INTEGER,
+                    compile_ms REAL,
+                    first_call_ms REAL,
+                    steady_latency_ms REAL,
+                    peak_memory_mb REAL,
+                    output_digest TEXT,
+                    artifact_digest TEXT,
+                    manifest TEXT NOT NULL,
+                    summary TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS model_runs_lookup_idx
+                ON model_runs(model_name, dataset_name, created_at DESC);
+
                 CREATE TABLE IF NOT EXISTS models (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -412,7 +440,7 @@ class Store:
         now = time.time()
         task_id = uuid.uuid4().hex
         kind = data.get("kind") or "command"
-        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline", "kernel_autotune", "compiler_run", "experiment_run"}:
+        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline", "kernel_autotune", "compiler_run", "experiment_run", "model_pipeline"}:
             raise ValueError(f"unsupported task kind: {kind}")
         payload = data.get("payload") or {}
         requirements = dict(data.get("requirements") or {})
@@ -467,6 +495,14 @@ class Store:
 
             spec = ExperimentSpec.from_payload(payload.get("spec"))
             payload["spec"] = spec.to_dict()
+        elif kind == "model_pipeline":
+            from edgeforge.model_pipeline import normalize_model_manifest
+
+            manifest = normalize_model_manifest(payload)
+            payload = manifest
+            target_arch = (manifest.get("target") or {}).get("architecture")
+            if target_arch:
+                requirements.setdefault("architectures", [target_arch])
         else:
             argv = payload.get("argv")
             if not isinstance(argv, list) or not argv or not all(isinstance(item, str) and item for item in argv):
@@ -699,6 +735,15 @@ class Store:
                     "metric_count": len(task["result"].get("metrics") or experiment_bundle.get("metrics") or []),
                 },
             )
+        if task["kind"] == "model_pipeline" and task["result"]:
+            self._record_model_run(task, worker_id)
+            self.append_event(
+                "model_pipeline.completed",
+                "worker",
+                "task",
+                task_id,
+                {"worker_id": worker_id, "model": (task["result"].get("manifest") or {}).get("model", {}).get("name"), "artifact_digest": (task["result"].get("artifact") or {}).get("digest")},
+            )
         self.append_event(
             "task.completed",
             "worker",
@@ -707,6 +752,61 @@ class Store:
             {"worker_id": worker_id, "status": status, "error": error, "runtime_version": data.get("runtime_version")},
         )
         return task
+
+    def _record_model_run(self, task: dict[str, Any], worker_id: str) -> None:
+        from edgeforge.model_pipeline import normalize_model_manifest
+
+        result = task.get("result") or {}
+        manifest = normalize_model_manifest(result.get("manifest") or task.get("payload") or {})
+        benchmark = result.get("benchmark") or {}
+        parsed = benchmark if isinstance(benchmark, dict) else {}
+        correctness = result.get("correctness")
+        if correctness is not None:
+            correctness = 1 if bool(correctness) else 0
+        summary = parsed.get("summary") if isinstance(parsed.get("summary"), dict) else parsed
+        output_digest = None
+        output = parsed.get("output_digest") or parsed.get("digest")
+        if isinstance(output, str):
+            output_digest = output
+        now = time.time()
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO model_runs(
+                    task_id, version, runtime_version, worker_id, model_name, dataset_name,
+                    dataset_manifest_digest, transform_digest, frontend, compiler_backend,
+                    compiler_identity, target_architecture, correctness, compile_ms,
+                    first_call_ms, steady_latency_ms, peak_memory_mb, output_digest,
+                    artifact_digest, manifest, summary, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    task["id"], task["version"], task.get("runtime_version"), worker_id,
+                    manifest["model"]["name"], manifest["dataset"]["name"], manifest["dataset"].get("manifest_digest"),
+                    manifest["transform_digest"], str(manifest["frontend"].get("name", "external")),
+                    str(manifest["compiler"].get("backend", "unknown")), str(manifest["compiler"].get("identity", "unknown")),
+                    (manifest.get("target") or {}).get("architecture"), correctness, result.get("compile_ms"),
+                    parsed.get("first_call_ms"), parsed.get("steady_latency_ms"), parsed.get("peak_memory_mb"), output_digest,
+                    (result.get("artifact") or {}).get("digest"), json.dumps(manifest, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(summary or {}, ensure_ascii=False, separators=(",", ":")), now,
+                ),
+            )
+
+    def list_model_runs(self, model_name: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        if model_name:
+            query, params = "SELECT * FROM model_runs WHERE model_name = ? ORDER BY created_at DESC LIMIT ?", (model_name, limit)
+        else:
+            query, params = "SELECT * FROM model_runs ORDER BY created_at DESC LIMIT ?", (limit,)
+        with self._connect() as connection:
+            rows = connection.execute(query, params).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["manifest"] = json.loads(item["manifest"])
+            item["summary"] = json.loads(item["summary"])
+            result.append(item)
+        return result
 
     def _record_experiment_run(self, task: dict[str, Any], worker_id: str) -> None:
         from edgeforge.experiment import ExperimentSpec

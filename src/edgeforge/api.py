@@ -165,6 +165,12 @@ class ControlHandler(BaseHTTPRequestHandler):
                     {"experiments": self.server.store.list_experiment_runs(workload, method, limit)},
                 )
                 return
+            if parsed.path == "/api/v1/model-runs":
+                query = parse_qs(parsed.query)
+                limit = int(query.get("limit", ["100"])[0])
+                model_name = query.get("model", [None])[0]
+                self._send(HTTPStatus.OK, {"model_runs": self.server.store.list_model_runs(model_name, limit)})
+                return
             if parsed.path == "/api/v1/experiment-metrics":
                 query = parse_qs(parsed.query)
                 limit = int(query.get("limit", ["1000"])[0])
@@ -231,6 +237,14 @@ class ControlHandler(BaseHTTPRequestHandler):
                 return
             if parsed.path == "/api/v1/tasks":
                 task = self.server.store.create_task(data)
+                self._send(HTTPStatus.CREATED, task)
+                return
+            if parsed.path == "/api/v1/model-pipelines":
+                spec = data.get("payload") if isinstance(data.get("payload"), dict) else {
+                    key: value for key, value in data.items() if key not in {"kind", "requirements", "priority", "max_attempts"}
+                }
+                task_data = {"kind": "model_pipeline", "payload": spec, "requirements": data.get("requirements") or {}, "priority": data.get("priority", 0), "max_attempts": data.get("max_attempts", 1)}
+                task = self.server.store.create_task(task_data)
                 self._send(HTTPStatus.CREATED, task)
                 return
             if parsed.path == "/api/v1/plans":

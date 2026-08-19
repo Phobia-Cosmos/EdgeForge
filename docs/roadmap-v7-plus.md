@@ -36,7 +36,14 @@
 - 将研究 Gate 和 Compiler Gate 串联，任何更快但能力回退超阈值的 Artifact 都不能 promote。
 - 验收：一个真实 RA-EEG checkpoint 完成 `export/compile → numerical correctness → capability regression → performance benchmark`，并可从 Artifact 与版本记录重放。
 
-## V10：Orange Pi 部署目标与条件性 IREE
+## V10：模型级 Pipeline 基座（已完成；0.10.0）
+
+- 统一 `Model/Dataset/Transform/Frontend/Compiler/Runtime` manifest，固定 transform digest 与完整 provenance。
+- 新增 `model_pipeline` 任务，按 `export → transform → compile → run → correctness → benchmark` 执行，所有外部命令都受 Worker allow-list、work-root 和 timeout 约束。
+- 结果写入 `model_runs`、版本化事件和 `model-compiler-manifest` Artifact；提供 Python reference baseline，真实 PyTorch/ONNX/Triton/IREE 通过同一 argv contract 接入。
+- 验收：标准库 reference adapter 在本机完成合成 EEG normalize/window、编译描述、推理、数值正确性和 benchmark；不把 reference 结果当作真实硬件性能。
+
+## V11：Orange Pi 部署目标与条件性 IREE
 
 - 先探测并记录 Orange Pi 的 ARM64 CPU、驱动、Vulkan、内存和可用 Runtime，选取真实可运行路径，不预设 NPU 已可用。
 - 在模型可稳定导出后，比较 LLVM CPU、条件性 IREE Vulkan 和 PyTorch/ONNX 可用路径的正确性、冷启动、steady latency、内存与 Artifact size。
@@ -44,7 +51,7 @@
 - P550/Meles 在这一阶段运行 Agent、CLI/API、Artifact 校验和 RISC-V 构建 smoke；仅在 Runtime 真实可构建时增加模型执行门禁。
 - 验收：至少一个非 x86 目标加载真实模型 Artifact 并完成离线 EEG inference；不能用 Python Reference Operator 代替模型部署成功。
 
-## V11：模型级回归、调度与多架构 CI
+## V12：模型级回归、调度与多架构 CI
 
 - 将 V6 的算子 Cost Model 扩展为 workload/model/runtime 级候选，不把不同能力或不同精度的路径当作可互换候选。
 - 对 checkpoint、Compiler、Runtime 和目标设备建立 Baseline/Canary，使用重复采样与明确阈值判断回归。
@@ -52,7 +59,7 @@
 - 增加长实验优先级、资源配额、断点恢复、Worker 离线重调度和 checkpoint 安全恢复。
 - 验收：给定两个候选版本，系统能回答研究能力、编译正确性和性能在哪个阶段发生变化，并自动阻止不满足目标 profile 的发布。
 
-## V12：可靠性与 Compiler Optimization Agent
+## V13：可靠性与 Compiler Optimization Agent
 
 - Agent 读取 ExperimentSpec、IR/graph、Profiler、编译日志、研究指标、Gate 失败和历史 Benchmark，提出实验诊断或优化候选。
 - 所有候选必须进入隔离分支和不可绕过的 `experiment → capability gate → compile → correctness → performance gate`。
@@ -71,4 +78,4 @@ RA-EEG 的科研节奏不与 EdgeForge 版本号绑定：先对齐 BrainUICL 协
 - 与当前 EEG workload 无关的 RoPE/KV Cache、llama.cpp/vLLM Serving 和 HAMi 多租户 GPU 方向。
 - 为了匹配上游 Issue 而提前实现没有内部需求的 Compiler 功能。
 
-EdgeForge v0.1.0–v0.9.0 的发布说明、验证数据库和日志按版本保持独立。V9 后续仍需完成真实 BrainUICL eager/`torch.compile` 模型级验证；任何新版本仍必须完成 Changelog、`releases/vX.Y.Z.md`、自动化测试、真实 workload 验证、日志归档和 Git tag。
+EdgeForge v0.1.0–v0.10.0 的发布说明、验证数据库和日志按版本保持独立。V9/V10 后续仍需完成真实 BrainUICL eager/`torch.compile` 模型级验证；任何新版本仍必须完成 Changelog、`releases/vX.Y.Z.md`、自动化测试、真实 workload 验证、日志归档和 Git tag。

@@ -21,6 +21,7 @@ from edgeforge import __version__
 from edgeforge.client import APIError, Client
 from edgeforge.compiler import run_kernel_autotune, run_kernel_pipeline
 from edgeforge.experiment import ExperimentSpec, build_experiment_bundle, bundle_artifact_upload
+from edgeforge.model_pipeline import run_model_pipeline
 from edgeforge.operator import OperatorSpec, benchmark_operator
 
 
@@ -234,6 +235,38 @@ class Worker:
             raise RuntimeError("experiment result_path escapes the configured work root")
         return path
 
+    def _execute_model_command(
+        self, argv: list[str], cwd_value: str | None, env_overrides: dict[str, str], timeout: float
+    ) -> dict[str, Any]:
+        if not argv:
+            raise RuntimeError("model stage command must not be empty")
+        resolved_argv = list(argv)
+        resolved_argv[0] = self._resolve_command(resolved_argv[0])
+        cwd = self._resolve_cwd(cwd_value)
+        if not isinstance(env_overrides, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in env_overrides.items()):
+            raise RuntimeError("model stage environment must contain string keys and values")
+        env = os.environ.copy()
+        env.update(env_overrides)
+        started = time.perf_counter()
+        completed = subprocess.run(
+            resolved_argv,
+            cwd=cwd,
+            env=env,
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=min(86_400.0, max(0.1, float(timeout))),
+            shell=False,
+        )
+        return {
+            "argv": resolved_argv,
+            "cwd": str(cwd),
+            "exit_code": completed.returncode,
+            "stdout": completed.stdout[-MAX_OUTPUT_CHARS:],
+            "stderr": completed.stderr[-MAX_OUTPUT_CHARS:],
+            "elapsed_ms": round((time.perf_counter() - started) * 1000.0, 3),
+        }
+
     def _execute_experiment(self, payload: dict[str, Any]) -> dict[str, Any]:
         spec = ExperimentSpec.from_payload(payload.get("spec"))
         runner = spec.runner
@@ -290,6 +323,13 @@ class Worker:
 
     def execute(self, task: dict[str, Any]) -> dict[str, Any]:
         payload = task["payload"]
+        if task["kind"] == "model_pipeline":
+            return run_model_pipeline(
+                payload,
+                work_root=self.work_root,
+                run_command=self._execute_model_command,
+                environment={"edgeforge_version": __version__, "worker_id": self.worker_id, "capabilities": collect_capabilities()},
+            )
         if task["kind"] == "experiment_run":
             return self._execute_experiment(payload)
         if task["kind"] == "kernel_autotune":

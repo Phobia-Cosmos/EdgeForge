@@ -75,6 +75,40 @@ class APITests(unittest.TestCase):
         events = self.client.request("GET", f"/api/v1/events?version={__version__}")["events"]
         self.assertTrue(any(event["event_type"] == "task.completed" for event in events))
 
+    def test_model_pipeline_api_persists_run_and_artifact(self):
+        registration = {
+            "id": "model-api-worker",
+            "hostname": "model-api-worker",
+            "capabilities": {"architecture": "x86_64", "accelerators": [], "cpu_count": 2, "memory_total_mb": 4096},
+            "metrics": {"load_1m": 0, "memory_available_mb": 2000},
+            "labels": {},
+            "version": __version__,
+        }
+        self.client.request("POST", "/api/v1/workers/register", registration)
+        task = self.client.request(
+            "POST",
+            "/api/v1/model-pipelines",
+            {
+                "model": {"name": "api-tiny"},
+                "dataset": {"name": "synthetic", "manifest_digest": "sha256:dataset"},
+                "transforms": [{"name": "window", "version": "v1", "config": {"length": 8}}],
+                "frontend": {"name": "external"},
+                "compiler": {"backend": "python-reference", "identity": "test"},
+                "target": {"architecture": "x86_64"},
+                "requirements": {"worker_ids": ["model-api-worker"]},
+            },
+        )
+        leased = self.client.request("POST", "/api/v1/workers/model-api-worker/lease", {})["task"]
+        self.assertEqual(leased["id"], task["id"])
+        worker = Worker(self.client, "model-api-worker", {}, Path(self.temporary.name) / "model-work", 1, {"true"}, False)
+        result = worker.execute(leased)
+        completed = self.client.request("POST", f"/api/v1/tasks/{task['id']}/complete", {"worker_id": "model-api-worker", "runtime_version": __version__, "status": "succeeded", "result": result})
+        self.assertEqual(completed["status"], "succeeded")
+        runs = self.client.request("GET", "/api/v1/model-runs?model=api-tiny")["model_runs"]
+        self.assertEqual(len(runs), 1)
+        self.assertEqual(runs[0]["compiler_backend"], "python-reference")
+        self.assertEqual(len(self.client.request("GET", "/api/v1/artifacts?kind=model-compiler-manifest")["artifacts"]), 1)
+
     def test_release_ledger(self):
         release = self.client.request(
             "POST",

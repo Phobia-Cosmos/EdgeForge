@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "model": {"name": "tiny-reference", "format": "external", "checkpoint": "models/tiny.bin"},
+  "dataset": {"name": "synthetic-eeg", "manifest_digest": "generated:edgeforge-synthetic-eeg-v1", "split": "validation", "root": ".edgeforge/reference", "transform_command": ["python3", "scripts/model-pipeline-reference.py", "transform"]},
+  "transforms": [
+    {"name": "normalize", "version": "eeg-normalize-v1", "config": {"mode": "train_stats"}},
+    {"name": "window", "version": "eeg-window-v1", "config": {"length": 3000, "stride": 1500}}
+  ],
+  "frontend": {"name": "edgeforge-reference", "command": ["python3", "scripts/model-pipeline-reference.py", "export"], "timeout_seconds": 3600},
+  "compiler": {"backend": "python-reference", "identity": "edgeforge-reference-v1", "command": ["python3", "scripts/model-pipeline-reference.py", "compile"], "timeout_seconds": 3600},
+  "runtime": {"name": "python-reference", "command": ["python3", "scripts/model-pipeline-reference.py", "run"], "timeout_seconds": 3600},
+  "correctness": {"command": ["python3", "scripts/model-pipeline-reference.py", "correctness"], "timeout_seconds": 3600},
+  "benchmark": {"command": ["python3", "scripts/model-pipeline-reference.py", "benchmark"], "repeats": 20, "timeout_seconds": 3600},
+  "target": {"architecture": "x86_64"},
+  "metadata": {"workload": "raeeg", "protocol": "lop-v1", "status": "runnable-reference"}
+}
