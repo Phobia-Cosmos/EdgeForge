@@ -173,6 +173,22 @@ class WorkerExecutionTests(unittest.TestCase):
                 }
             )
 
+    def test_model_pipeline_correctness_failure_sets_nonzero_exit(self):
+        result = self.worker.execute(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "tiny"},
+                    "dataset": {"name": "synthetic"},
+                    "frontend": {"command": ["python3", "-c", "print('{}')"]},
+                    "correctness": {"command": ["python3", "-c", "print('{\"correctness\": false}')"]},
+                },
+            }
+        )
+        self.assertEqual(result["exit_code"], 1)
+        self.assertEqual(result["pipeline"][-1]["stage"], "correctness")
+        self.assertEqual(result["pipeline"][-1]["validation_error"], "correctness reported false")
+
     def test_packaged_reference_pipeline_runs_from_isolated_work_root(self):
         repository = Path(__file__).resolve().parents[1]
         manifest = json.loads((repository / "config" / "model-pipeline-synthetic.json").read_text(encoding="utf-8"))

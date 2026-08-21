@@ -148,8 +148,13 @@ def run_model_pipeline(
                 "EDGEFORGE_TRANSFORM_DIGEST": manifest["transform_digest"],
                 "EDGEFORGE_MODEL_NAME": str(manifest["model"]["name"]),
                 "EDGEFORGE_DATASET_NAME": str(manifest["dataset"]["name"]),
+                "EDGEFORGE_MODEL_BACKEND": str(manifest["compiler"].get("backend") or "python-reference"),
+                "EDGEFORGE_TARGET_ARCHITECTURE": str(manifest["target"].get("architecture") or ""),
+                "EDGEFORGE_TARGET_DEVICE": str(manifest["target"].get("device") or ""),
                 "EDGEFORGE_STAGE": stage,
             }
+            if stage == "benchmark":
+                env["EDGEFORGE_BENCHMARK_REPEATS"] = str(manifest["benchmark"].get("repeats", 1))
             result_path = section.get("result_path")
             if result_path:
                 if not isinstance(result_path, str):
@@ -164,6 +169,9 @@ def run_model_pipeline(
             if parsed:
                 stage_result["parsed"] = parsed
                 outputs[stage] = parsed
+                if stage == "correctness" and "correctness" in parsed and not bool(parsed["correctness"]):
+                    stage_result["exit_code"] = 1
+                    stage_result["validation_error"] = "correctness reported false"
         stage_result["elapsed_ms"] = round((time.perf_counter() - stage_started) * 1000.0, 3)
         stages.append(stage_result)
         if stage_result.get("exit_code", 1) != 0:

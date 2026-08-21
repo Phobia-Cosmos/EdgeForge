@@ -145,6 +145,20 @@ python3 -m edgeforge model-pipeline --token "$EDGEFORGE_TOKEN" \
 python3 -m edgeforge model-runs --token "$EDGEFORGE_TOKEN" --model brainuicl
 ```
 
+本机 PyTorch contract 使用共享 `research` 环境（PyTorch 2.11.0），不改变 EdgeForge 的无第三方依赖控制面。先在 Worker 进程中激活环境并把 EdgeForge `src` 放进绝对 `PYTHONPATH`，再运行 eager 或 compile manifest：
+
+```sh
+source /home/undefined/UbuntuData/python-envs/activate-research.sh
+export PYTHONPATH=/home/undefined/Desktop/EdgeForge/src${PYTHONPATH:+:$PYTHONPATH}
+export EDGEFORGE_BACKENDS=python-reference,torch-eager,torch-compile
+python3 -m edgeforge model-pipeline --token "$EDGEFORGE_TOKEN" \
+  --spec config/model-pipeline-torch-eager.json --worker-id worker-local-torch --wait
+python3 -m edgeforge model-pipeline --token "$EDGEFORGE_TOKEN" \
+  --spec config/model-pipeline-torch-compile.json --worker-id worker-local-torch --wait
+```
+
+这两个 manifest 当前只验证 CPU eager 与 `torch.compile` 的模型接口、编译/首调用、数值 correctness 和重复 benchmark；没有 CUDA 时不会声称 GPU 性能，真实 BrainUICL checkpoint 仍需独立接入。
+
 BrainUICL 历史结果迁移和 LoP smoke 验证记录见 [docs/raeeg-migration.md](docs/raeeg-migration.md) 与 [docs/raeeg-lop-validation-20260819.md](docs/raeeg-lop-validation-20260819.md)。
 
 扩大 sequence/eval 预算后的单 seed LoP 验证见 [docs/raeeg-lop-expanded-validation-20260820.md](docs/raeeg-lop-expanded-validation-20260820.md)；多 seed 当前明确标记为 `blocked-by-checkpoint`。

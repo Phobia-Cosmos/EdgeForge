@@ -52,8 +52,9 @@
 - P550/Meles 在这一阶段运行 Agent、CLI/API、Artifact 校验和 RISC-V 构建 smoke；仅在 Runtime 真实可构建时增加模型执行门禁。
 - 验收：至少一个非 x86 目标加载真实模型 Artifact 并完成离线 EEG inference；不能用 Python Reference Operator 代替模型部署成功。
 
-## V12：模型级回归、调度与多架构 CI
+## V12：模型级回归、调度与多架构 CI（本机前置已开始）
 
+- 0.11.0 在本机共享 PyTorch 环境完成 `torch-eager` 与 CPU `torch-compile` adapter contract、correctness failure gate 和重复 benchmark；这不代表 CUDA 或真实 BrainUICL 模型结论。
 - 将 V6 的算子 Cost Model 扩展为 workload/model/runtime 级候选，不把不同能力或不同精度的路径当作可互换候选。
 - 对 checkpoint、Compiler、Runtime 和目标设备建立 Baseline/Canary，使用重复采样与明确阈值判断回归。
 - 建立适配不同目标的发布矩阵：4070S 执行能力与性能门禁，Orange Pi 执行部署门禁，P550/Meles 执行协议与可移植性门禁。
