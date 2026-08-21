@@ -111,6 +111,35 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(runs[0]["transform_digest"], leased["payload"]["transform_digest"])
         self.assertEqual(runs[0]["compiler_backend"], "python-reference")
 
+    def test_model_pipeline_persists_stage_events(self):
+        task = self.store.create_task(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "event-model"},
+                    "dataset": {"name": "synthetic"},
+                    "compiler": {"backend": "python-reference", "identity": "test"},
+                    "target": {"architecture": "aarch64"},
+                },
+                "requirements": {"worker_ids": ["arm"]},
+            }
+        )
+        leased = self.store.lease_task("arm")
+        result = {
+            "exit_code": 0,
+            "manifest": leased["payload"],
+            "correctness": True,
+            "pipeline": [
+                {"stage": "export", "exit_code": 0, "elapsed_ms": 1.2, "parsed": {"format": "test"}},
+                {"stage": "transform", "exit_code": 0, "elapsed_ms": 2.3},
+            ],
+        }
+        self.store.complete_task(task["id"], "arm", {"status": "succeeded", "runtime_version": __version__, "result": result})
+        events = self.store.list_events(version=__version__)
+        stage_events = {item["event_type"]: item for item in events if item["event_type"].startswith("model_pipeline.")}
+        self.assertEqual(stage_events["model_pipeline.export"]["payload"]["elapsed_ms"], 1.2)
+        self.assertEqual(stage_events["model_pipeline.transform"]["payload"]["exit_code"], 0)
+
     def test_model_run_prefers_adapter_compile_time(self):
         task = self.store.create_task(
             {

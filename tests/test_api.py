@@ -114,6 +114,9 @@ class APITests(unittest.TestCase):
         self.assertEqual(len(runs), 1)
         self.assertEqual(runs[0]["compiler_backend"], "python-reference")
         self.assertEqual(len(self.client.request("GET", "/api/v1/artifacts?kind=model-compiler-manifest")["artifacts"]), 1)
+        event_types = {item["event_type"] for item in self.client.request("GET", f"/api/v1/events?version={__version__}")["events"]}
+        self.assertIn("model_pipeline.export", event_types)
+        self.assertIn("model_pipeline.benchmark", event_types)
 
     def test_model_regressions_endpoint(self):
         response = self.client.request("GET", "/api/v1/model-regressions?model=missing&threshold=0.2")

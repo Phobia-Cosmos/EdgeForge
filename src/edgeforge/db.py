@@ -742,6 +742,23 @@ class Store:
                 },
             )
         if task["kind"] == "model_pipeline" and task["result"]:
+            for stage in task["result"].get("pipeline") or []:
+                stage_name = str(stage.get("stage") or "unknown")
+                self.append_event(
+                    f"model_pipeline.{stage_name}",
+                    "worker",
+                    "task",
+                    task_id,
+                    {
+                        "worker_id": worker_id,
+                        "status": task["status"],
+                        "stage": stage_name,
+                        "exit_code": stage.get("exit_code"),
+                        "elapsed_ms": stage.get("elapsed_ms"),
+                        "parsed": stage.get("parsed"),
+                        "validation_error": stage.get("validation_error"),
+                    },
+                )
             self._record_model_run(task, worker_id)
             self.append_event(
                 "model_pipeline.completed",

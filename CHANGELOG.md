@@ -22,6 +22,7 @@
 - 76/76 EdgeForge 自动化测试通过，包含独立临时 `work_root` 的六阶段 reference pipeline 回归。
 - 共享 `research` 环境 PyTorch 2.11.0 下，CPU `torch-eager` 与 `torch-compile` 两条六阶段 pipeline 均通过；CUDA 未启用，不生成 GPU 性能结论。
 - 模型失败任务会保留为 `model_runs.task_status=failed`，但不会被用作后续 baseline。
+- 模型流水线的每个 stage 现在写入 `model_pipeline.<stage>` 版本化事件，保存状态、exit code、耗时和结构化输出摘要。
 - 本机 `target-probe` 和 synthetic pipeline 通过；Orange Pi probe、Runtime correctness 和离线 EEG inference 尚待真实串口/板端验证，因此本版本当前为候选状态。
 
 ## 0.10.2 - 2026-08-20
