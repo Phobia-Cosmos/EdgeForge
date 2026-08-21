@@ -181,6 +181,16 @@ python3 -m edgeforge lop-analyze --token "$EDGEFORGE_TOKEN" \
 python3 -m edgeforge lop-analysis --token "$EDGEFORGE_TOKEN" <analysis-id>
 ```
 
+对尚未导入控制面的本地 catalog，可一键做只读 LoP 证据审计。该命令会按方法报告 source、ER predictor、plasticity outcome、stage、seed 和 replay 元数据；`--summary` 只输出方法级摘要，不上传或修改原始结果：
+
+```sh
+PYTHONPATH=src python3 -m edgeforge lop-audit \
+  --catalog config/raeeg-local-catalog.json \
+  --summary
+```
+
+审计发现 `plasticity.acc_gain` 不等于 LoP 证据；必须同时存在可配对的 ER predictor 和至少 3 个不重复 seed。当前 catalog 中 EWC、Online-EWC、SI、MAS、Finetune 有 plasticity，但缺少 `task.spectra.transformer_1.effective_rank`；BrainUICL、SPR、PuriDivER 的登记 source 路径也需要先修复，因此它们目前都不能报告 LoP 结果。
+
 查询模型 Backend 与 Target 约束：
 
 ```sh

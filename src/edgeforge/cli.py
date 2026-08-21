@@ -294,6 +294,17 @@ def build_parser() -> argparse.ArgumentParser:
     _add_client_options(lop_analysis)
     lop_analysis.add_argument("analysis_id")
 
+    lop_audit = subparsers.add_parser("lop-audit", help="audit local RA-EEG results for LoP evidence")
+    lop_audit.add_argument("--catalog", default="config/raeeg-local-catalog.json")
+    lop_audit.add_argument("--predictor", default="task.spectra.transformer_1.effective_rank")
+    lop_audit.add_argument("--outcome", default="plasticity.acc_gain")
+    lop_audit.add_argument("--context-policy", choices=("aggregate-step", "exact"), default="aggregate-step")
+    lop_audit.add_argument("--bootstrap-repeats", type=int, default=1000)
+    lop_audit.add_argument("--bootstrap-seed", type=int, default=20260821)
+    lop_audit.add_argument("--minimum-pairs", type=int, default=3)
+    lop_audit.add_argument("--minimum-seeds", type=int, default=3)
+    lop_audit.add_argument("--summary", action="store_true", help="print only method-level evidence summary")
+
     models = subparsers.add_parser("models", help="list registered model candidates and production models")
     _add_client_options(models)
     models.add_argument("--workload")
@@ -847,6 +858,46 @@ def main(argv: list[str] | None = None) -> None:
             return
         if args.command == "lop-analysis":
             _print_json(_client(args).request("GET", f"/api/v1/lop-analyses/{args.analysis_id}"))
+            return
+        if args.command == "lop-audit":
+            from edgeforge.lop_audit import audit_catalog
+
+            audit = audit_catalog(
+                args.catalog,
+                predictor=args.predictor,
+                outcome=args.outcome,
+                context_policy=args.context_policy,
+                bootstrap_repeats=args.bootstrap_repeats,
+                bootstrap_seed=args.bootstrap_seed,
+                minimum_pairs=args.minimum_pairs,
+                minimum_seeds=args.minimum_seeds,
+            )
+            if args.summary:
+                analyses = []
+                for item in audit["analyses"]:
+                    result = item["result"]
+                    analyses.append({
+                        "workload": item["workload"],
+                        "protocol": item["protocol"],
+                        "comparison_group": item["comparison_group"],
+                        "method": item["method"],
+                        "evidence_status": item["evidence_status"],
+                        "status": result["status"],
+                        "experiment_count": result["experiment_count"],
+                        "seed_count": result["seed_count"],
+                        "pair_count": result["pair_count"],
+                    })
+                audit = {
+                    "audit": audit["audit"],
+                    "catalog": audit["catalog"],
+                    "predictor": audit["predictor"],
+                    "outcome": audit["outcome"],
+                    "minimum_seeds": audit["minimum_seeds"],
+                    "status_counts": audit["status_counts"],
+                    "method_summary": audit["method_summary"],
+                    "analyses": analyses,
+                }
+            _print_json(audit)
             return
         if args.command == "models":
             query = f"?limit={args.limit}"

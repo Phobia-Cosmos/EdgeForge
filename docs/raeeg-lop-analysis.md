@@ -52,6 +52,10 @@ python3 -m edgeforge lop-analyze --token "$EDGEFORGE_TOKEN" \
 
 等价 API 是 `POST /api/v1/lop-analyses`，body 使用相同字段，其中 `experiment_ids` 是数组。查询接口为 `GET /api/v1/lop-analyses` 和 `GET /api/v1/lop-analyses/{analysis_id}`；CLI 对应 `lop-analyses` 与 `lop-analysis`。
 
+对于还没有导入 SQLite 的本地结果，`lop-audit --catalog <catalog.json>` 提供只读的一键审计。它读取 catalog 指向的 `metrics.json`/`RESULTS.json`，运行同一套归一化器，按方法/协议/comparison group 检查 source 是否存在、predictor/outcome 是否存在、stage 是否可配对、seed 是否足够，并在证据可用时调用本分析器。`--summary` 输出方法级状态，包括 `replay_values`、predictor/outcome 覆盖率和分析的 pair/seed 数量；该命令不会上传原始结果，也不会把 `status=ok` 变成科学结论。
+
+审计状态的含义是：`missing-source` 表示 catalog 路径失效；`missing-predictor` 表示有 plasticity 但没有 ER 指标；`missing-outcome` 表示缺少 plasticity 指标；`candidate` 表示两类指标都存在，之后仍需通过 stage、context、seed 和统计门槛。正则化或 replay 方法只有在补齐同一协议下的 ER trajectory、future plasticity、checkpoint stage 和至少 3 个真实 seed 后，才能进入正式 LoP 分析。
+
 `analysis_digest` 是规范化完整结果的 SHA-256，`analysis_id` 是其前 32 个十六进制字符。相同实验运行证据与相同规范化配置会得到同一 ID，重复创建不会新增第二条分析或第二个 `lop.analysis.created` 事件；实验重跑、指标、来源 digest 或配置改变都会产生新的分析身份。
 
 ## 当前研究状态

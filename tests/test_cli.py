@@ -94,6 +94,12 @@ class CLITests(unittest.TestCase):
         self.assertEqual(args.lag, 1)
         self.assertEqual(args.minimum_seeds, 3)
 
+    def test_lop_audit_accepts_local_catalog_and_summary(self):
+        parser = build_parser()
+        args = parser.parse_args(["lop-audit", "--catalog", "catalog.json", "--summary"])
+        self.assertEqual(args.catalog, "catalog.json")
+        self.assertTrue(args.summary)
+
 
 if __name__ == "__main__":
     unittest.main()

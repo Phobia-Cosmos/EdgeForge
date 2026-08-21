@@ -11,6 +11,7 @@
 - 可选 `edgeforge.torch_model_pipeline` adapter 与本机 eager/`torch.compile` manifest；PyTorch 只在 Worker 外部环境中提供。
 - 模型级 regression API/CLI，按模型、数据集、transform、Backend/Compiler identity 和完整 Target 隔离比较 correctness、steady latency 和 compile time。
 - 版本化 `lop-lagged-correlation-v1` 分析、SQLite/API/CLI 持久化与内容寻址 digest，支持 Pearson、Spearman、exact context 和确定性 seed-cluster bootstrap CI。
+- 新增只读 `lop-audit` CLI，可对本地 RA-EEG catalog 按方法检查 LoP predictor/outcome、stage、seed、source 和 replay 元数据，并输出方法级摘要。
 
 ### Safety
 
@@ -21,7 +22,7 @@
 
 ### Validation
 
-- 94/94 EdgeForge 自动化测试通过，包含独立临时 `work_root` 的六阶段 reference pipeline 与 LoP 分析回归。
+- 96/96 EdgeForge 自动化测试通过，包含独立临时 `work_root` 的六阶段 reference pipeline、LoP 分析和本地 catalog 审计回归。
 - 共享 `research` 环境 PyTorch 2.11.0 下，CPU `torch-eager` 与 `torch-compile` 两条六阶段 pipeline 均通过；CUDA 未启用，不生成 GPU 性能结论。
 - 模型失败任务会保留为 `model_runs.task_status=failed`，但不会被用作后续 baseline。
 - 模型流水线的每个 stage 现在写入 `model_pipeline.<stage>` 版本化事件，保存状态、exit code、耗时和结构化输出摘要。
