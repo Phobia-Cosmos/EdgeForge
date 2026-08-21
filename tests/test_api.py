@@ -1,4 +1,6 @@
 import base64
+import hashlib
+import json
 import tempfile
 import threading
 import unittest
@@ -37,6 +39,35 @@ class APITests(unittest.TestCase):
         names = {item["name"] for item in response["backends"]}
         self.assertIn("iree", names)
         self.assertIn("rknn", names)
+
+    def test_deployment_audit_endpoint_returns_blocked_without_runtime_evidence(self):
+        probe = {
+            "schema_version": 1,
+            "generated_at": "2026-08-21T00:00:00Z",
+            "capabilities": {"architecture": "x86_64", "accelerators": []},
+            "backend_claims": {"advertised": ["python-reference"], "inferred": []},
+        }
+        digest_payload = {key: value for key, value in probe.items() if key != "generated_at"}
+        probe["probe_digest"] = hashlib.sha256(
+            json.dumps(digest_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        response = self.client.request(
+            "POST",
+            "/api/v1/deployment-audits",
+            {
+                "manifest": {
+                    "schema_version": 1,
+                    "model": {"name": "audit-api-model"},
+                    "dataset": {"name": "synthetic", "manifest_digest": "dataset:v1"},
+                    "compiler": {"backend": "python-reference"},
+                    "target": {"architecture": "x86_64"},
+                },
+                "probe": probe,
+            },
+        )
+        self.assertEqual(response["audit"], "edgeforge-deployment-audit-v1")
+        self.assertEqual(response["status"], "blocked")
+        self.assertEqual(response["evidence"]["successful_model_runs"], 0)
 
     def test_full_task_protocol(self):
         registration = {

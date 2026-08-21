@@ -273,6 +273,19 @@ class ControlHandler(BaseHTTPRequestHandler):
                 task = self.server.store.create_task(task_data)
                 self._send(HTTPStatus.CREATED, task)
                 return
+            if parsed.path == "/api/v1/deployment-audits":
+                from edgeforge.deployment_audit import audit_deployment
+
+                manifest = data.get("manifest")
+                probe = data.get("probe")
+                if not isinstance(manifest, dict) or not isinstance(probe, dict):
+                    raise ValueError("manifest and probe are required JSON objects")
+                model_runs = data.get("model_runs")
+                if model_runs is None:
+                    model_name = str((manifest.get("model") or {}).get("name") or "")
+                    model_runs = self.server.store.list_model_runs(model_name, 1000) if model_name else []
+                self._send(HTTPStatus.OK, audit_deployment(manifest, probe, model_runs))
+                return
             if parsed.path == "/api/v1/plans":
                 plan = self.server.store.plan_execution(
                     data.get("operator") or {},

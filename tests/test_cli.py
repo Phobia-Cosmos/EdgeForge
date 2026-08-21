@@ -82,6 +82,26 @@ class CLITests(unittest.TestCase):
         args = parser.parse_args(["target-probe", "--output", "probe.json"])
         self.assertEqual(args.output, "probe.json")
 
+    def test_target_audit_accepts_manifest_probe_and_evidence(self):
+        parser = build_parser()
+        args = parser.parse_args(
+            [
+                "target-audit",
+                "--manifest",
+                "manifest.json",
+                "--probe",
+                "probe.json",
+                "--model-runs",
+                "runs.json",
+                "--output",
+                "audit.json",
+            ]
+        )
+        self.assertEqual(args.manifest, "manifest.json")
+        self.assertEqual(args.probe, "probe.json")
+        self.assertEqual(args.model_runs, "runs.json")
+        self.assertEqual(args.output, "audit.json")
+
     def test_model_regressions_accepts_backend_filters(self):
         parser = build_parser()
         args = parser.parse_args(["model-regressions", "--backend", "torch-compile", "--threshold", "0.3"])

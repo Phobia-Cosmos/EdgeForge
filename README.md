@@ -32,6 +32,18 @@ python3 -m edgeforge target-probe --output ./edgeforge-target-probe.json
 
 清单记录架构、CPU features、板型/SoC、内存、设备节点、内核 GPU/NPU 驱动、Vulkan ICD/loader 和已发现 Runtime 的实际探测结果。`backend_claims.inferred` 固定为空；只有显式配置且通过 Runtime correctness 后，Backend 才能加入 Worker 广告。
 
+模型发布前可用 `target-audit` 将 manifest、Target Probe 和模型级 correctness 证据绑定检查。它要求目标架构匹配、Backend 被显式广告、所需 accelerator 出现在真实 probe 中，并且存在同一 manifest digest 的成功模型运行；缺少任一证据都会返回 `blocked` 并以退出码 1 结束：
+
+```sh
+python3 -m edgeforge target-audit \
+  --manifest config/model-pipeline-synthetic.json \
+  --probe ./edgeforge-target-probe.json \
+  --model-runs ./model-runs.json \
+  --output ./deployment-audit.json
+```
+
+该审计只判断部署证据是否完整，不把 RK3588 字符串、驱动文件或 `backend_claims.inferred` 当成 NPU/Runtime correctness，也不产生性能或科研结论。完整契约见 [docs/deployment-target-audit.md](docs/deployment-target-audit.md)。
+
 另开终端启动本机 Worker：
 
 ```sh
@@ -101,6 +113,7 @@ python3 -m edgeforge operator-benchmark \
 | `POST /api/v1/model-pipelines` | 创建模型 frontend/transform/compile/runtime/correctness/benchmark 任务 |
 | `GET /api/v1/model-runs` | 查询模型级编译、正确性和性能结果 |
 | `GET /api/v1/model-regressions` | 按模型/数据集/Backend/架构查询模型级 correctness、compile 和 steady latency 回归 |
+| `POST /api/v1/deployment-audits` | 在控制面上审计 manifest、Target Probe 与模型 correctness 证据（不持久化原始输入） |
 | `GET /api/v1/experiment-metrics` | 查询 Plasticity、Forgetting、BWT、Spectrum 等结构化指标 |
 | `GET/POST /api/v1/lop-analyses` | 查询或创建版本化的 `ER(t-1) → Plasticity(t)` 描述性分析 |
 | `GET /api/v1/lop-analyses/{id}` | 查询一个内容寻址的 LoP 分析结果与证据快照 |

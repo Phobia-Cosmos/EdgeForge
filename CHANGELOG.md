@@ -13,6 +13,8 @@
 - 版本化 `lop-lagged-correlation-v1` 分析、SQLite/API/CLI 持久化与内容寻址 digest，支持 Pearson、Spearman、exact context 和确定性 seed-cluster bootstrap CI。
 - 新增只读 `lop-audit` CLI，可对本地 RA-EEG catalog 按方法检查 LoP predictor/outcome、stage、seed、source 和 replay 元数据，并输出方法级摘要。
 - `lop-audit` 支持 method filter、完整 JSON 报告输出、自定义 predictor 的探索性标记，以及对非标准/无效历史结果的逐文件容错。
+- 新增只读 `target-audit` CLI，将模型 manifest、Target Probe 和模型级 correctness 运行绑定为部署证据门禁；缺少显式 Backend 广告、目标架构匹配、accelerator 或成功 correctness 运行时保持 `blocked`。
+- 新增 `POST /api/v1/deployment-audits`，让发布自动化可以复用同一部署证据门禁；报告是即时只读结果，不持久化原始 Probe 或 EEG。
 
 ### Safety
 

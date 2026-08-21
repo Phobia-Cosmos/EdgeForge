@@ -92,6 +92,15 @@ def build_parser() -> argparse.ArgumentParser:
     target_probe = subparsers.add_parser("target-probe", help="collect an auditable local target capability manifest")
     target_probe.add_argument("--output", help="also write the JSON manifest to this path")
 
+    target_audit = subparsers.add_parser(
+        "target-audit",
+        help="audit a model manifest against a target probe and correctness evidence",
+    )
+    target_audit.add_argument("--manifest", required=True, help="model pipeline manifest JSON path")
+    target_audit.add_argument("--probe", required=True, help="target-probe JSON path")
+    target_audit.add_argument("--model-runs", help="JSON array or {model_runs: [...]} evidence path")
+    target_audit.add_argument("--output", help="also write the JSON audit report to this path")
+
     workers = subparsers.add_parser("workers", help="list registered workers")
     _add_client_options(workers)
 
@@ -727,6 +736,26 @@ def main(argv: list[str] | None = None) -> None:
                 )
             _print_json(probe)
             return
+        if args.command == "target-audit":
+            try:
+                manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
+                probe = json.loads(Path(args.probe).read_text(encoding="utf-8"))
+                model_runs = None
+                if args.model_runs:
+                    model_runs = json.loads(Path(args.model_runs).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as error:
+                raise ValueError(f"unable to read target audit input: {error}") from error
+            if not isinstance(manifest, dict) or not isinstance(probe, dict):
+                raise ValueError("--manifest and --probe must contain JSON objects")
+            from edgeforge.deployment_audit import audit_deployment
+
+            audit = audit_deployment(manifest, probe, model_runs)
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(json.dumps(audit, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            _print_json(audit)
+            raise SystemExit(0 if audit["status"] == "ready" else 1)
         if args.command == "workers":
             _print_json(_client(args).request("GET", "/api/v1/workers"))
             return
