@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.10.2` 在 V8/V9 能力之上提供模型级 frontend → transform → compile → runtime → correctness → benchmark Pipeline、BrainUICL/RA-EEG 历史结果迁移和显式 Backend/Target capability contract；模型框架通过受控外部命令接入，IREE 仍是可插拔后端而非系统依赖。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.11.0` 候选版在 V8–V10 能力之上增加可审计的目标设备探测，并修复隔离 Worker 工作目录下的 reference model pipeline；模型框架通过受控外部命令接入，IREE 仍是可插拔后端而非系统依赖。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)，V10 Model Pipeline 见 [docs/design-v10.md](docs/design-v10.md)，BrainUICL/RA-EEG 迁移见 [docs/raeeg-migration.md](docs/raeeg-migration.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)，V10 Model Pipeline 见 [docs/design-v10.md](docs/design-v10.md)，V11 Target Probe 见 [docs/design-v11.md](docs/design-v11.md)，BrainUICL/RA-EEG 迁移见 [docs/raeeg-migration.md](docs/raeeg-migration.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 
@@ -23,6 +23,14 @@ export PYTHONPATH="$PWD/src"
 export EDGEFORGE_TOKEN="$(openssl rand -hex 32)"
 python3 -m edgeforge control --bind 0.0.0.0 --database ./edgeforge.db
 ```
+
+在任何目标节点启动 Worker 前，先生成不带推测结论的能力证据清单：
+
+```sh
+python3 -m edgeforge target-probe --output ./edgeforge-target-probe.json
+```
+
+清单记录架构、CPU features、板型/SoC、内存、设备节点、内核 GPU/NPU 驱动、Vulkan ICD/loader 和已发现 Runtime 的实际探测结果。`backend_claims.inferred` 固定为空；只有显式配置且通过 Runtime correctness 后，Backend 才能加入 Worker 广告。
 
 另开终端启动本机 Worker：
 
@@ -129,7 +137,7 @@ python3 -m edgeforge gate-evaluations --token "$EDGEFORGE_TOKEN"
 
 ## RA-EEG 实验
 
-模型级流水线使用一个 JSON manifest 描述模型、数据集、变换和后端命令。[config/model-pipeline-synthetic.json](config/model-pipeline-synthetic.json) 是可运行的标准库 reference baseline，覆盖六个 stage；真实 BrainUICL 接入时只需替换对应 argv，并将 Worker 的 `--work-root` 指向受信任工作区：
+模型级流水线使用一个 JSON manifest 描述模型、数据集、变换和后端命令。[config/model-pipeline-synthetic.json](config/model-pipeline-synthetic.json) 是可运行的标准库 reference baseline，覆盖六个 stage；adapter 通过已安装的 `edgeforge.reference_model_pipeline` 模块启动，因此可以在独立 Worker `work_root` 中运行。真实 BrainUICL 接入时只需替换对应 argv，并将 Worker 的 `--work-root` 指向受信任工作区：
 
 ```sh
 python3 -m edgeforge model-pipeline --token "$EDGEFORGE_TOKEN" \

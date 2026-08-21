@@ -77,6 +77,11 @@ class CLITests(unittest.TestCase):
         )
         self.assertEqual(args.dtype or ["fp32"], ["fp32"])
 
+    def test_target_probe_accepts_output_manifest_path(self):
+        parser = build_parser()
+        args = parser.parse_args(["target-probe", "--output", "probe.json"])
+        self.assertEqual(args.output, "probe.json")
+
 
 if __name__ == "__main__":
     unittest.main()

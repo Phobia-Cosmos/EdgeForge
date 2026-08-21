@@ -14,6 +14,7 @@ import statistics
 import subprocess
 import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -63,20 +64,43 @@ def _cpu_model() -> str:
     return platform.processor() or "unknown"
 
 
-def _accelerators() -> list[str]:
+def _device_tree_value(name: str) -> str:
+    return _read_text(f"/proc/device-tree/{name}").replace("\x00", ",").strip(",")
+
+
+def _cpu_features() -> list[str]:
+    features: set[str] = set()
+    for line in _read_text("/proc/cpuinfo").splitlines():
+        key, _, value = line.partition(":")
+        if key.strip().lower() in {"features", "flags"}:
+            features.update(value.strip().split())
+    return sorted(features)
+
+
+def _device_nodes() -> dict[str, list[str]]:
+    groups = {
+        "drm": sorted(str(path) for path in Path("/dev/dri").glob("card*")),
+        "drm_render": sorted(str(path) for path in Path("/dev/dri").glob("renderD*")),
+        "rknpu": sorted(str(path) for path in Path("/dev").glob("rknpu*")),
+    }
+    return {name: paths for name, paths in groups.items() if paths}
+
+
+def _accelerators(device_nodes: dict[str, list[str]] | None = None) -> list[str]:
     accelerators: list[str] = []
     if shutil.which("nvidia-smi"):
         accelerators.append("nvidia-gpu")
-    compatible = _read_text("/proc/device-tree/compatible").replace("\x00", ",").lower()
-    if Path("/dev/rknpu").exists() or "rk3588" in compatible:
+    nodes = device_nodes if device_nodes is not None else _device_nodes()
+    if nodes.get("rknpu"):
         accelerators.append("rk3588-npu")
-    if Path("/dev/dri").exists():
+    if nodes.get("drm") or nodes.get("drm_render"):
         accelerators.append("drm")
     return accelerators
 
 
 def collect_capabilities() -> dict[str, Any]:
     memory = _memory_info()
+    device_nodes = _device_nodes()
     runtimes = [name for name in ("python3", "git", "cmake", "ninja", "gcc", "clang", "nvidia-smi") if shutil.which(name)]
     advertised_backends = {"python-reference"}
     configured_backends = os.environ.get("EDGEFORGE_BACKENDS", "")
@@ -87,8 +111,12 @@ def collect_capabilities() -> dict[str, Any]:
         "kernel": platform.release(),
         "cpu_count": os.cpu_count() or 1,
         "cpu_model": _cpu_model(),
+        "cpu_features": _cpu_features(),
+        "board_model": _device_tree_value("model") or None,
+        "soc_compatible": [item for item in _device_tree_value("compatible").split(",") if item],
         "memory_total_mb": memory.get("MemTotal", 0),
-        "accelerators": _accelerators(),
+        "device_nodes": device_nodes,
+        "accelerators": _accelerators(device_nodes),
         "runtimes": runtimes,
         "python": platform.python_version(),
         "backends": sorted(advertised_backends),
@@ -98,6 +126,8 @@ def collect_capabilities() -> dict[str, Any]:
         "cpu_model": capabilities["cpu_model"],
         "cpu_count": capabilities["cpu_count"],
         "memory_total_mb": capabilities["memory_total_mb"],
+        "board_model": capabilities["board_model"],
+        "soc_compatible": capabilities["soc_compatible"],
         "accelerators": capabilities["accelerators"],
         "backends": capabilities["backends"],
     }
@@ -105,6 +135,119 @@ def collect_capabilities() -> dict[str, Any]:
         json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()[:24]
     return capabilities
+
+
+def _os_release() -> dict[str, str]:
+    values: dict[str, str] = {}
+    for line in _read_text("/etc/os-release").splitlines():
+        key, separator, value = line.partition("=")
+        if separator and key:
+            values[key] = value.strip().strip('"')
+    return values
+
+
+def _kernel_driver_evidence() -> dict[str, Any]:
+    modules = []
+    for line in _read_text("/proc/modules").splitlines():
+        name = line.partition(" ")[0]
+        if any(marker in name.lower() for marker in ("drm", "gpu", "mali", "panfrost", "panthor", "rknpu")):
+            modules.append(name)
+    drm_drivers = []
+    for card in Path("/sys/class/drm").glob("card[0-9]*"):
+        driver = card / "device" / "driver"
+        try:
+            drm_drivers.append({"device": card.name, "driver": driver.resolve(strict=True).name})
+        except OSError:
+            continue
+    return {"kernel_modules": sorted(set(modules)), "drm_drivers": drm_drivers}
+
+
+def _probe_executable(executable: str, arguments: tuple[str, ...]) -> dict[str, Any]:
+    evidence: dict[str, Any] = {"executable": str(Path(executable).resolve()), "probe_argv": [executable, *arguments]}
+    try:
+        completed = subprocess.run(
+            [executable, *arguments],
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=5,
+            shell=False,
+        )
+        evidence.update(
+            {
+                "exit_code": completed.returncode,
+                "stdout": completed.stdout[-16_384:],
+                "stderr": completed.stderr[-16_384:],
+            }
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        evidence["probe_error"] = str(error)
+    return evidence
+
+
+def _runtime_evidence() -> dict[str, dict[str, Any]]:
+    candidates = {
+        "python3": ("--version",),
+        "onnxruntime_perf_test": ("-h",),
+        "iree-run-module": ("--version",),
+        "iree-benchmark-module": ("--version",),
+        "vulkaninfo": ("--summary",),
+        # rknn_server versions do not share one stable non-starting flag.
+        "rknn_server": None,
+    }
+    evidence = {}
+    for name, probe_arguments in candidates.items():
+        executable = shutil.which(name)
+        if not executable:
+            continue
+        evidence[name] = (
+            _probe_executable(executable, probe_arguments)
+            if probe_arguments is not None
+            else {"executable": str(Path(executable).resolve()), "probe_status": "not-executed-no-safe-version-flag"}
+        )
+    return evidence
+
+
+def _vulkan_evidence() -> dict[str, Any]:
+    manifest_paths = set()
+    for root in (Path("/etc/vulkan/icd.d"), Path("/usr/share/vulkan/icd.d")):
+        manifest_paths.update(str(path) for path in root.glob("*.json"))
+    loader_paths = set()
+    for root in (Path("/lib"), Path("/usr/lib")):
+        loader_paths.update(str(path) for path in root.glob("*/libvulkan.so*"))
+        loader_paths.update(str(path) for path in root.glob("libvulkan.so*"))
+    return {
+        "vulkaninfo": shutil.which("vulkaninfo"),
+        "icd_manifests": sorted(manifest_paths),
+        "loader_libraries": sorted(loader_paths),
+    }
+
+
+def collect_target_probe() -> dict[str, Any]:
+    """Collect auditable target evidence without inferring backend readiness."""
+    capabilities = collect_capabilities()
+    document: dict[str, Any] = {
+        "schema_version": 1,
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "edgeforge_version": __version__,
+        "capabilities": capabilities,
+        "evidence": {
+            "os_release": _os_release(),
+            "kernel_drivers": _kernel_driver_evidence(),
+            "runtime_executables": _runtime_evidence(),
+            "vulkan": _vulkan_evidence(),
+        },
+        "backend_claims": {
+            "advertised": capabilities["backends"],
+            "inferred": [],
+            "policy": "backend readiness requires explicit configuration and a successful runtime validation",
+        },
+    }
+    digest_payload = {key: value for key, value in document.items() if key != "generated_at"}
+    document["probe_digest"] = hashlib.sha256(
+        json.dumps(digest_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return document
 
 
 def _temperatures() -> dict[str, float]:

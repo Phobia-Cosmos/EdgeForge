@@ -1,10 +1,12 @@
 import tempfile
 import unittest
 import json
+import os
 from pathlib import Path
+from unittest import mock
 
 from edgeforge.client import Client
-from edgeforge.worker import Worker
+from edgeforge.worker import Worker, _accelerators, collect_target_probe
 
 
 class WorkerExecutionTests(unittest.TestCase):
@@ -170,6 +172,32 @@ class WorkerExecutionTests(unittest.TestCase):
                     },
                 }
             )
+
+    def test_packaged_reference_pipeline_runs_from_isolated_work_root(self):
+        repository = Path(__file__).resolve().parents[1]
+        manifest = json.loads((repository / "config" / "model-pipeline-synthetic.json").read_text(encoding="utf-8"))
+        python_path = str(repository / "src")
+        with mock.patch.dict(os.environ, {"PYTHONPATH": python_path}):
+            result = self.worker.execute({"kind": "model_pipeline", "payload": manifest})
+        self.assertEqual(result["exit_code"], 0)
+        self.assertTrue(result["correctness"])
+        self.assertEqual([stage["stage"] for stage in result["pipeline"]], [
+            "export", "transform", "compile", "run", "correctness", "benchmark"
+        ])
+        self.assertEqual(result["benchmark"]["summary"]["runs"], 20)
+
+    def test_rk3588_npu_requires_a_real_device_node(self):
+        self.assertNotIn("rk3588-npu", _accelerators({}))
+        self.assertIn("rk3588-npu", _accelerators({"rknpu": ["/dev/rknpu0"]}))
+
+    def test_target_probe_does_not_infer_backend_readiness(self):
+        with mock.patch.dict(os.environ, {"EDGEFORGE_BACKENDS": "python-reference,onnx-runtime"}):
+            probe = collect_target_probe()
+        self.assertEqual(probe["schema_version"], 1)
+        self.assertEqual(len(probe["probe_digest"]), 64)
+        self.assertEqual(probe["backend_claims"]["inferred"], [])
+        self.assertEqual(probe["backend_claims"]["advertised"], ["onnx-runtime", "python-reference"])
+        self.assertIn("vulkan", probe["evidence"])
 
 
 if __name__ == "__main__":

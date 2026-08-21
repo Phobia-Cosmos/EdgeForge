@@ -15,7 +15,7 @@ from edgeforge.api import serve
 from edgeforge.client import APIError, Client
 from edgeforge.logging_utils import configure_logging
 from edgeforge.operator import SUPPORTED_OPERATORS
-from edgeforge.worker import Worker, default_worker_id
+from edgeforge.worker import Worker, collect_target_probe, default_worker_id
 
 
 def _add_client_options(parser: argparse.ArgumentParser) -> None:
@@ -88,6 +88,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="allow an executable name or absolute path; repeat as needed",
     )
     worker.add_argument("--allow-any-command", action="store_true", help="allow any executable (trusted CI workers only)")
+
+    target_probe = subparsers.add_parser("target-probe", help="collect an auditable local target capability manifest")
+    target_probe.add_argument("--output", help="also write the JSON manifest to this path")
 
     workers = subparsers.add_parser("workers", help="list registered workers")
     _add_client_options(workers)
@@ -669,6 +672,17 @@ def main(argv: list[str] | None = None) -> None:
                 allow_any_command=args.allow_any_command,
             )
             worker.run()
+            return
+        if args.command == "target-probe":
+            probe = collect_target_probe()
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(
+                    json.dumps(probe, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+            _print_json(probe)
             return
         if args.command == "workers":
             _print_json(_client(args).request("GET", "/api/v1/workers"))

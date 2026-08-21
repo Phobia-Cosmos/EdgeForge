@@ -43,9 +43,10 @@
 - 结果写入 `model_runs`、版本化事件和 `model-compiler-manifest` Artifact；提供 Python reference baseline，真实 PyTorch/ONNX/Triton/IREE 通过同一 argv contract 接入。
 - 验收：标准库 reference adapter 在本机完成合成 EEG normalize/window、编译描述、推理、数值正确性和 benchmark；0.10.1 完成 BrainUICL 817 个历史结果的 catalog 扫描和 LoP 验证；0.10.2 增加 explicit Backend/Target Registry；不把 reference 或历史导入结果当作真实硬件性能。
 
-## V11：Orange Pi 部署目标与条件性 IREE
+## V11：Orange Pi 部署目标与条件性 IREE（进行中；0.11.0 完成 Target Probe 基座）
 
-- 先探测并记录 Orange Pi 的 ARM64 CPU、驱动、Vulkan、内存和可用 Runtime，选取真实可运行路径，不预设 NPU 已可用。
+- 0.11.0 增加 `target-probe`，记录 ARM64 CPU、板型/SoC、驱动、Vulkan、内存、设备节点和可用 Runtime 的可审计证据；不从 RK3588 型号或 Vulkan 文件推断 NPU/Backend 已就绪。
+- 在 Orange Pi 上执行并保存 probe 后，基于真实结果选取可运行路径，不预设 NPU 已可用。
 - 在模型可稳定导出后，比较 LLVM CPU、条件性 IREE Vulkan 和 PyTorch/ONNX 可用路径的正确性、冷启动、steady latency、内存与 Artifact size。
 - RKNN/NPU 是并行实验：只有工具链、算子覆盖和量化正确性真实通过后才注册为正式 Backend。
 - P550/Meles 在这一阶段运行 Agent、CLI/API、Artifact 校验和 RISC-V 构建 smoke；仅在 Runtime 真实可构建时增加模型执行门禁。
@@ -78,4 +79,4 @@ RA-EEG 的科研节奏不与 EdgeForge 版本号绑定：先对齐 BrainUICL 协
 - 与当前 EEG workload 无关的 RoPE/KV Cache、llama.cpp/vLLM Serving 和 HAMi 多租户 GPU 方向。
 - 为了匹配上游 Issue 而提前实现没有内部需求的 Compiler 功能。
 
-EdgeForge v0.1.0–v0.10.2 的发布说明、验证数据库和日志按版本保持独立。V9/V10 后续仍需完成真实 BrainUICL eager/`torch.compile` 模型级验证；任何新版本仍必须完成 Changelog、`releases/vX.Y.Z.md`、自动化测试、真实 workload 验证、日志归档和 Git tag。
+EdgeForge v0.1.0–v0.11.0 的发布说明、验证数据库和日志按版本保持独立。V9/V10 后续仍需完成真实 BrainUICL eager/`torch.compile` 模型级验证；任何新版本仍必须完成 Changelog、`releases/vX.Y.Z.md`、自动化测试、真实 workload 验证、日志归档和 Git tag。

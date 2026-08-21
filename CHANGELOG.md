@@ -2,6 +2,24 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.11.0 - 2026-08-21
+
+### Added
+
+- `target-probe` CLI 与 schema v1 设备证据清单，覆盖架构、CPU features、板型/SoC、内存、设备节点、内核 GPU/NPU 驱动、Vulkan ICD/loader 和 Runtime executable probe。
+- 打包后的 `edgeforge.reference_model_pipeline` adapter，使 synthetic 六阶段流水线可在隔离 Worker `work_root` 中运行。
+
+### Safety
+
+- RK3588 compatible string 不再自动广告 `rk3588-npu`；必须存在真实 `/dev/rknpu*` 设备节点。
+- Target Probe 的 `backend_claims.inferred` 固定为空；文件、驱动或可执行程序存在都不等价于 Backend correctness 已验证。
+- IREE 保持 blocked contract，不下载 LLVM/IREE 源码，也不生成推测的 Orange Pi 性能数据。
+
+### Validation
+
+- 76/76 EdgeForge 自动化测试通过，包含独立临时 `work_root` 的六阶段 reference pipeline 回归。
+- 本机 `target-probe` 和 synthetic pipeline 通过；Orange Pi probe、Runtime correctness 和离线 EEG inference 尚待真实串口/板端验证，因此本版本当前为候选状态。
+
 ## 0.10.2 - 2026-08-20
 
 ### Added
