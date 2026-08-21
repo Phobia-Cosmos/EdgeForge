@@ -10,19 +10,22 @@
 - 打包后的 `edgeforge.reference_model_pipeline` adapter，使 synthetic 六阶段流水线可在隔离 Worker `work_root` 中运行。
 - 可选 `edgeforge.torch_model_pipeline` adapter 与本机 eager/`torch.compile` manifest；PyTorch 只在 Worker 外部环境中提供。
 - 模型级 regression API/CLI，按模型、数据集、transform、Backend/Compiler identity 和完整 Target 隔离比较 correctness、steady latency 和 compile time。
+- 版本化 `lop-lagged-correlation-v1` 分析、SQLite/API/CLI 持久化与内容寻址 digest，支持 Pearson、Spearman、exact context 和确定性 seed-cluster bootstrap CI。
 
 ### Safety
 
 - RK3588 compatible string 不再自动广告 `rk3588-npu`；必须存在真实 `/dev/rknpu*` 设备节点。
 - Target Probe 的 `backend_claims.inferred` 固定为空；文件、驱动或可执行程序存在都不等价于 Backend correctness 已验证。
 - IREE 保持 blocked contract，不下载 LLVM/IREE 源码，也不生成推测的 Orange Pi 性能数据。
+- LoP 分析拒绝混合 workload、protocol、comparison group、method、checkpoint transition 或重复 seed；最低有效 seed 门槛固定为 3，且所有结果都保持 `scientific_conclusion_allowed=false`。
 
 ### Validation
 
-- 76/76 EdgeForge 自动化测试通过，包含独立临时 `work_root` 的六阶段 reference pipeline 回归。
+- 94/94 EdgeForge 自动化测试通过，包含独立临时 `work_root` 的六阶段 reference pipeline 与 LoP 分析回归。
 - 共享 `research` 环境 PyTorch 2.11.0 下，CPU `torch-eager` 与 `torch-compile` 两条六阶段 pipeline 均通过；CUDA 未启用，不生成 GPU 性能结论。
 - 模型失败任务会保留为 `model_runs.task_status=failed`，但不会被用作后续 baseline。
 - 模型流水线的每个 stage 现在写入 `model_pipeline.<stage>` 版本化事件，保存状态、exit code、耗时和结构化输出摘要。
+- LoP 回归覆盖非连续 checkpoint 配对、exact subject context、scope/method/stage/context-grid/duplicate-seed 阻断、常量指标、缺失证据、最新 task 指标隔离以及 API 幂等持久化。
 - 本机 `target-probe` 和 synthetic pipeline 通过；Orange Pi probe、Runtime correctness 和离线 EEG inference 尚待真实串口/板端验证，因此本版本当前为候选状态。
 
 ## 0.10.2 - 2026-08-20

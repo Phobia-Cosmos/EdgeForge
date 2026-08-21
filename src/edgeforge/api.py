@@ -24,6 +24,7 @@ COMPLETE_PATH = re.compile(r"^/api/v1/tasks/([0-9a-f]+)/complete$")
 HEARTBEAT_PATH = re.compile(r"^/api/v1/workers/([^/]+)/heartbeat$")
 LEASE_PATH = re.compile(r"^/api/v1/workers/([^/]+)/lease$")
 ARTIFACT_PATH = re.compile(r"^/api/v1/artifacts/([0-9a-f]{64})$")
+LOP_ANALYSIS_PATH = re.compile(r"^/api/v1/lop-analyses/([0-9a-f]{32})$")
 MODEL_ACTION_PATH = re.compile(r"^/api/v1/models/([^/]+)/(promote|reject|rollback)$")
 
 
@@ -196,6 +197,16 @@ class ControlHandler(BaseHTTPRequestHandler):
                     {"metrics": self.server.store.list_experiment_metrics(experiment_id, name, limit)},
                 )
                 return
+            if parsed.path == "/api/v1/lop-analyses":
+                query = parse_qs(parsed.query)
+                self._send(HTTPStatus.OK, {"analyses": self.server.store.list_lop_analyses(
+                    query.get("workload", [None])[0], query.get("status", [None])[0], int(query.get("limit", ["100"])[0])
+                )})
+                return
+            lop_match = LOP_ANALYSIS_PATH.match(parsed.path)
+            if lop_match:
+                self._send(HTTPStatus.OK, self.server.store.get_lop_analysis(lop_match.group(1)))
+                return
             if parsed.path == "/api/v1/models":
                 query = parse_qs(parsed.query)
                 workload = query.get("workload", [None])[0]
@@ -293,6 +304,10 @@ class ControlHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/v1/gate-policies":
                 policy = self.server.store.create_gate_policy(data)
                 self._send(HTTPStatus.CREATED, policy)
+                return
+            if parsed.path == "/api/v1/lop-analyses":
+                analysis = self.server.store.create_lop_analysis(data)
+                self._send(HTTPStatus.CREATED, analysis)
                 return
             if parsed.path == "/api/v1/gate-evaluations":
                 model_id = str(data.get("model_id") or "")

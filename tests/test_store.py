@@ -80,6 +80,60 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.store.create_task({"kind": "shell", "payload": {"argv": ["true"]}})
 
+    def test_lop_analysis_uses_only_latest_experiment_run_metrics(self):
+        experiment_id = "lop-rerun"
+        spec = {
+            "schema_version": 1,
+            "experiment_id": experiment_id,
+            "workload": "raeeg-lop",
+            "dataset": {"name": "ISRUC"},
+            "model": {"name": "BrainUICL"},
+            "protocol": "lop-v1",
+            "method": "probe",
+            "seed": 1,
+            "runner": {
+                "mode": "import",
+                "result_path": "metrics.json",
+                "adapter": "edgeforge-bundle-v1",
+            },
+            "metadata": {"comparison_group": "lop-rerun"},
+        }
+        for offset in (0.0, 100.0):
+            task = self.store.create_task({
+                "kind": "experiment_run",
+                "payload": {"spec": spec},
+                "requirements": {"worker_ids": ["x86"]},
+            })
+            self.store.lease_task("x86")
+            metrics = []
+            for step in range(3):
+                metrics.extend([
+                    {"namespace": "raeeg.research", "name": "task.spectra.transformer_1.effective_rank", "value": offset + step, "step": step, "unit": "scalar", "context": {}},
+                    {"namespace": "raeeg.research", "name": "plasticity.acc_gain", "value": offset + step * 0.1, "step": step, "unit": "ratio", "context": {}},
+                ])
+            bundle = {
+                "schema_version": 1,
+                "experiment_id": experiment_id,
+                "workload": "raeeg-lop",
+                "spec": spec,
+                "metrics": metrics,
+                "summary": {},
+                "source_result": {"digest": ("a" if offset == 0.0 else "b") * 64},
+            }
+            self.store.complete_task(task["id"], "x86", {
+                "status": "succeeded",
+                "runtime_version": __version__,
+                "result": {"experiment_bundle": bundle},
+            })
+        analysis = self.store.create_lop_analysis({
+            "experiment_ids": [experiment_id],
+            "minimum_pairs": 2,
+            "bootstrap_repeats": 100,
+        })
+        self.assertEqual(analysis["result"]["pair_count"], 2)
+        self.assertEqual(analysis["result"]["pairs"][0]["predictor"], 100.0)
+        self.assertEqual(analysis["result"]["experiments"][0]["task_id"], task["id"])
+
     def test_model_pipeline_persists_model_run(self):
         task = self.store.create_task(
             {

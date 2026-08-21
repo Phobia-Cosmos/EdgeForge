@@ -102,6 +102,8 @@ python3 -m edgeforge operator-benchmark \
 | `GET /api/v1/model-runs` | 查询模型级编译、正确性和性能结果 |
 | `GET /api/v1/model-regressions` | 按模型/数据集/Backend/架构查询模型级 correctness、compile 和 steady latency 回归 |
 | `GET /api/v1/experiment-metrics` | 查询 Plasticity、Forgetting、BWT、Spectrum 等结构化指标 |
+| `GET/POST /api/v1/lop-analyses` | 查询或创建版本化的 `ER(t-1) → Plasticity(t)` 描述性分析 |
+| `GET /api/v1/lop-analyses/{id}` | 查询一个内容寻址的 LoP 分析结果与证据快照 |
 | `GET/POST /api/v1/models` | 查询或注册绑定来源实验的模型 candidate |
 | `GET/POST /api/v1/gate-policies` | 查询或创建不可变 Capability Gate Policy |
 | `GET/POST /api/v1/gate-evaluations` | 查询或执行不可变 Gate Evaluation |
@@ -132,6 +134,7 @@ python3 -m edgeforge tuning-runs --token "$EDGEFORGE_TOKEN" --operator matmul
 python3 -m edgeforge schedule-decisions --token "$EDGEFORGE_TOKEN"
 python3 -m edgeforge experiments --token "$EDGEFORGE_TOKEN" --workload raeeg
 python3 -m edgeforge experiment-metrics --token "$EDGEFORGE_TOKEN" --name plasticity.acc_gain
+python3 -m edgeforge lop-analyses --token "$EDGEFORGE_TOKEN" --workload raeeg-lop
 python3 -m edgeforge models --token "$EDGEFORGE_TOKEN" --workload raeeg
 python3 -m edgeforge gate-evaluations --token "$EDGEFORGE_TOKEN"
 ```
@@ -164,6 +167,19 @@ python3 -m edgeforge model-pipeline --token "$EDGEFORGE_TOKEN" \
 BrainUICL 历史结果迁移和 LoP smoke 验证记录见 [docs/raeeg-migration.md](docs/raeeg-migration.md) 与 [docs/raeeg-lop-validation-20260819.md](docs/raeeg-lop-validation-20260819.md)。
 
 扩大 sequence/eval 预算后的单 seed LoP 验证见 [docs/raeeg-lop-expanded-validation-20260820.md](docs/raeeg-lop-expanded-validation-20260820.md)；多 seed 当前明确标记为 `blocked-by-checkpoint`。
+
+版本化 LoP 分析器用于检验前一 checkpoint 的 ER 与后一 checkpoint plasticity 之间的描述性关联。默认 `lag=1` 按每个实验实际存在的有序 stage 配对，例如 `[0, 10, 25]` 产生 `0→10` 与 `10→25`，不会解释成整数 `stage - 1`。分析要求 workload、protocol、comparison group、method 和 checkpoint transition 一致，至少 3 个不重复的真实 seed；bootstrap 按 seed cluster 重采样。结果始终保存 `scientific_conclusion_allowed=false`，不能自动变成因果或群体 LoP 结论。完整契约见 [docs/raeeg-lop-analysis.md](docs/raeeg-lop-analysis.md)。
+
+```sh
+python3 -m edgeforge lop-analyze --token "$EDGEFORGE_TOKEN" \
+  --experiment-id lop-seed-4321 \
+  --experiment-id lop-seed-4322 \
+  --experiment-id lop-seed-4323 \
+  --context-policy exact \
+  --bootstrap-repeats 2000
+
+python3 -m edgeforge lop-analysis --token "$EDGEFORGE_TOKEN" <analysis-id>
+```
 
 查询模型 Backend 与 Target 约束：
 

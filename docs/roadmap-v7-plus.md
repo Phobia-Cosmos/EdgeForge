@@ -70,7 +70,7 @@
 
 ## 独立研究里程碑
 
-RA-EEG 的科研节奏不与 EdgeForge 版本号绑定：先对齐 BrainUICL 协议与已有 CL 方法，再运行 ISRUC 自然 LoP 多 seed 基线，随后分析 `ER(t-1) → Plasticity(t)`，之后才决定攻击、归因、防御和 FACED 扩展。科研结论失败或不显著也必须被完整记录，不能为了基础设施演示预设 LoP 必然存在。
+RA-EEG 的科研节奏不与 EdgeForge 版本号绑定：先对齐 BrainUICL 协议与已有 CL 方法，再运行 ISRUC 自然 LoP 多 seed 基线，随后分析 `ER(t-1) → Plasticity(t)`，之后才决定攻击、归因、防御和 FACED 扩展。0.11.0 已完成版本化 lagged-correlation 分析基座、seed-cluster bootstrap、scope/stage/duplicate-seed 门槛和内容寻址持久化；真实多 seed checkpoint 证据仍是下一里程碑，当前单 seed smoke 不能升级为科研结论。科研结论失败或不显著也必须被完整记录，不能为了基础设施演示预设 LoP 必然存在。
 
 ## 暂缓项
 

@@ -88,6 +88,12 @@ class CLITests(unittest.TestCase):
         self.assertEqual(args.backend, "torch-compile")
         self.assertEqual(args.threshold, 0.3)
 
+    def test_lop_analyze_defaults_to_lagged_relation(self):
+        parser = build_parser()
+        args = parser.parse_args(["lop-analyze", "--experiment-id", "exp-1"])
+        self.assertEqual(args.lag, 1)
+        self.assertEqual(args.minimum_seeds, 3)
+
 
 if __name__ == "__main__":
     unittest.main()

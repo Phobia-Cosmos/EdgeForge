@@ -272,6 +272,28 @@ def build_parser() -> argparse.ArgumentParser:
     experiment_metrics.add_argument("--name")
     experiment_metrics.add_argument("--limit", type=int, default=1000)
 
+    lop_analyze = subparsers.add_parser("lop-analyze", help="run a versioned descriptive RA-EEG LoP analysis")
+    _add_client_options(lop_analyze)
+    lop_analyze.add_argument("--experiment-id", action="append", required=True)
+    lop_analyze.add_argument("--predictor", default="task.spectra.transformer_1.effective_rank")
+    lop_analyze.add_argument("--outcome", default="plasticity.acc_gain")
+    lop_analyze.add_argument("--lag", type=int, default=1)
+    lop_analyze.add_argument("--context-policy", choices=("aggregate-step", "exact"), default="aggregate-step")
+    lop_analyze.add_argument("--bootstrap-repeats", type=int, default=2000)
+    lop_analyze.add_argument("--bootstrap-seed", type=int, default=20260821)
+    lop_analyze.add_argument("--minimum-pairs", type=int, default=3)
+    lop_analyze.add_argument("--minimum-seeds", type=int, default=3)
+
+    lop_analyses = subparsers.add_parser("lop-analyses", help="list persisted LoP analyses")
+    _add_client_options(lop_analyses)
+    lop_analyses.add_argument("--workload")
+    lop_analyses.add_argument("--status")
+    lop_analyses.add_argument("--limit", type=int, default=100)
+
+    lop_analysis = subparsers.add_parser("lop-analysis", help="show one persisted LoP analysis")
+    _add_client_options(lop_analysis)
+    lop_analysis.add_argument("analysis_id")
+
     models = subparsers.add_parser("models", help="list registered model candidates and production models")
     _add_client_options(models)
     models.add_argument("--workload")
@@ -801,6 +823,30 @@ def main(argv: list[str] | None = None) -> None:
             if args.name:
                 query += f"&name={args.name}"
             _print_json(_client(args).request("GET", f"/api/v1/experiment-metrics{query}"))
+            return
+        if args.command == "lop-analyze":
+            _print_json(_client(args).request("POST", "/api/v1/lop-analyses", {
+                "experiment_ids": args.experiment_id,
+                "predictor": args.predictor,
+                "outcome": args.outcome,
+                "lag": args.lag,
+                "context_policy": args.context_policy,
+                "bootstrap_repeats": args.bootstrap_repeats,
+                "bootstrap_seed": args.bootstrap_seed,
+                "minimum_pairs": args.minimum_pairs,
+                "minimum_seeds": args.minimum_seeds,
+            }))
+            return
+        if args.command == "lop-analyses":
+            query = f"?limit={args.limit}"
+            if args.workload:
+                query += f"&workload={args.workload}"
+            if args.status:
+                query += f"&status={args.status}"
+            _print_json(_client(args).request("GET", f"/api/v1/lop-analyses{query}"))
+            return
+        if args.command == "lop-analysis":
+            _print_json(_client(args).request("GET", f"/api/v1/lop-analyses/{args.analysis_id}"))
             return
         if args.command == "models":
             query = f"?limit={args.limit}"

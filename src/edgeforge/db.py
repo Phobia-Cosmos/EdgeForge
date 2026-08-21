@@ -253,6 +253,24 @@ class Store:
                 CREATE INDEX IF NOT EXISTS model_runs_lookup_idx
                 ON model_runs(model_name, dataset_name, created_at DESC);
 
+                CREATE TABLE IF NOT EXISTS lop_analyses (
+                    analysis_id TEXT PRIMARY KEY,
+                    version TEXT NOT NULL,
+                    analysis_name TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    workload TEXT NOT NULL,
+                    protocol TEXT NOT NULL,
+                    comparison_group TEXT NOT NULL,
+                    config TEXT NOT NULL,
+                    experiment_ids TEXT NOT NULL,
+                    result TEXT NOT NULL,
+                    created_at REAL NOT NULL,
+                    created_by_version TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS lop_analyses_lookup_idx
+                ON lop_analyses(workload, protocol, comparison_group, created_at DESC);
+
                 CREATE TABLE IF NOT EXISTS models (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -1032,6 +1050,120 @@ class Store:
         for row in rows:
             item = dict(row)
             item["context"] = json.loads(item["context"])
+            result.append(item)
+        return result
+
+    def _list_experiment_metrics_for_task(self, task_id: str) -> list[dict[str, Any]]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM experiment_metrics WHERE task_id = ? ORDER BY created_at DESC, id DESC",
+                (task_id,),
+            ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["context"] = json.loads(item["context"])
+            result.append(item)
+        return result
+
+    def create_lop_analysis(self, payload: dict[str, Any]) -> dict[str, Any]:
+        from edgeforge.lop_analysis import analyze_lop
+
+        if not isinstance(payload, dict):
+            raise ValueError("LoP analysis payload must be an object")
+        experiment_ids = payload.get("experiment_ids")
+        if not isinstance(experiment_ids, list) or not experiment_ids or len(experiment_ids) > 100:
+            raise ValueError("experiment_ids must be a non-empty array with at most 100 entries")
+        if len(set(experiment_ids)) != len(experiment_ids) or not all(isinstance(item, str) and item for item in experiment_ids):
+            raise ValueError("experiment_ids must contain unique non-empty strings")
+        experiment_ids = sorted(experiment_ids)
+        experiments = []
+        metrics_by_experiment: dict[str, list[dict[str, Any]]] = {}
+        for experiment_id in experiment_ids:
+            experiment = self._get_experiment_run(experiment_id)
+            experiments.append(experiment)
+            metrics_by_experiment[experiment_id] = self._list_experiment_metrics_for_task(experiment["task_id"])
+        config = {
+            "predictor": str(payload.get("predictor") or "task.spectra.transformer_1.effective_rank"),
+            "outcome": str(payload.get("outcome") or "plasticity.acc_gain"),
+            "lag": int(payload.get("lag", 1)),
+            "context_policy": str(payload.get("context_policy") or "aggregate-step"),
+            "bootstrap_repeats": int(payload.get("bootstrap_repeats", 2000)),
+            "bootstrap_seed": int(payload.get("bootstrap_seed", 20260821)),
+            "minimum_pairs": int(payload.get("minimum_pairs", 3)),
+            "minimum_seeds": int(payload.get("minimum_seeds", 3)),
+        }
+        result = analyze_lop(experiments, metrics_by_experiment, **config)
+        config = {
+            "predictor": result["predictor"],
+            "outcome": result["outcome"],
+            "lag": result["lag"],
+            "context_policy": result["context_policy"],
+            "bootstrap_repeats": result["bootstrap"]["repeats"],
+            "bootstrap_seed": result["bootstrap"]["seed"],
+            "minimum_pairs": result["minimum_pairs"],
+            "minimum_seeds": result["minimum_seeds"],
+        }
+        identities = result["experiments"]
+        scope = identities[0] if result["scope_consistent"] else {
+            "workload": "", "protocol": "", "comparison_group": ""
+        }
+        analysis_id = result["analysis_digest"][:32]
+        now = time.time()
+        with self._lock, self._connect() as connection:
+            cursor = connection.execute(
+                """
+                INSERT OR IGNORE INTO lop_analyses(
+                    analysis_id, version, analysis_name, status, workload, protocol,
+                    comparison_group, config, experiment_ids, result, created_at, created_by_version
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    analysis_id, self.version, result["analysis"], result["status"],
+                    str(scope.get("workload") or ""), str(scope.get("protocol") or ""),
+                    str(scope.get("comparison_group") or ""), json.dumps(config, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(experiment_ids, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(result, ensure_ascii=False, separators=(",", ":")), now, self.version,
+                ),
+            )
+            inserted = cursor.rowcount == 1
+        stored = self.get_lop_analysis(analysis_id)
+        if stored["result"]["analysis_digest"] != result["analysis_digest"]:
+            raise RuntimeError("LoP analysis ID collision")
+        if inserted:
+            self.append_event("lop.analysis.created", "control", "lop_analysis", analysis_id, {
+                "status": stored["status"], "experiment_ids": experiment_ids, "pair_count": result["pair_count"],
+                "seed_count": result["seed_count"], "analysis_digest": result["analysis_digest"],
+            })
+        return stored
+
+    def get_lop_analysis(self, analysis_id: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM lop_analyses WHERE analysis_id = ?", (analysis_id,)).fetchone()
+        if row is None:
+            raise KeyError(analysis_id)
+        item = dict(row)
+        for field in ("config", "experiment_ids", "result"):
+            item[field] = json.loads(item[field])
+        return item
+
+    def list_lop_analyses(self, workload: str | None = None, status: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        clauses, params = [], []
+        if workload:
+            clauses.append("workload = ?")
+            params.append(workload)
+        if status:
+            clauses.append("status = ?")
+            params.append(status)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._connect() as connection:
+            rows = connection.execute(f"SELECT * FROM lop_analyses{where} ORDER BY created_at DESC LIMIT ?", (*params, limit)).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            for field in ("config", "experiment_ids", "result"):
+                item[field] = json.loads(item[field])
             result.append(item)
         return result
 
