@@ -191,6 +191,20 @@ PYTHONPATH=src python3 -m edgeforge lop-audit \
 
 审计发现 `plasticity.acc_gain` 不等于 LoP 证据；必须同时存在可配对的 ER predictor 和至少 3 个不重复 seed。当前 catalog 中 EWC、Online-EWC、SI、MAS、Finetune 有 plasticity，但缺少 `task.spectra.transformer_1.effective_rank`；BrainUICL、SPR、PuriDivER 的登记 source 路径也需要先修复，因此它们目前都不能报告 LoP 结果。
 
+如果想检查已有正则化轨迹中的其它关联，可显式指定自定义 predictor；系统会将结果标成探索性关联而不是 LoP：
+
+```sh
+PYTHONPATH=src python3 -m edgeforge lop-audit \
+  --catalog config/raeeg-local-catalog.json \
+  --predictor task.importance.mean \
+  --outcome plasticity.acc_gain \
+  --summary
+```
+
+当前 seed 4321 单次结果的探索性 Pearson 值为：EWC `-0.0414`、Online-EWC `0.0336`、SI `-0.0796`、MAS `0.0031`；Finetune 的 predictor 无变化，相关系数不可定义。它们全部因只有一个 seed 而为 `insufficient-seeds`，不能解释为 LoP 或方法差异结论。
+
+对 BrainUICL 工作区全部 672 个历史结果的验证记录见 [docs/raeeg-lop-method-validation-20260821.md](docs/raeeg-lop-method-validation-20260821.md)：所有结果均缺 ER predictor，尚不能回答正则化或 replay 是否出现 LoP。
+
 查询模型 Backend 与 Target 约束：
 
 ```sh

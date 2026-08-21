@@ -45,7 +45,39 @@ class LopAuditTests(unittest.TestCase):
             self.assertEqual(ewc["result"]["status"], "blocked-incomplete-evidence")
             self.assertEqual(result["method_summary"]["ewc"]["statuses"], ["missing-predictor"])
             self.assertEqual(result["method_summary"]["probe"]["predictor_available"], 3)
+            self.assertEqual(result["analysis_scope"], "lop-er-plasticity")
             self.assertFalse(result["scientific_conclusion_allowed"])
+
+            exploratory = audit_catalog(
+                catalog,
+                predictor="task.importance.mean",
+                outcome="plasticity.acc_gain",
+                bootstrap_repeats=100,
+                minimum_pairs=2,
+                methods=["probe"],
+            )
+            self.assertEqual(exploratory["analysis_scope"], "exploratory-custom-association")
+            self.assertEqual(exploratory["method_filter"], ["probe"])
+
+    def test_audit_tolerates_non_envelope_metrics_and_invalid_json(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            summary = root / "summary.json"
+            summary.write_text(json.dumps({"metrics": ["acc", "mf1"], "summary": {"acc": 0.7}}), encoding="utf-8")
+            invalid = root / "invalid.json"
+            invalid.write_text("{not-json", encoding="utf-8")
+            catalog = root / "catalog.json"
+            catalog.write_text(json.dumps({
+                "schema_version": 1,
+                "worker_work_root": str(root),
+                "experiments": [
+                    {"experiment_id": "summary", "workload": "raeeg", "protocol": "historical", "method": "summary", "seed": 1, "runner": {"result_path": "summary.json"}, "metadata": {"comparison_group": "historical"}},
+                    {"experiment_id": "invalid", "workload": "raeeg", "protocol": "historical", "method": "invalid", "seed": 2, "runner": {"result_path": "invalid.json"}, "metadata": {"comparison_group": "historical"}},
+                ],
+            }), encoding="utf-8")
+            result = audit_catalog(catalog, bootstrap_repeats=100)
+            self.assertEqual(result["status_counts"]["invalid-source"], 1)
+            self.assertEqual(result["status_counts"]["missing-predictor"], 1)
 
 
 if __name__ == "__main__":

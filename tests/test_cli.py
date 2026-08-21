@@ -96,8 +96,10 @@ class CLITests(unittest.TestCase):
 
     def test_lop_audit_accepts_local_catalog_and_summary(self):
         parser = build_parser()
-        args = parser.parse_args(["lop-audit", "--catalog", "catalog.json", "--summary"])
+        args = parser.parse_args(["lop-audit", "--catalog", "catalog.json", "--method", "ewc", "--output", "audit.json", "--summary"])
         self.assertEqual(args.catalog, "catalog.json")
+        self.assertEqual(args.method, ["ewc"])
+        self.assertEqual(args.output, "audit.json")
         self.assertTrue(args.summary)
 
 

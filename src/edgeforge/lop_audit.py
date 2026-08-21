@@ -12,6 +12,9 @@ from edgeforge.experiment import normalize_raeeg_metrics
 from edgeforge.lop_analysis import DEFAULT_OUTCOME, DEFAULT_PREDICTOR, analyze_lop
 
 
+MAX_AUDIT_RESULT_BYTES = 16 * 1024 * 1024
+
+
 def _merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     result = dict(base)
     for key, value in override.items():
@@ -24,12 +27,25 @@ def _merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
 
 def _load_json(path: Path) -> dict[str, Any]:
     try:
+        if path.stat().st_size > MAX_AUDIT_RESULT_BYTES:
+            raise ValueError(f"result exceeds {MAX_AUDIT_RESULT_BYTES} bytes: {path}")
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ValueError(f"cannot read JSON result: {path}: {error}") from error
     if not isinstance(value, dict):
         raise ValueError(f"result must be a JSON object: {path}")
     return value
+
+
+def _normalized_metrics(raw: dict[str, Any]) -> list[dict[str, Any]]:
+    direct = raw.get("metrics")
+    if isinstance(direct, list) and all(
+        isinstance(item, dict) and isinstance(item.get("name"), str)
+        for item in direct
+    ):
+        return direct
+    metrics, _summary = normalize_raeeg_metrics(raw)
+    return metrics
 
 
 def _digest(path: Path) -> str:
@@ -72,6 +88,7 @@ def audit_catalog(
     bootstrap_seed: int = 20260821,
     minimum_pairs: int = 3,
     minimum_seeds: int = 3,
+    methods: list[str] | None = None,
 ) -> dict[str, Any]:
     """Audit a catalog without uploading or mutating its source results."""
     path = Path(catalog_path).resolve()
@@ -82,9 +99,12 @@ def audit_catalog(
     records: list[dict[str, Any]] = []
     groups: dict[tuple[str, str, str, str], list[tuple[dict[str, Any], list[dict[str, Any]]]]] = defaultdict(list)
     defaults = catalog.get("defaults") or {}
+    method_filter = {str(item).strip() for item in (methods or []) if str(item).strip()}
     for raw_entry in catalog["experiments"]:
         entry = _merge(defaults, raw_entry) if isinstance(raw_entry, dict) else {}
         if not isinstance(entry, dict):
+            continue
+        if method_filter and str(entry.get("method") or "") not in method_filter:
             continue
         relative = str((entry.get("runner") or {}).get("result_path") or "")
         source = (root / relative).resolve() if relative else Path("/")
@@ -104,14 +124,18 @@ def audit_catalog(
             "outcome_steps": [],
         }
         if record["source_exists"]:
-            raw = _load_json(source)
-            if isinstance(raw.get("metrics"), list):
-                metrics = raw["metrics"]
-            else:
-                metrics, _summary = normalize_raeeg_metrics(raw)
+            try:
+                raw = _load_json(source)
+                metrics = _normalized_metrics(raw)
+                source_digest = _digest(source)
+            except (OSError, ValueError) as error:
+                record["status"] = "invalid-source"
+                record["error"] = str(error)
+                records.append(record)
+                continue
             names = _metric_names(metrics)
             record.update({
-                "source_digest": _digest(source),
+                "source_digest": source_digest,
                 "metric_count": len(metrics),
                 "predictor_count": sum(item.get("name") == predictor for item in metrics),
                 "outcome_count": sum(item.get("name") == outcome for item in metrics),
@@ -168,7 +192,7 @@ def audit_catalog(
         })
         for record in records:
             if record["experiment_id"] in result["contributing_experiments"] and record["status"] == "candidate":
-                record["status"] = "analyzed"
+                record["status"] = "analyzed" if result["status"] == "ok" else "analysis-blocked"
 
     status_counts: dict[str, int] = defaultdict(int)
     for record in records:
@@ -201,11 +225,18 @@ def audit_catalog(
         "catalog": str(path),
         "worker_work_root": str(root),
         "predictor": predictor,
+        "predictor_role": "er" if predictor == DEFAULT_PREDICTOR else "custom",
         "outcome": outcome,
+        "analysis_scope": "lop-er-plasticity" if predictor == DEFAULT_PREDICTOR else "exploratory-custom-association",
+        "method_filter": sorted(method_filter),
         "context_policy": context_policy,
         "minimum_seeds": max(3, int(minimum_seeds)),
         "scientific_conclusion_allowed": False,
-        "interpretation": "evidence audit only; analysis remains descriptive and non-causal",
+        "interpretation": (
+            "ER-to-plasticity evidence audit; analysis remains descriptive and non-causal"
+            if predictor == DEFAULT_PREDICTOR
+            else "custom predictor association audit; not an ER-based LoP analysis and not causal"
+        ),
         "record_count": len(records),
         "status_counts": dict(sorted(status_counts.items())),
         "method_summary": dict(sorted(method_summary.items())),

@@ -303,6 +303,8 @@ def build_parser() -> argparse.ArgumentParser:
     lop_audit.add_argument("--bootstrap-seed", type=int, default=20260821)
     lop_audit.add_argument("--minimum-pairs", type=int, default=3)
     lop_audit.add_argument("--minimum-seeds", type=int, default=3)
+    lop_audit.add_argument("--method", action="append", default=[], help="limit audit to one or more method names")
+    lop_audit.add_argument("--output", help="also write the JSON audit report to this path")
     lop_audit.add_argument("--summary", action="store_true", help="print only method-level evidence summary")
 
     models = subparsers.add_parser("models", help="list registered model candidates and production models")
@@ -871,7 +873,12 @@ def main(argv: list[str] | None = None) -> None:
                 bootstrap_seed=args.bootstrap_seed,
                 minimum_pairs=args.minimum_pairs,
                 minimum_seeds=args.minimum_seeds,
+                methods=args.method,
             )
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(json.dumps(audit, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             if args.summary:
                 analyses = []
                 for item in audit["analyses"]:
@@ -891,6 +898,8 @@ def main(argv: list[str] | None = None) -> None:
                     "audit": audit["audit"],
                     "catalog": audit["catalog"],
                     "predictor": audit["predictor"],
+                    "predictor_role": audit["predictor_role"],
+                    "analysis_scope": audit["analysis_scope"],
                     "outcome": audit["outcome"],
                     "minimum_seeds": audit["minimum_seeds"],
                     "status_counts": audit["status_counts"],

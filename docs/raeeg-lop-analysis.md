@@ -56,6 +56,10 @@ python3 -m edgeforge lop-analyze --token "$EDGEFORGE_TOKEN" \
 
 审计状态的含义是：`missing-source` 表示 catalog 路径失效；`missing-predictor` 表示有 plasticity 但没有 ER 指标；`missing-outcome` 表示缺少 plasticity 指标；`candidate` 表示两类指标都存在，之后仍需通过 stage、context、seed 和统计门槛。正则化或 replay 方法只有在补齐同一协议下的 ER trajectory、future plasticity、checkpoint stage 和至少 3 个真实 seed 后，才能进入正式 LoP 分析。
 
+审计器允许 `--predictor` 指定其它已记录指标，例如 `task.importance.mean`，但这类输出的 `analysis_scope` 是 `exploratory-custom-association`，不会伪装成 `lop-er-plasticity`。在当前 seed 4321 catalog 上，EWC、Online-EWC、SI、MAS、Finetune 均可形成 48 个 importance→plasticity 相邻 task pair，但因只有一个 seed 统一为 `insufficient-seeds`；EWC、Online-EWC、SI、MAS 的 Pearson 分别约为 `-0.0414`、`0.0336`、`-0.0796`、`0.0031`，Finetune 因 predictor 无变化无法定义相关系数。这是覆盖性验证，不是 LoP 机制或方法排名结论。
+
+2026-08-21 的全量只读审计覆盖 BrainUICL 工作区 672 个结果文件，全部为 `missing-predictor`。方法级数量与后续 instrumentation 要求见 [raeeg-lop-method-validation-20260821.md](raeeg-lop-method-validation-20260821.md)。
+
 `analysis_digest` 是规范化完整结果的 SHA-256，`analysis_id` 是其前 32 个十六进制字符。相同实验运行证据与相同规范化配置会得到同一 ID，重复创建不会新增第二条分析或第二个 `lop.analysis.created` 事件；实验重跑、指标、来源 digest 或配置改变都会产生新的分析身份。
 
 ## 当前研究状态
