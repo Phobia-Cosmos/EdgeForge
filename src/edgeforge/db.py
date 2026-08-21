@@ -229,6 +229,7 @@ class Store:
                     version TEXT NOT NULL,
                     runtime_version TEXT,
                     worker_id TEXT NOT NULL,
+                    task_status TEXT NOT NULL DEFAULT 'succeeded',
                     model_name TEXT NOT NULL,
                     dataset_name TEXT NOT NULL,
                     dataset_manifest_digest TEXT,
@@ -321,6 +322,9 @@ class Store:
                 connection.execute("ALTER TABLE tasks ADD COLUMN version TEXT NOT NULL DEFAULT '0.1.0'")
             if "runtime_version" not in columns:
                 connection.execute("ALTER TABLE tasks ADD COLUMN runtime_version TEXT")
+            model_run_columns = {row["name"] for row in connection.execute("PRAGMA table_info(model_runs)").fetchall()}
+            if "task_status" not in model_run_columns:
+                connection.execute("ALTER TABLE model_runs ADD COLUMN task_status TEXT NOT NULL DEFAULT 'succeeded'")
             benchmark_columns = {row["name"] for row in connection.execute("PRAGMA table_info(benchmarks)").fetchall()}
             if "kernel_id" not in benchmark_columns:
                 connection.execute("ALTER TABLE benchmarks ADD COLUMN kernel_id TEXT")
@@ -775,19 +779,20 @@ class Store:
             connection.execute(
                 """
                 INSERT OR REPLACE INTO model_runs(
-                    task_id, version, runtime_version, worker_id, model_name, dataset_name,
+                    task_id, version, runtime_version, worker_id, task_status, model_name, dataset_name,
                     dataset_manifest_digest, transform_digest, frontend, compiler_backend,
                     compiler_identity, target_architecture, correctness, compile_ms,
                     first_call_ms, steady_latency_ms, peak_memory_mb, output_digest,
                     artifact_digest, manifest, summary, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    task["id"], task["version"], task.get("runtime_version"), worker_id,
+                    task["id"], task["version"], task.get("runtime_version"), worker_id, task.get("status", "succeeded"),
                     manifest["model"]["name"], manifest["dataset"]["name"], manifest["dataset"].get("manifest_digest"),
                     manifest["transform_digest"], str(manifest["frontend"].get("name", "external")),
                     str(manifest["compiler"].get("backend", "unknown")), str(manifest["compiler"].get("identity", "unknown")),
-                    (manifest.get("target") or {}).get("architecture"), correctness, result.get("compile_ms"),
+                    (manifest.get("target") or {}).get("architecture"), correctness,
+                    parsed.get("compile_ms", result.get("compile_ms")),
                     parsed.get("first_call_ms"), parsed.get("steady_latency_ms"), parsed.get("peak_memory_mb"), output_digest,
                     (result.get("artifact") or {}).get("digest"), json.dumps(manifest, ensure_ascii=False, separators=(",", ":")),
                     json.dumps(summary or {}, ensure_ascii=False, separators=(",", ":")), now,
@@ -807,8 +812,71 @@ class Store:
             item = dict(row)
             item["manifest"] = json.loads(item["manifest"])
             item["summary"] = json.loads(item["summary"])
+            if item.get("correctness") is not None:
+                item["correctness"] = bool(item["correctness"])
             result.append(item)
         return result
+
+    def model_regressions(
+        self,
+        model_name: str | None = None,
+        dataset_name: str | None = None,
+        backend: str | None = None,
+        architecture: str | None = None,
+        threshold: float = 0.2,
+    ) -> list[dict[str, Any]]:
+        """Compare adjacent model runs without mixing backend or target paths."""
+        threshold = min(10.0, max(0.0, float(threshold)))
+        runs = self.list_model_runs(model_name, 1000)
+        groups: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+        for run in runs:
+            if dataset_name and run["dataset_name"] != dataset_name:
+                continue
+            if backend and run["compiler_backend"] != backend:
+                continue
+            if architecture and run.get("target_architecture") != architecture:
+                continue
+            manifest = run.get("manifest") or {}
+            target = manifest.get("target") or {}
+            key = (
+                run["model_name"],
+                run["dataset_name"],
+                run["compiler_backend"],
+                run.get("compiler_identity"),
+                run.get("target_architecture"),
+                target.get("device"),
+                target.get("accelerator"),
+                run.get("transform_digest"),
+            )
+            groups.setdefault(key, []).append(run)
+        regressions: list[dict[str, Any]] = []
+        for key, values in groups.items():
+            values.sort(key=lambda value: (value["created_at"], value["task_id"]))
+            if len(values) < 2:
+                continue
+            latest = values[-1]
+            baseline = next(
+                (value for value in reversed(values[:-1]) if value.get("task_status") == "succeeded" and value.get("correctness") is not False),
+                None,
+            )
+            if baseline is None:
+                continue
+            common = {
+                "model": key[0], "dataset": key[1], "backend": key[2], "compiler_identity": key[3],
+                "architecture": key[4], "device": key[5], "accelerator": key[6],
+                "transform_digest": key[7], "baseline": baseline, "latest": latest,
+            }
+            if latest.get("task_status") != "succeeded" or latest.get("correctness") is not True:
+                regressions.append({**common, "kind": "correctness", "reason": "latest model run did not pass correctness"})
+                continue
+            for metric, label in (("steady_latency_ms", "steady_latency"), ("compile_ms", "compile_time")):
+                previous_value = baseline.get(metric)
+                latest_value = latest.get(metric)
+                if isinstance(previous_value, (int, float)) and isinstance(latest_value, (int, float)) and previous_value > 0:
+                    ratio = float(latest_value) / float(previous_value)
+                    if ratio > 1.0 + threshold:
+                        regressions.append({**common, "kind": label, "slowdown_ratio": round(ratio, 4)})
+        return regressions
 
     def _record_experiment_run(self, task: dict[str, Any], worker_id: str) -> None:
         from edgeforge.experiment import ExperimentSpec

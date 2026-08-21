@@ -175,6 +175,17 @@ class ControlHandler(BaseHTTPRequestHandler):
                 model_name = query.get("model", [None])[0]
                 self._send(HTTPStatus.OK, {"model_runs": self.server.store.list_model_runs(model_name, limit)})
                 return
+            if parsed.path == "/api/v1/model-regressions":
+                query = parse_qs(parsed.query)
+                self._send(
+                    HTTPStatus.OK,
+                    {"regressions": self.server.store.model_regressions(
+                        query.get("model", [None])[0], query.get("dataset", [None])[0],
+                        query.get("backend", [None])[0], query.get("architecture", [None])[0],
+                        float(query.get("threshold", ["0.2"])[0]),
+                    )},
+                )
+                return
             if parsed.path == "/api/v1/experiment-metrics":
                 query = parse_qs(parsed.query)
                 limit = int(query.get("limit", ["1000"])[0])

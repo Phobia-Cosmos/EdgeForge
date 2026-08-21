@@ -179,13 +179,15 @@ def run_model_pipeline(
 
     benchmark = outputs.get("benchmark") or {}
     correctness = outputs.get("correctness") or {}
+    compile_output = outputs.get("compile") or {}
+    compile_stage_ms = next((item.get("elapsed_ms") for item in stages if item["stage"] == "compile"), None)
     result = {
         "exit_code": 0 if stages and all(item.get("exit_code", 1) == 0 for item in stages) else 1,
         "manifest": manifest,
         "pipeline": stages,
         "correctness": bool(correctness.get("correctness", correctness.get("passed", False))) if correctness else None,
         "benchmark": benchmark,
-        "compile_ms": next((item.get("elapsed_ms") for item in stages if item["stage"] == "compile"), None),
+        "compile_ms": compile_output.get("compile_ms", compile_stage_ms),
         "elapsed_ms": round((time.perf_counter() - started) * 1000.0, 3),
         "environment": environment or {},
     }

@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import time
 from pathlib import Path
 
 from edgeforge import __version__
@@ -13,6 +14,7 @@ def worker(worker_id, architecture, load=0.0):
         "capabilities": {
             "architecture": architecture,
             "accelerators": [],
+            "backends": ["python-reference", "torch-eager", "torch-compile"],
             "cpu_count": 4,
             "memory_total_mb": 16000,
         },
@@ -108,6 +110,81 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(len(runs), 1)
         self.assertEqual(runs[0]["transform_digest"], leased["payload"]["transform_digest"])
         self.assertEqual(runs[0]["compiler_backend"], "python-reference")
+
+    def test_model_run_prefers_adapter_compile_time(self):
+        task = self.store.create_task(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "compile-time-model"},
+                    "dataset": {"name": "synthetic"},
+                    "compiler": {"backend": "python-reference", "identity": "test"},
+                    "target": {"architecture": "aarch64"},
+                },
+                "requirements": {"worker_ids": ["arm"]},
+            }
+        )
+        leased = self.store.lease_task("arm")
+        self.store.complete_task(
+            task["id"], "arm", {"status": "succeeded", "runtime_version": __version__, "result": {
+                "manifest": leased["payload"], "correctness": True, "compile_ms": 99.0,
+                "benchmark": {"compile_ms": 3.5, "steady_latency_ms": 1.0},
+            }}
+        )
+        self.assertEqual(self.store.list_model_runs("compile-time-model")[0]["compile_ms"], 3.5)
+
+    def test_model_regressions_compare_only_matching_backend_and_target(self):
+        def complete(model, backend, target, latency, compile_ms, status="succeeded", correctness=True):
+            worker_id = "x86" if target.get("architecture") == "x86_64" else "arm"
+            task = self.store.create_task(
+                {
+                    "kind": "model_pipeline",
+                    "payload": {
+                        "model": {"name": model},
+                        "dataset": {"name": "synthetic", "manifest_digest": "sha256:data"},
+                        "compiler": {"backend": backend, "identity": "test"},
+                        "target": target,
+                    },
+                    "requirements": {"worker_ids": [worker_id]},
+                }
+            )
+            leased = self.store.lease_task(worker_id)
+            result = {
+                "exit_code": 0 if status == "succeeded" else 1,
+                "manifest": leased["payload"],
+                "correctness": correctness,
+                "compile_ms": compile_ms,
+                "benchmark": {"steady_latency_ms": latency},
+            }
+            self.store.complete_task(task["id"], worker_id, {"status": status, "runtime_version": __version__, "result": result})
+            time.sleep(0.002)
+
+        complete("regression-model", "torch-eager", {"architecture": "aarch64"}, 1.0, 2.0)
+        complete("regression-model", "torch-eager", {"architecture": "aarch64"}, 2.0, 5.0)
+        complete("regression-model", "torch-compile", {"architecture": "aarch64"}, 20.0, 50.0)
+        complete("regression-model", "torch-eager", {"architecture": "x86_64"}, 20.0, 50.0)
+        regressions = self.store.model_regressions("regression-model", threshold=0.2)
+        self.assertEqual({item["kind"] for item in regressions}, {"steady_latency", "compile_time"})
+        self.assertTrue(all(item["backend"] == "torch-eager" and item["architecture"] == "aarch64" for item in regressions))
+
+    def test_failed_model_run_is_recorded_but_not_used_as_baseline(self):
+        task = self.store.create_task(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "failed-model"},
+                    "dataset": {"name": "synthetic"},
+                    "compiler": {"backend": "python-reference", "identity": "test"},
+                    "target": {"architecture": "aarch64"},
+                },
+                "requirements": {"worker_ids": ["arm"]},
+            }
+        )
+        self.store.lease_task("arm")
+        self.store.complete_task(task["id"], "arm", {"status": "failed", "result": {"manifest": task["payload"], "correctness": False}})
+        runs = self.store.list_model_runs("failed-model")
+        self.assertEqual(runs[0]["task_status"], "failed")
+        self.assertEqual(self.store.model_regressions("failed-model"), [])
 
     def test_model_pipeline_rejects_iree_without_explicit_device(self):
         with self.assertRaisesRegex(ValueError, "requires explicit target"):

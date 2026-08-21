@@ -252,6 +252,14 @@ def build_parser() -> argparse.ArgumentParser:
     model_runs.add_argument("--model")
     model_runs.add_argument("--limit", type=int, default=100)
 
+    model_regressions = subparsers.add_parser("model-regressions", help="find model pipeline regressions")
+    _add_client_options(model_regressions)
+    model_regressions.add_argument("--model")
+    model_regressions.add_argument("--dataset")
+    model_regressions.add_argument("--backend")
+    model_regressions.add_argument("--architecture")
+    model_regressions.add_argument("--threshold", type=float, default=0.2)
+
     experiments = subparsers.add_parser("experiments", help="list persisted model experiments")
     _add_client_options(experiments)
     experiments.add_argument("--workload")
@@ -769,6 +777,14 @@ def main(argv: list[str] | None = None) -> None:
             if args.model:
                 query += f"&model={args.model}"
             _print_json(_client(args).request("GET", f"/api/v1/model-runs{query}"))
+            return
+        if args.command == "model-regressions":
+            query = f"?threshold={args.threshold}"
+            for key in ("model", "dataset", "backend", "architecture"):
+                value = getattr(args, key)
+                if value:
+                    query += f"&{key}={value}"
+            _print_json(_client(args).request("GET", f"/api/v1/model-regressions{query}"))
             return
         if args.command == "experiments":
             query = f"?limit={args.limit}"

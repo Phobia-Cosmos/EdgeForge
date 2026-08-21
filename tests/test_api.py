@@ -115,6 +115,10 @@ class APITests(unittest.TestCase):
         self.assertEqual(runs[0]["compiler_backend"], "python-reference")
         self.assertEqual(len(self.client.request("GET", "/api/v1/artifacts?kind=model-compiler-manifest")["artifacts"]), 1)
 
+    def test_model_regressions_endpoint(self):
+        response = self.client.request("GET", "/api/v1/model-regressions?model=missing&threshold=0.2")
+        self.assertEqual(response["regressions"], [])
+
     def test_release_ledger(self):
         release = self.client.request(
             "POST",

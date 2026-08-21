@@ -100,6 +100,7 @@ python3 -m edgeforge operator-benchmark \
 | `GET /api/v1/experiments` | 查询模型实验、协议、方法、seed、摘要与 Bundle Artifact |
 | `POST /api/v1/model-pipelines` | 创建模型 frontend/transform/compile/runtime/correctness/benchmark 任务 |
 | `GET /api/v1/model-runs` | 查询模型级编译、正确性和性能结果 |
+| `GET /api/v1/model-regressions` | 按模型/数据集/Backend/架构查询模型级 correctness、compile 和 steady latency 回归 |
 | `GET /api/v1/experiment-metrics` | 查询 Plasticity、Forgetting、BWT、Spectrum 等结构化指标 |
 | `GET/POST /api/v1/models` | 查询或注册绑定来源实验的模型 candidate |
 | `GET/POST /api/v1/gate-policies` | 查询或创建不可变 Capability Gate Policy |
@@ -143,6 +144,7 @@ python3 -m edgeforge gate-evaluations --token "$EDGEFORGE_TOKEN"
 python3 -m edgeforge model-pipeline --token "$EDGEFORGE_TOKEN" \
   --spec config/model-pipeline-synthetic.json --worker-id worker-4070s --wait
 python3 -m edgeforge model-runs --token "$EDGEFORGE_TOKEN" --model brainuicl
+python3 -m edgeforge model-regressions --token "$EDGEFORGE_TOKEN" --model brainuicl --threshold 0.2
 ```
 
 本机 PyTorch contract 使用共享 `research` 环境（PyTorch 2.11.0），不改变 EdgeForge 的无第三方依赖控制面。先在 Worker 进程中激活环境并把 EdgeForge `src` 放进绝对 `PYTHONPATH`，再运行 eager 或 compile manifest：

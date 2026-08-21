@@ -82,6 +82,12 @@ class CLITests(unittest.TestCase):
         args = parser.parse_args(["target-probe", "--output", "probe.json"])
         self.assertEqual(args.output, "probe.json")
 
+    def test_model_regressions_accepts_backend_filters(self):
+        parser = build_parser()
+        args = parser.parse_args(["model-regressions", "--backend", "torch-compile", "--threshold", "0.3"])
+        self.assertEqual(args.backend, "torch-compile")
+        self.assertEqual(args.threshold, 0.3)
+
 
 if __name__ == "__main__":
     unittest.main()

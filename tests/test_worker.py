@@ -144,7 +144,7 @@ class WorkerExecutionTests(unittest.TestCase):
                     "dataset": {"name": "synthetic", "manifest_digest": "sha256:test"},
                     "transforms": [{"name": "normalize", "version": "v1", "config": {"mean": 0.0}}],
                     "frontend": {"name": "pytorch", "command": ["python3", "-c", "print('{}')"]},
-                    "compiler": {"backend": "torch-compile", "identity": "test", "command": ["python3", "-c", "print('{}')"]},
+                    "compiler": {"backend": "torch-compile", "identity": "test", "command": ["python3", "-c", "print('{\"compile_ms\": 12.5}')"]},
                     "runtime": {"command": ["python3", "-c", "print('{}')"]},
                     "correctness": {"command": ["python3", "-c", "print('{\"correctness\": true}')"]},
                     "benchmark": {"command": ["python3", "-c", "print('{\"steady_latency_ms\": 1.2}')"], "repeats": 1},
@@ -157,6 +157,7 @@ class WorkerExecutionTests(unittest.TestCase):
         self.assertEqual(len(result["pipeline"]), 6)
         self.assertEqual(result["manifest"]["compiler"]["backend"], "torch-compile")
         self.assertEqual(result["manifest"]["backend_spec"]["name"], "torch-compile")
+        self.assertEqual(result["compile_ms"], 12.5)
         self.assertEqual(len(result["manifest"]["transform_digest"]), 64)
         self.assertEqual(result["artifact_upload"]["kind"], "model-compiler-manifest")
 
