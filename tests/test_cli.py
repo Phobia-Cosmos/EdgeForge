@@ -77,6 +77,51 @@ class CLITests(unittest.TestCase):
         )
         self.assertEqual(args.dtype or ["fp32"], ["fp32"])
 
+    def test_target_probe_accepts_output_manifest_path(self):
+        parser = build_parser()
+        args = parser.parse_args(["target-probe", "--output", "probe.json"])
+        self.assertEqual(args.output, "probe.json")
+
+    def test_target_audit_accepts_manifest_probe_and_evidence(self):
+        parser = build_parser()
+        args = parser.parse_args(
+            [
+                "target-audit",
+                "--manifest",
+                "manifest.json",
+                "--probe",
+                "probe.json",
+                "--model-runs",
+                "runs.json",
+                "--output",
+                "audit.json",
+            ]
+        )
+        self.assertEqual(args.manifest, "manifest.json")
+        self.assertEqual(args.probe, "probe.json")
+        self.assertEqual(args.model_runs, "runs.json")
+        self.assertEqual(args.output, "audit.json")
+
+    def test_model_regressions_accepts_backend_filters(self):
+        parser = build_parser()
+        args = parser.parse_args(["model-regressions", "--backend", "torch-compile", "--threshold", "0.3"])
+        self.assertEqual(args.backend, "torch-compile")
+        self.assertEqual(args.threshold, 0.3)
+
+    def test_lop_analyze_defaults_to_lagged_relation(self):
+        parser = build_parser()
+        args = parser.parse_args(["lop-analyze", "--experiment-id", "exp-1"])
+        self.assertEqual(args.lag, 1)
+        self.assertEqual(args.minimum_seeds, 3)
+
+    def test_lop_audit_accepts_local_catalog_and_summary(self):
+        parser = build_parser()
+        args = parser.parse_args(["lop-audit", "--catalog", "catalog.json", "--method", "ewc", "--output", "audit.json", "--summary"])
+        self.assertEqual(args.catalog, "catalog.json")
+        self.assertEqual(args.method, ["ewc"])
+        self.assertEqual(args.output, "audit.json")
+        self.assertTrue(args.summary)
+
 
 if __name__ == "__main__":
     unittest.main()

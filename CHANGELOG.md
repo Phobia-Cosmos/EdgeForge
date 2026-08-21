@@ -2,6 +2,118 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.11.0 - 2026-08-21
+
+### Added
+
+- `target-probe` CLI 与 schema v1 设备证据清单，覆盖架构、CPU features、板型/SoC、内存、设备节点、内核 GPU/NPU 驱动、Vulkan ICD/loader 和 Runtime executable probe。
+- 打包后的 `edgeforge.reference_model_pipeline` adapter，使 synthetic 六阶段流水线可在隔离 Worker `work_root` 中运行。
+- 可选 `edgeforge.torch_model_pipeline` adapter 与本机 eager/`torch.compile` manifest；PyTorch 只在 Worker 外部环境中提供。
+- 模型级 regression API/CLI，按模型、数据集、transform、Backend/Compiler identity 和完整 Target 隔离比较 correctness、steady latency 和 compile time。
+- 版本化 `lop-lagged-correlation-v1` 分析、SQLite/API/CLI 持久化与内容寻址 digest，支持 Pearson、Spearman、exact context 和确定性 seed-cluster bootstrap CI。
+- 新增只读 `lop-audit` CLI，可对本地 RA-EEG catalog 按方法检查 LoP predictor/outcome、stage、seed、source 和 replay 元数据，并输出方法级摘要。
+- `lop-audit` 支持 method filter、完整 JSON 报告输出、自定义 predictor 的探索性标记，以及对非标准/无效历史结果的逐文件容错。
+- 新增只读 `target-audit` CLI，将模型 manifest、Target Probe 和模型级 correctness 运行绑定为部署证据门禁；缺少显式 Backend 广告、目标架构匹配、accelerator 或成功 correctness 运行时保持 `blocked`。
+- 新增 `POST /api/v1/deployment-audits`，让发布自动化可以复用同一部署证据门禁；报告是即时只读结果，不持久化原始 Probe 或 EEG。
+
+### Safety
+
+- RK3588 compatible string 不再自动广告 `rk3588-npu`；必须存在真实 `/dev/rknpu*` 设备节点。
+- Target Probe 的 `backend_claims.inferred` 固定为空；文件、驱动或可执行程序存在都不等价于 Backend correctness 已验证。
+- IREE 保持 blocked contract，不下载 LLVM/IREE 源码，也不生成推测的 Orange Pi 性能数据。
+- LoP 分析拒绝混合 workload、protocol、comparison group、method、checkpoint transition 或重复 seed；最低有效 seed 门槛固定为 3，且所有结果都保持 `scientific_conclusion_allowed=false`。
+
+### Validation
+
+- 97/97 EdgeForge 自动化测试通过，包含独立临时 `work_root` 的六阶段 reference pipeline、LoP 分析和本地 catalog 审计回归。
+- 对 BrainUICL 工作区 672 个现有结果完成只读全量审计；全部缺少正式 ER predictor，未生成伪造 LoP 结论。
+- 共享 `research` 环境 PyTorch 2.11.0 下，CPU `torch-eager` 与 `torch-compile` 两条六阶段 pipeline 均通过；CUDA 未启用，不生成 GPU 性能结论。
+- 模型失败任务会保留为 `model_runs.task_status=failed`，但不会被用作后续 baseline。
+- 模型流水线的每个 stage 现在写入 `model_pipeline.<stage>` 版本化事件，保存状态、exit code、耗时和结构化输出摘要。
+- LoP 回归覆盖非连续 checkpoint 配对、exact subject context、scope/method/stage/context-grid/duplicate-seed 阻断、常量指标、缺失证据、最新 task 指标隔离以及 API 幂等持久化。
+- 本机 `target-probe` 和 synthetic pipeline 通过；Orange Pi probe、Runtime correctness 和离线 EEG inference 尚待真实串口/板端验证，因此本版本当前为候选状态。
+
+## 0.10.2 - 2026-08-20
+
+### Added
+
+- Explicit Backend/Target Registry，统一描述 architecture、device、accelerator 和 Worker advertised backends。
+- `GET /api/v1/backend-capabilities` 与 `backend-capabilities` CLI。
+- IREE explicit architecture/device 校验、RKNN ARM64/NPU 校验、custom backend target 校验。
+- 上游贡献准备文档，明确 IREE explicit target 和 runtime manifest 两个小型 PR 边界。
+
+### Safety
+
+- 模型任务不再允许非 reference Backend 隐式继承 host target；缺少 target 时在控制面拒绝。
+- Worker 默认只广告 `python-reference`，其余 Backend 必须由真实环境显式声明。
+
+### Validation
+
+- 72/72 EdgeForge 自动化测试通过。
+- 该版本不修改 IREE 源码，也不声称实现 IREE #24760；上游工作仍需由真实模型 reproducer 驱动。
+- IREE 源码未在本版本 clone 进 EdgeForge；当前磁盘余量约 8.8 GiB，避免无必要的大型源码副本。
+
+## 0.10.1 - 2026-08-19
+
+### Added
+
+- BrainUICL/RA-EEG 历史结果迁移模块和 `build-raeeg-catalog.py`。
+- 支持扫描 `metrics.json` 与 `RESULTS.json`，保存源文件 SHA-256、相对路径、seed、方法、协议和 comparison group。
+- 为 817 个本地结果提供可重放的 catalog 生成能力，不复制 EEG、checkpoint 或研究源码。
+- 增加 Backend × Target 说明和 RA-EEG 分批迁移文档。
+
+### Safety
+
+- 自动迁移结果统一标记为 historical import，默认 `scientific_conclusion_allowed=false`。
+- `aligned-full49`、`method-transfer` 和 `historical-unclassified` 分组隔离，未完成 protocol review 的结果不能直接进入 Capability Gate。
+
+### Validation
+
+- 66/66 EdgeForge 自动化测试通过。
+- 全量 catalog 扫描发现 817 个结果文件，生成约 1.2 MiB catalog。
+- 8 组 curated ISRUC 结果迁移成功，并完成 1 个 EdgeForge 三阶段 LoP smoke；任务、8396 条指标、9 个 Artifact 和 WAL checkpoint 数据库已归档。
+- 扩大预算的单 seed LoP 验证完成；非法 stage 配置被正确拒绝并留存，多 seed 状态明确为 `blocked-by-checkpoint`。
+
+## 0.10.0 - 2026-08-19
+
+### Added
+
+- Model/Dataset/Transform manifest 与 transform digest。
+- `model_pipeline` 任务，覆盖 frontend export、dataset transform、compile、runtime、correctness 和 model benchmark stage。
+- 受控外部 Backend 接口，可接入 Python reference、PyTorch eager/compile、ONNX Runtime、Triton 或 IREE。
+- `model_runs` 持久化表、model compiler manifest Artifact、Model Pipeline API/CLI 和版本化完成事件。
+
+### Safety
+
+- Stage command 使用 argv、Worker allow-list、work-root containment、`shell=False`、超时和输出上限。
+- 未提供的 stage 显式记录为 skipped；没有真实 Runtime 或编译器时不会伪造性能证据。
+- IREE 仍是可插拔 backend，#24760 不属于本版本的必做实现。
+
+### Validation
+
+- 63/63 EdgeForge 自动化测试通过（含模型流水线成功、失败、API 和持久化测试）。
+- 验证记录见 `releases/v0.10.0.md`。
+
+## 0.9.0 - 2026-08-18
+
+### Added
+
+- packed `conv_nchwc` Operator IR，支持 stride、dilation 和 accumulate 属性。
+- 受信任的 IREE `iree-ukernel` runtime-only `compile → correctness → benchmark` Pipeline。
+- IREE compiler manifest Artifact，记录 IREE repository、commit、patch digest、packed shape 和 benchmark 输出。
+- x86_64 与 aarch64 的 kernel registration 配置和 Orange Pi 运行说明。
+
+### Safety
+
+- IREE test/benchmark command 必须来自 Worker allow-list，并受 work-root/workdir 边界约束；所有执行使用 `shell=False`。
+- `operator_benchmark` 不再接受非 reference backend，避免把 Python fallback 误记为 IREE 证据；IREE 必须使用 `kernel_pipeline`。
+- `blocked-*` source 状态禁止执行；真实状态必须绑定 repository、完整 commit 与 patch SHA-256；fake 合同测试必须显式标记为 `contract-only-not-real-iree`。
+- IREE #24760 仍是开放 issue；当前双节点只完成 adapter contract validation，不宣称已构建 IREE compiler、验证真实 IREE binary 或取得硬件性能结果。
+
+### Validation
+
+- 见 `releases/v0.9.0.md`；V8 的 Model Registry 与 Capability Gate 记录保持不变。
+
 ## 0.8.0 - 2026-08-16
 
 ### Added

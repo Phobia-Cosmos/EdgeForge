@@ -1,10 +1,12 @@
 import tempfile
 import unittest
 import json
+import os
 from pathlib import Path
+from unittest import mock
 
 from edgeforge.client import Client
-from edgeforge.worker import Worker
+from edgeforge.worker import Worker, _accelerators, collect_target_probe
 
 
 class WorkerExecutionTests(unittest.TestCase):
@@ -132,6 +134,87 @@ class WorkerExecutionTests(unittest.TestCase):
         self.assertEqual(bundle["experiment_id"], "worker-import-test")
         self.assertTrue(any(item["name"] == "plasticity.acc_gain" for item in bundle["metrics"]))
         self.assertEqual(result["artifact_upload"]["kind"], "experiment-bundle")
+
+    def test_model_pipeline_runs_external_stages_and_records_digests(self):
+        result = self.worker.execute(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "tiny", "format": "pytorch"},
+                    "dataset": {"name": "synthetic", "manifest_digest": "sha256:test"},
+                    "transforms": [{"name": "normalize", "version": "v1", "config": {"mean": 0.0}}],
+                    "frontend": {"name": "pytorch", "command": ["python3", "-c", "print('{}')"]},
+                    "compiler": {"backend": "torch-compile", "identity": "test", "command": ["python3", "-c", "print('{\"compile_ms\": 12.5}')"]},
+                    "runtime": {"command": ["python3", "-c", "print('{}')"]},
+                    "correctness": {"command": ["python3", "-c", "print('{\"correctness\": true}')"]},
+                    "benchmark": {"command": ["python3", "-c", "print('{\"steady_latency_ms\": 1.2}')"], "repeats": 1},
+                    "target": {"architecture": "x86_64"},
+                },
+            }
+        )
+        self.assertEqual(result["exit_code"], 0)
+        self.assertTrue(result["correctness"])
+        self.assertEqual(len(result["pipeline"]), 6)
+        self.assertEqual(result["manifest"]["compiler"]["backend"], "torch-compile")
+        self.assertEqual(result["manifest"]["backend_spec"]["name"], "torch-compile")
+        self.assertEqual(result["compile_ms"], 12.5)
+        self.assertEqual(len(result["manifest"]["transform_digest"]), 64)
+        self.assertEqual(result["artifact_upload"]["kind"], "model-compiler-manifest")
+
+    def test_model_pipeline_rejects_unlisted_stage_command(self):
+        with self.assertRaisesRegex(RuntimeError, "not allowed"):
+            self.worker.execute(
+                {
+                    "kind": "model_pipeline",
+                    "payload": {
+                        "model": {"name": "tiny"},
+                        "dataset": {"name": "synthetic"},
+                        "frontend": {"command": ["uname", "-m"]},
+                    },
+                }
+            )
+
+    def test_model_pipeline_correctness_failure_sets_nonzero_exit(self):
+        result = self.worker.execute(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "tiny"},
+                    "dataset": {"name": "synthetic"},
+                    "frontend": {"command": ["python3", "-c", "print('{}')"]},
+                    "correctness": {"command": ["python3", "-c", "print('{\"correctness\": false}')"]},
+                },
+            }
+        )
+        self.assertEqual(result["exit_code"], 1)
+        self.assertEqual(result["pipeline"][-1]["stage"], "correctness")
+        self.assertEqual(result["pipeline"][-1]["validation_error"], "correctness reported false")
+
+    def test_packaged_reference_pipeline_runs_from_isolated_work_root(self):
+        repository = Path(__file__).resolve().parents[1]
+        manifest = json.loads((repository / "config" / "model-pipeline-synthetic.json").read_text(encoding="utf-8"))
+        python_path = str(repository / "src")
+        with mock.patch.dict(os.environ, {"PYTHONPATH": python_path}):
+            result = self.worker.execute({"kind": "model_pipeline", "payload": manifest})
+        self.assertEqual(result["exit_code"], 0)
+        self.assertTrue(result["correctness"])
+        self.assertEqual([stage["stage"] for stage in result["pipeline"]], [
+            "export", "transform", "compile", "run", "correctness", "benchmark"
+        ])
+        self.assertEqual(result["benchmark"]["summary"]["runs"], 20)
+
+    def test_rk3588_npu_requires_a_real_device_node(self):
+        self.assertNotIn("rk3588-npu", _accelerators({}))
+        self.assertIn("rk3588-npu", _accelerators({"rknpu": ["/dev/rknpu0"]}))
+
+    def test_target_probe_does_not_infer_backend_readiness(self):
+        with mock.patch.dict(os.environ, {"EDGEFORGE_BACKENDS": "python-reference,onnx-runtime"}):
+            probe = collect_target_probe()
+        self.assertEqual(probe["schema_version"], 1)
+        self.assertEqual(len(probe["probe_digest"]), 64)
+        self.assertEqual(probe["backend_claims"]["inferred"], [])
+        self.assertEqual(probe["backend_claims"]["advertised"], ["onnx-runtime", "python-reference"])
+        self.assertIn("vulkan", probe["evidence"])
 
 
 if __name__ == "__main__":

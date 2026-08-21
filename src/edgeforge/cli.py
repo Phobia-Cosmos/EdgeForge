@@ -14,7 +14,8 @@ from edgeforge import __version__
 from edgeforge.api import serve
 from edgeforge.client import APIError, Client
 from edgeforge.logging_utils import configure_logging
-from edgeforge.worker import Worker, default_worker_id
+from edgeforge.operator import SUPPORTED_OPERATORS
+from edgeforge.worker import Worker, collect_target_probe, default_worker_id
 
 
 def _add_client_options(parser: argparse.ArgumentParser) -> None:
@@ -50,6 +51,16 @@ def _print_json(value: Any) -> None:
     print(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True))
 
 
+def _attrs(value: str) -> dict[str, Any]:
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as error:
+        raise ValueError("--attrs must be a JSON object") from error
+    if not isinstance(parsed, dict):
+        raise ValueError("--attrs must be a JSON object")
+    return parsed
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="edgeforge", description="EdgeForge heterogeneous edge runtime")
     parser.add_argument("--log-level", default=os.environ.get("EDGEFORGE_LOG_LEVEL", "INFO"))
@@ -78,8 +89,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     worker.add_argument("--allow-any-command", action="store_true", help="allow any executable (trusted CI workers only)")
 
+    target_probe = subparsers.add_parser("target-probe", help="collect an auditable local target capability manifest")
+    target_probe.add_argument("--output", help="also write the JSON manifest to this path")
+
+    target_audit = subparsers.add_parser(
+        "target-audit",
+        help="audit a model manifest against a target probe and correctness evidence",
+    )
+    target_audit.add_argument("--manifest", required=True, help="model pipeline manifest JSON path")
+    target_audit.add_argument("--probe", required=True, help="target-probe JSON path")
+    target_audit.add_argument("--model-runs", help="JSON array or {model_runs: [...]} evidence path")
+    target_audit.add_argument("--output", help="also write the JSON audit report to this path")
+
     workers = subparsers.add_parser("workers", help="list registered workers")
     _add_client_options(workers)
+
+    backend_capabilities = subparsers.add_parser("backend-capabilities", help="list model backend target contracts")
+    _add_client_options(backend_capabilities)
 
     tasks = subparsers.add_parser("tasks", help="list recent tasks")
     _add_client_options(tasks)
@@ -108,10 +134,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     operator = subparsers.add_parser("operator-benchmark", help="run an Operator IR benchmark")
     _add_client_options(operator)
-    operator.add_argument("--operator", required=True, choices=("matmul", "softmax", "rmsnorm", "silu"))
-    operator.add_argument("--shape", required=True, help="comma-separated dimensions; matmul uses M,K,N")
+    operator.add_argument("--operator", required=True, choices=tuple(sorted(SUPPORTED_OPERATORS)))
+    operator.add_argument("--shape", required=True, help="comma-separated dimensions; matmul uses M,K,N and conv_nchwc uses N,OC_outer,OH,OW,IC_outer,FH,FW,k0,c0")
     operator.add_argument("--dtype", default="fp32", choices=("fp32", "fp16", "bf16"))
     operator.add_argument("--backend", default="python-reference")
+    operator.add_argument("--attrs", default="{}", help="JSON operator attributes")
     operator.add_argument("--kernel-id")
     operator.add_argument("--arch", action="append", default=[])
     operator.add_argument("--worker-id", action="append", default=[])
@@ -165,9 +192,10 @@ def build_parser() -> argparse.ArgumentParser:
     pipeline = subparsers.add_parser("kernel-pipeline", help="run compile, correctness and benchmark stages")
     _add_client_options(pipeline)
     pipeline.add_argument("--kernel-id", required=True)
-    pipeline.add_argument("--operator", required=True, choices=("matmul", "softmax", "rmsnorm", "silu"))
+    pipeline.add_argument("--operator", required=True, choices=tuple(sorted(SUPPORTED_OPERATORS)))
     pipeline.add_argument("--shape", required=True)
     pipeline.add_argument("--dtype", default="fp32", choices=("fp32", "fp16", "bf16"))
+    pipeline.add_argument("--attrs", default="{}", help="JSON operator attributes")
     pipeline.add_argument("--worker-id", action="append", default=[])
     pipeline.add_argument("--arch", action="append", default=[])
     pipeline.add_argument("--repeats", type=int, default=5)
@@ -216,6 +244,31 @@ def build_parser() -> argparse.ArgumentParser:
     experiment_run.add_argument("--max-attempts", type=int, default=1)
     experiment_run.add_argument("--wait", action="store_true")
 
+    model_pipeline = subparsers.add_parser("model-pipeline", help="run frontend, transform, compile, runtime and benchmark stages")
+    _add_client_options(model_pipeline)
+    model_pipeline.add_argument("--spec", required=True, help="path to a model pipeline manifest JSON file")
+    model_pipeline.add_argument("--worker-id", action="append", default=[])
+    model_pipeline.add_argument("--arch", action="append", default=[])
+    model_pipeline.add_argument("--accelerator", action="append", default=[])
+    model_pipeline.add_argument("--label", action="append", default=[], metavar="KEY=VALUE")
+    model_pipeline.add_argument("--min-memory-mb", type=int, default=0)
+    model_pipeline.add_argument("--priority", type=int, default=0)
+    model_pipeline.add_argument("--max-attempts", type=int, default=1)
+    model_pipeline.add_argument("--wait", action="store_true")
+
+    model_runs = subparsers.add_parser("model-runs", help="list persisted model pipeline runs")
+    _add_client_options(model_runs)
+    model_runs.add_argument("--model")
+    model_runs.add_argument("--limit", type=int, default=100)
+
+    model_regressions = subparsers.add_parser("model-regressions", help="find model pipeline regressions")
+    _add_client_options(model_regressions)
+    model_regressions.add_argument("--model")
+    model_regressions.add_argument("--dataset")
+    model_regressions.add_argument("--backend")
+    model_regressions.add_argument("--architecture")
+    model_regressions.add_argument("--threshold", type=float, default=0.2)
+
     experiments = subparsers.add_parser("experiments", help="list persisted model experiments")
     _add_client_options(experiments)
     experiments.add_argument("--workload")
@@ -227,6 +280,41 @@ def build_parser() -> argparse.ArgumentParser:
     experiment_metrics.add_argument("--experiment-id")
     experiment_metrics.add_argument("--name")
     experiment_metrics.add_argument("--limit", type=int, default=1000)
+
+    lop_analyze = subparsers.add_parser("lop-analyze", help="run a versioned descriptive RA-EEG LoP analysis")
+    _add_client_options(lop_analyze)
+    lop_analyze.add_argument("--experiment-id", action="append", required=True)
+    lop_analyze.add_argument("--predictor", default="task.spectra.transformer_1.effective_rank")
+    lop_analyze.add_argument("--outcome", default="plasticity.acc_gain")
+    lop_analyze.add_argument("--lag", type=int, default=1)
+    lop_analyze.add_argument("--context-policy", choices=("aggregate-step", "exact"), default="aggregate-step")
+    lop_analyze.add_argument("--bootstrap-repeats", type=int, default=2000)
+    lop_analyze.add_argument("--bootstrap-seed", type=int, default=20260821)
+    lop_analyze.add_argument("--minimum-pairs", type=int, default=3)
+    lop_analyze.add_argument("--minimum-seeds", type=int, default=3)
+
+    lop_analyses = subparsers.add_parser("lop-analyses", help="list persisted LoP analyses")
+    _add_client_options(lop_analyses)
+    lop_analyses.add_argument("--workload")
+    lop_analyses.add_argument("--status")
+    lop_analyses.add_argument("--limit", type=int, default=100)
+
+    lop_analysis = subparsers.add_parser("lop-analysis", help="show one persisted LoP analysis")
+    _add_client_options(lop_analysis)
+    lop_analysis.add_argument("analysis_id")
+
+    lop_audit = subparsers.add_parser("lop-audit", help="audit local RA-EEG results for LoP evidence")
+    lop_audit.add_argument("--catalog", default="config/raeeg-local-catalog.json")
+    lop_audit.add_argument("--predictor", default="task.spectra.transformer_1.effective_rank")
+    lop_audit.add_argument("--outcome", default="plasticity.acc_gain")
+    lop_audit.add_argument("--context-policy", choices=("aggregate-step", "exact"), default="aggregate-step")
+    lop_audit.add_argument("--bootstrap-repeats", type=int, default=1000)
+    lop_audit.add_argument("--bootstrap-seed", type=int, default=20260821)
+    lop_audit.add_argument("--minimum-pairs", type=int, default=3)
+    lop_audit.add_argument("--minimum-seeds", type=int, default=3)
+    lop_audit.add_argument("--method", action="append", default=[], help="limit audit to one or more method names")
+    lop_audit.add_argument("--output", help="also write the JSON audit report to this path")
+    lop_audit.add_argument("--summary", action="store_true", help="print only method-level evidence summary")
 
     models = subparsers.add_parser("models", help="list registered model candidates and production models")
     _add_client_options(models)
@@ -296,9 +384,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _add_compiler_scheduler_options(parser: argparse.ArgumentParser, *, include_execution: bool) -> None:
-    parser.add_argument("--operator", required=True, choices=("matmul", "softmax", "rmsnorm", "silu"))
+    parser.add_argument("--operator", required=True, choices=tuple(sorted(SUPPORTED_OPERATORS)))
     parser.add_argument("--shape", required=True)
     parser.add_argument("--dtype", default="fp32", choices=("fp32", "fp16", "bf16"))
+    parser.add_argument("--attrs", default="{}", help="JSON operator attributes")
     parser.add_argument("--worker-id", action="append", default=[])
     parser.add_argument("--arch", action="append", default=[])
     parser.add_argument("--backend", action="append", default=[])
@@ -351,6 +440,39 @@ def _submit(args: argparse.Namespace) -> int:
     return 0 if task["status"] == "succeeded" else 1
 
 
+def _model_pipeline_submit(args: argparse.Namespace) -> int:
+    try:
+        spec = json.loads(Path(args.spec).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"unable to read model pipeline spec: {error}") from error
+    if not isinstance(spec, dict):
+        raise ValueError("model pipeline spec must be a JSON object")
+    task = _client(args).request(
+        "POST",
+        "/api/v1/model-pipelines",
+        {
+            **spec,
+            "requirements": {
+                "architectures": args.arch,
+                "accelerators": args.accelerator,
+                "worker_ids": args.worker_id,
+                "labels": _labels(args.label),
+                "min_memory_mb": args.min_memory_mb,
+            },
+            "priority": args.priority,
+            "max_attempts": args.max_attempts,
+        },
+    )
+    _print_json(task)
+    if not args.wait:
+        return 0
+    while task["status"] not in {"succeeded", "failed", "cancelled"}:
+        time.sleep(1)
+        task = _client(args).request("GET", f"/api/v1/tasks/{task['id']}")
+    _print_json(task)
+    return 0 if task["status"] == "succeeded" else 1
+
+
 def _operator_submit(args: argparse.Namespace) -> int:
     try:
         shape = [int(item.strip()) for item in args.shape.split(",") if item.strip()]
@@ -369,6 +491,7 @@ def _operator_submit(args: argparse.Namespace) -> int:
                     "shape": shape,
                     "dtype": args.dtype,
                     "backend": args.backend,
+                    "attrs": _attrs(args.attrs),
                 },
                 "repeats": args.repeats,
             },
@@ -431,7 +554,7 @@ def _pipeline_submit(args: argparse.Namespace) -> int:
         {
             "kind": "kernel_pipeline",
             "payload": {
-                "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype},
+                "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype, "attrs": _attrs(args.attrs)},
                 "kernel_id": args.kernel_id,
                 "repeats": args.repeats,
                 "warmup": args.warmup,
@@ -504,7 +627,7 @@ def _compiler_scheduler_payload(args: argparse.Namespace) -> dict[str, Any]:
     if not shape:
         raise ValueError("--shape must not be empty")
     return {
-        "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype},
+        "operator": {"name": args.operator, "shape": shape, "dtype": args.dtype, "attrs": _attrs(args.attrs)},
         "requirements": {
             "worker_ids": args.worker_id,
             "architectures": args.arch,
@@ -602,8 +725,42 @@ def main(argv: list[str] | None = None) -> None:
             )
             worker.run()
             return
+        if args.command == "target-probe":
+            probe = collect_target_probe()
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(
+                    json.dumps(probe, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+            _print_json(probe)
+            return
+        if args.command == "target-audit":
+            try:
+                manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
+                probe = json.loads(Path(args.probe).read_text(encoding="utf-8"))
+                model_runs = None
+                if args.model_runs:
+                    model_runs = json.loads(Path(args.model_runs).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as error:
+                raise ValueError(f"unable to read target audit input: {error}") from error
+            if not isinstance(manifest, dict) or not isinstance(probe, dict):
+                raise ValueError("--manifest and --probe must contain JSON objects")
+            from edgeforge.deployment_audit import audit_deployment
+
+            audit = audit_deployment(manifest, probe, model_runs)
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(json.dumps(audit, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            _print_json(audit)
+            raise SystemExit(0 if audit["status"] == "ready" else 1)
         if args.command == "workers":
             _print_json(_client(args).request("GET", "/api/v1/workers"))
+            return
+        if args.command == "backend-capabilities":
+            _print_json(_client(args).request("GET", "/api/v1/backend-capabilities"))
             return
         if args.command == "tasks":
             _print_json(_client(args).request("GET", f"/api/v1/tasks?limit={args.limit}"))
@@ -677,6 +834,22 @@ def main(argv: list[str] | None = None) -> None:
             return
         if args.command == "experiment-run":
             raise SystemExit(_experiment_run(args))
+        if args.command == "model-pipeline":
+            raise SystemExit(_model_pipeline_submit(args))
+        if args.command == "model-runs":
+            query = f"?limit={args.limit}"
+            if args.model:
+                query += f"&model={args.model}"
+            _print_json(_client(args).request("GET", f"/api/v1/model-runs{query}"))
+            return
+        if args.command == "model-regressions":
+            query = f"?threshold={args.threshold}"
+            for key in ("model", "dataset", "backend", "architecture"):
+                value = getattr(args, key)
+                if value:
+                    query += f"&{key}={value}"
+            _print_json(_client(args).request("GET", f"/api/v1/model-regressions{query}"))
+            return
         if args.command == "experiments":
             query = f"?limit={args.limit}"
             if args.workload:
@@ -692,6 +865,77 @@ def main(argv: list[str] | None = None) -> None:
             if args.name:
                 query += f"&name={args.name}"
             _print_json(_client(args).request("GET", f"/api/v1/experiment-metrics{query}"))
+            return
+        if args.command == "lop-analyze":
+            _print_json(_client(args).request("POST", "/api/v1/lop-analyses", {
+                "experiment_ids": args.experiment_id,
+                "predictor": args.predictor,
+                "outcome": args.outcome,
+                "lag": args.lag,
+                "context_policy": args.context_policy,
+                "bootstrap_repeats": args.bootstrap_repeats,
+                "bootstrap_seed": args.bootstrap_seed,
+                "minimum_pairs": args.minimum_pairs,
+                "minimum_seeds": args.minimum_seeds,
+            }))
+            return
+        if args.command == "lop-analyses":
+            query = f"?limit={args.limit}"
+            if args.workload:
+                query += f"&workload={args.workload}"
+            if args.status:
+                query += f"&status={args.status}"
+            _print_json(_client(args).request("GET", f"/api/v1/lop-analyses{query}"))
+            return
+        if args.command == "lop-analysis":
+            _print_json(_client(args).request("GET", f"/api/v1/lop-analyses/{args.analysis_id}"))
+            return
+        if args.command == "lop-audit":
+            from edgeforge.lop_audit import audit_catalog
+
+            audit = audit_catalog(
+                args.catalog,
+                predictor=args.predictor,
+                outcome=args.outcome,
+                context_policy=args.context_policy,
+                bootstrap_repeats=args.bootstrap_repeats,
+                bootstrap_seed=args.bootstrap_seed,
+                minimum_pairs=args.minimum_pairs,
+                minimum_seeds=args.minimum_seeds,
+                methods=args.method,
+            )
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(json.dumps(audit, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            if args.summary:
+                analyses = []
+                for item in audit["analyses"]:
+                    result = item["result"]
+                    analyses.append({
+                        "workload": item["workload"],
+                        "protocol": item["protocol"],
+                        "comparison_group": item["comparison_group"],
+                        "method": item["method"],
+                        "evidence_status": item["evidence_status"],
+                        "status": result["status"],
+                        "experiment_count": result["experiment_count"],
+                        "seed_count": result["seed_count"],
+                        "pair_count": result["pair_count"],
+                    })
+                audit = {
+                    "audit": audit["audit"],
+                    "catalog": audit["catalog"],
+                    "predictor": audit["predictor"],
+                    "predictor_role": audit["predictor_role"],
+                    "analysis_scope": audit["analysis_scope"],
+                    "outcome": audit["outcome"],
+                    "minimum_seeds": audit["minimum_seeds"],
+                    "status_counts": audit["status_counts"],
+                    "method_summary": audit["method_summary"],
+                    "analyses": analyses,
+                }
+            _print_json(audit)
             return
         if args.command == "models":
             query = f"?limit={args.limit}"

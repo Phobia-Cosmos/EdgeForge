@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlparse
 
 from edgeforge import __version__
 from edgeforge.artifact import ArtifactStore
+from edgeforge.backend_registry import backend_capabilities
 from edgeforge.db import Store
 
 
@@ -23,6 +24,7 @@ COMPLETE_PATH = re.compile(r"^/api/v1/tasks/([0-9a-f]+)/complete$")
 HEARTBEAT_PATH = re.compile(r"^/api/v1/workers/([^/]+)/heartbeat$")
 LEASE_PATH = re.compile(r"^/api/v1/workers/([^/]+)/lease$")
 ARTIFACT_PATH = re.compile(r"^/api/v1/artifacts/([0-9a-f]{64})$")
+LOP_ANALYSIS_PATH = re.compile(r"^/api/v1/lop-analyses/([0-9a-f]{32})$")
 MODEL_ACTION_PATH = re.compile(r"^/api/v1/models/([^/]+)/(promote|reject|rollback)$")
 
 
@@ -106,6 +108,9 @@ class ControlHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/v1/workers":
                 self._send(HTTPStatus.OK, {"workers": self.server.store.list_workers()})
                 return
+            if parsed.path == "/api/v1/backend-capabilities":
+                self._send(HTTPStatus.OK, {"backends": backend_capabilities()})
+                return
             if parsed.path == "/api/v1/tasks":
                 query = parse_qs(parsed.query)
                 limit = int(query.get("limit", ["100"])[0])
@@ -165,6 +170,23 @@ class ControlHandler(BaseHTTPRequestHandler):
                     {"experiments": self.server.store.list_experiment_runs(workload, method, limit)},
                 )
                 return
+            if parsed.path == "/api/v1/model-runs":
+                query = parse_qs(parsed.query)
+                limit = int(query.get("limit", ["100"])[0])
+                model_name = query.get("model", [None])[0]
+                self._send(HTTPStatus.OK, {"model_runs": self.server.store.list_model_runs(model_name, limit)})
+                return
+            if parsed.path == "/api/v1/model-regressions":
+                query = parse_qs(parsed.query)
+                self._send(
+                    HTTPStatus.OK,
+                    {"regressions": self.server.store.model_regressions(
+                        query.get("model", [None])[0], query.get("dataset", [None])[0],
+                        query.get("backend", [None])[0], query.get("architecture", [None])[0],
+                        float(query.get("threshold", ["0.2"])[0]),
+                    )},
+                )
+                return
             if parsed.path == "/api/v1/experiment-metrics":
                 query = parse_qs(parsed.query)
                 limit = int(query.get("limit", ["1000"])[0])
@@ -174,6 +196,16 @@ class ControlHandler(BaseHTTPRequestHandler):
                     HTTPStatus.OK,
                     {"metrics": self.server.store.list_experiment_metrics(experiment_id, name, limit)},
                 )
+                return
+            if parsed.path == "/api/v1/lop-analyses":
+                query = parse_qs(parsed.query)
+                self._send(HTTPStatus.OK, {"analyses": self.server.store.list_lop_analyses(
+                    query.get("workload", [None])[0], query.get("status", [None])[0], int(query.get("limit", ["100"])[0])
+                )})
+                return
+            lop_match = LOP_ANALYSIS_PATH.match(parsed.path)
+            if lop_match:
+                self._send(HTTPStatus.OK, self.server.store.get_lop_analysis(lop_match.group(1)))
                 return
             if parsed.path == "/api/v1/models":
                 query = parse_qs(parsed.query)
@@ -233,6 +265,27 @@ class ControlHandler(BaseHTTPRequestHandler):
                 task = self.server.store.create_task(data)
                 self._send(HTTPStatus.CREATED, task)
                 return
+            if parsed.path == "/api/v1/model-pipelines":
+                spec = data.get("payload") if isinstance(data.get("payload"), dict) else {
+                    key: value for key, value in data.items() if key not in {"kind", "requirements", "priority", "max_attempts"}
+                }
+                task_data = {"kind": "model_pipeline", "payload": spec, "requirements": data.get("requirements") or {}, "priority": data.get("priority", 0), "max_attempts": data.get("max_attempts", 1)}
+                task = self.server.store.create_task(task_data)
+                self._send(HTTPStatus.CREATED, task)
+                return
+            if parsed.path == "/api/v1/deployment-audits":
+                from edgeforge.deployment_audit import audit_deployment
+
+                manifest = data.get("manifest")
+                probe = data.get("probe")
+                if not isinstance(manifest, dict) or not isinstance(probe, dict):
+                    raise ValueError("manifest and probe are required JSON objects")
+                model_runs = data.get("model_runs")
+                if model_runs is None:
+                    model_name = str((manifest.get("model") or {}).get("name") or "")
+                    model_runs = self.server.store.list_model_runs(model_name, 1000) if model_name else []
+                self._send(HTTPStatus.OK, audit_deployment(manifest, probe, model_runs))
+                return
             if parsed.path == "/api/v1/plans":
                 plan = self.server.store.plan_execution(
                     data.get("operator") or {},
@@ -264,6 +317,10 @@ class ControlHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/v1/gate-policies":
                 policy = self.server.store.create_gate_policy(data)
                 self._send(HTTPStatus.CREATED, policy)
+                return
+            if parsed.path == "/api/v1/lop-analyses":
+                analysis = self.server.store.create_lop_analysis(data)
+                self._send(HTTPStatus.CREATED, analysis)
                 return
             if parsed.path == "/api/v1/gate-evaluations":
                 model_id = str(data.get("model_id") or "")
