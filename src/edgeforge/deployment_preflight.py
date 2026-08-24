@@ -87,6 +87,9 @@ def evaluate_preflight(
     if missing_alternatives:
         reasons.append("missing one of runtime capabilities: " + "; ".join("|".join(group) for group in missing_alternatives))
     validation_pass, validation_reason = _runtime_validation_status(backend, validation)
+    if validation and validation.get("name") and probe.get("name") and validation.get("name") != probe.get("name"):
+        validation_pass = False
+        validation_reason = f"validation target mismatch: validation={validation.get('name')}, probe={probe.get('name')}"
     if backend in {"rknn", "opencl", "vulkan"} and not validation_pass:
         reasons.append("missing successful runtime API validation: " + validation_reason)
     return {

@@ -62,6 +62,20 @@ class DeploymentPreflightTests(unittest.TestCase):
         )
         self.assertEqual(passed["status"], "PASS")
 
+        mismatched = dict(validation)
+        mismatched["name"] = "other-board"
+        blocked = evaluate_preflight(
+            {"model": {"name": "mobilenet"}, "compiler": {"backend": "rknn"}, "target": {"architecture": "aarch64"}},
+            {
+                "name": "orangepi",
+                "status": "online",
+                "summary": {"architecture": "aarch64"},
+                "runtime_capabilities": {"rknn_runtime_files": True, "rk3588_npu_drm": True},
+            },
+            mismatched,
+        )
+        self.assertEqual(blocked["status"], "BLOCKED")
+
     def test_rknn_blocks_when_runtime_exists_but_no_npu_evidence(self):
         result = evaluate_preflight(
             {"model": {"name": "mobilenet"}, "compiler": {"backend": "rknn"}, "target": {"architecture": "aarch64"}},
