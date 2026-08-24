@@ -52,6 +52,8 @@ python3 -m edgeforge target-audit \
 
 该审计只判断部署证据是否完整，不把 RK3588 字符串、驱动文件或 `backend_claims.inferred` 当成 NPU/Runtime correctness，也不产生性能或科研结论。完整契约见 [docs/deployment-target-audit.md](docs/deployment-target-audit.md)。
 
+RKNN/OpenCL/Vulkan 的 capability preflight 还要求已保存的 API smoke 证据；例如 RKNN 使用 `scripts/model-deploy-preflight.py --runtime-validation .edgeforge/rk3588-accelerator-smoke-v0.16.1.json`。仅发现 `librknnrt.so` 或 DRM 节点不会自动解锁 backend。
+
 另开终端启动本机 Worker：
 
 ```sh

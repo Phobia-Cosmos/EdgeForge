@@ -56,6 +56,18 @@ PYTHONPATH=src python3 scripts/probe-target.py \
 
 部署前的 capability preflight 现在对 `rknn` 要求板端 Runtime 文件，并接受 `rk3588_npu_drm`、`rk3588_npu_device` 或 `rk3588_npu_platform` 任一 NPU 设备证据；不再要求板端安装 RKNN-Toolkit2 Python 包。真正的模型发布门禁仍需同一模型的 RKNN conversion digest、算子覆盖、数值 correctness 和 benchmark 证据。
 
+从 0.16.1 起，`rknn`/`opencl`/`vulkan` preflight 还要求显式的已记录 API smoke JSON；文件与设备节点只能说明环境候选存在，不能单独解锁 backend：
+
+```sh
+PYTHONPATH=src python3 scripts/model-deploy-preflight.py \
+  --manifest /tmp/rknn-manifest.json \
+  --probe .edgeforge/v0.16.1-target-probe-orangepi.json \
+  --runtime-validation .edgeforge/rk3588-accelerator-smoke-v0.16.1.json \
+  --output /tmp/rknn-preflight.json --version 0.16.1
+```
+
+本次实际结果为 `PASS`；省略 `--runtime-validation` 会明确 `BLOCKED`。该 gate 仍不等价于 EEG 模型的有标签数值 correctness。
+
 ## 后续工作顺序
 
 1. 在主机环境接入 RKNN-Toolkit2 v1.5.2 的 ONNX/`torch.export` adapter，把转换日志、target=`rk3588`、量化校准集 digest 和 `.rknn` digest 写入 Model Pipeline artifact；不在板端安装 Toolkit2。

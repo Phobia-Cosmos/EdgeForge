@@ -20,7 +20,7 @@ class DeploymentPreflightTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "PASS")
 
-    def test_rknn_uses_board_runtime_and_drm_evidence_without_python_toolkit(self):
+    def test_rknn_requires_recorded_board_api_smoke_without_python_toolkit(self):
         result = evaluate_preflight(
             {"model": {"name": "mobilenet"}, "compiler": {"backend": "rknn"}, "target": {"architecture": "aarch64"}},
             {
@@ -35,8 +35,32 @@ class DeploymentPreflightTests(unittest.TestCase):
                 },
             },
         )
-        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["status"], "BLOCKED")
         self.assertNotIn("rknn_python", result["required_capabilities"])
+
+        validation = {
+            "status": "partial",
+            "npu": {
+                "status": "pass",
+                "init": {"code": 0},
+                "sdk": {"code": 0},
+                "io_query": {"code": 0},
+                "inputs_set": {"code": 0},
+                "destroy": {"code": 0},
+                "deterministic_zero_input": True,
+            },
+        }
+        passed = evaluate_preflight(
+            {"model": {"name": "mobilenet"}, "compiler": {"backend": "rknn"}, "target": {"architecture": "aarch64"}},
+            {
+                "name": "orangepi",
+                "status": "online",
+                "summary": {"architecture": "aarch64"},
+                "runtime_capabilities": {"rknn_runtime_files": True, "rk3588_npu_drm": True},
+            },
+            validation,
+        )
+        self.assertEqual(passed["status"], "PASS")
 
     def test_rknn_blocks_when_runtime_exists_but_no_npu_evidence(self):
         result = evaluate_preflight(

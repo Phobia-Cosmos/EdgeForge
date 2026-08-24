@@ -32,13 +32,42 @@ def _alternative_capabilities(backend: str) -> list[list[str]]:
     return []
 
 
-def evaluate_preflight(manifest: dict[str, Any], probe: dict[str, Any]) -> dict[str, Any]:
+def _runtime_validation_status(backend: str, validation: dict[str, Any] | None) -> tuple[bool, str]:
+    """Check an already-recorded accelerator API smoke; never execute code."""
+
+    if backend not in {"rknn", "opencl", "vulkan"}:
+        return True, "not-required"
+    if not validation:
+        return False, "missing"
+    if backend == "rknn":
+        npu = validation.get("npu") or {}
+        step_values = {
+            "init": npu.get("init"),
+            "sdk": (npu.get("sdk") or {}).get("result") or (npu.get("sdk") or {}),
+            "io_query": npu.get("io_query"),
+            "inputs_set": npu.get("inputs_set"),
+            "destroy": npu.get("destroy"),
+        }
+        steps_ok = all((step_values.get(step) or {}).get("code") == 0 for step in step_values)
+        passed = npu.get("status") == "pass" and steps_ok and bool(npu.get("deterministic_zero_input"))
+        return passed, "pass" if passed else "npu smoke did not pass init/query/input/run/output/determinism checks"
+    section = (validation.get("gpu") or {}).get(backend) or {}
+    passed = section.get("status") == "pass"
+    return passed, "pass" if passed else f"{backend} smoke did not pass"
+
+
+def evaluate_preflight(
+    manifest: dict[str, Any],
+    probe: dict[str, Any],
+    runtime_validation: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     target = manifest.get("target") or {}
     compiler = manifest.get("compiler") or {}
     backend = str(compiler.get("backend") or "")
     expected_architecture = str(target.get("architecture") or "")
     actual_architecture = str((probe.get("summary") or {}).get("architecture") or "")
     available = probe.get("runtime_capabilities") or {}
+    validation = runtime_validation if runtime_validation is not None else probe.get("runtime_validation")
     reasons: list[str] = []
     if not backend:
         reasons.append("manifest.compiler.backend is missing")
@@ -57,6 +86,9 @@ def evaluate_preflight(manifest: dict[str, Any], probe: dict[str, Any]) -> dict[
         reasons.append("missing runtime capabilities: " + ", ".join(missing))
     if missing_alternatives:
         reasons.append("missing one of runtime capabilities: " + "; ".join("|".join(group) for group in missing_alternatives))
+    validation_pass, validation_reason = _runtime_validation_status(backend, validation)
+    if backend in {"rknn", "opencl", "vulkan"} and not validation_pass:
+        reasons.append("missing successful runtime API validation: " + validation_reason)
     return {
         "schema_version": 1,
         "status": "PASS" if not reasons else "BLOCKED",
@@ -69,6 +101,10 @@ def evaluate_preflight(manifest: dict[str, Any], probe: dict[str, Any]) -> dict[
         "missing_capabilities": missing,
         "alternative_capabilities": alternatives,
         "missing_alternative_capabilities": missing_alternatives,
+        "runtime_validation_required": backend in {"rknn", "opencl", "vulkan"},
+        "runtime_validation_status": "PASS" if validation_pass else "BLOCKED",
+        "runtime_validation_reason": validation_reason,
+        "runtime_validation_digest": hashlib.sha256(json.dumps(validation, sort_keys=True, separators=(",", ":")).encode()).hexdigest() if validation is not None else None,
         "reasons": reasons,
         "manifest_digest": hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
         "probe_digest": hashlib.sha256(json.dumps(probe, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),

@@ -9,6 +9,7 @@
 - 新增 `edgeforge.accelerator_probe` 与 `scripts/rk3588-accelerator-smoke.py`：在无摄像头、离线、确定性输入下实际执行 Mali OpenCL vector-add、Vulkan loader/device instance 和 RKNN C API `init → query → run → output` smoke。
 - Target Probe 增加 DRM RKNPU driver、platform NPU、OpenCL 用户态、Vulkan loader/ICD 和 OpenCL device evidence；RK3588 的 `card1/renderD129` 不再因为没有 `/dev/rknpu*` 被误报为缺失。
 - RKNN deployment preflight 改为要求板端 `librknnrt.so`/`librknn_api.so` 与任一 RKNPU DRM/character/platform 证据，不要求板端安装 PC 侧 RKNN-Toolkit2 Python 包；新增 `opencl`/`vulkan` capability contracts。
+- 加入显式 `--runtime-validation` gate：仅有文件/设备证据的 RKNN/OpenCL/Vulkan 目标仍为 BLOCKED，必须提供已保存的 API smoke 结果。
 - 新增 [RK3588 accelerator validation](docs/rk3588-accelerator-validation-v1.md) 手册对照、结果边界和后续 RKNN/EEG adapter 计划。
 
 ### Safety

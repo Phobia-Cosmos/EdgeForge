@@ -18,9 +18,11 @@ def main() -> int:
     parser.add_argument("--probe", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--log-dir", type=Path, default=Path("logs"))
-    parser.add_argument("--version", default="0.12.0")
+    parser.add_argument("--runtime-validation", type=Path, help="recorded accelerator smoke JSON; never executed")
+    parser.add_argument("--version", default="0.16.1")
     args = parser.parse_args()
-    result = evaluate_preflight(load_json(args.manifest), load_json(args.probe))
+    validation = load_json(args.runtime_validation) if args.runtime_validation else None
+    result = evaluate_preflight(load_json(args.manifest), load_json(args.probe), validation)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     encoded = json.dumps(result, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
