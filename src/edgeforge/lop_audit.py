@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from edgeforge.experiment import normalize_raeeg_metrics
-from edgeforge.lop_analysis import DEFAULT_OUTCOME, DEFAULT_PREDICTOR, analyze_lop
+from edgeforge.lop_analysis import DEFAULT_OUTCOME, DEFAULT_PREDICTOR, analyze_lop, metric_candidates
 
 
 MAX_AUDIT_RESULT_BYTES = 16 * 1024 * 1024
@@ -61,7 +61,12 @@ def _metric_names(metrics: list[dict[str, Any]]) -> set[str]:
 
 
 def _metric_steps(metrics: list[dict[str, Any]], name: str) -> list[int]:
-    return sorted({int(item["step"]) for item in metrics if item.get("name") == name and item.get("step") is not None})
+    candidates = set(metric_candidates(name))
+    return sorted({int(item["step"]) for item in metrics if item.get("name") in candidates and item.get("step") is not None})
+
+
+def _has_metric(names: set[str], name: str) -> bool:
+    return bool(names.intersection(metric_candidates(name)))
 
 
 def _entry_identity(entry: dict[str, Any], source_digest: str | None = None) -> dict[str, Any]:
@@ -137,12 +142,12 @@ def audit_catalog(
             record.update({
                 "source_digest": source_digest,
                 "metric_count": len(metrics),
-                "predictor_count": sum(item.get("name") == predictor for item in metrics),
-                "outcome_count": sum(item.get("name") == outcome for item in metrics),
+                "predictor_count": sum(item.get("name") in metric_candidates(predictor) for item in metrics),
+                "outcome_count": sum(item.get("name") in metric_candidates(outcome) for item in metrics),
                 "predictor_steps": _metric_steps(metrics, predictor),
                 "outcome_steps": _metric_steps(metrics, outcome),
-                "has_predictor": predictor in names,
-                "has_outcome": outcome in names,
+                "has_predictor": _has_metric(names, predictor),
+                "has_outcome": _has_metric(names, outcome),
             })
             if not record["has_predictor"]:
                 record["status"] = "missing-predictor"

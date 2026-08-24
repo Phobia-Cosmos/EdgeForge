@@ -7,6 +7,26 @@ from edgeforge.lop_audit import audit_catalog
 
 
 class LopAuditTests(unittest.TestCase):
+    def test_audit_resolves_legacy_transformer_and_task_outcome_aliases(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            entries = []
+            for seed in (1, 2, 3):
+                result_path = root / f"legacy-{seed}.json"
+                rows = []
+                for step in range(3):
+                    rows.extend([
+                        {"name": "task.spectra.transformer.effective_rank", "value": 4 + seed + step, "step": step, "context": {}},
+                        {"name": "task.plasticity.acc_gain", "value": 0.1 * step + seed * 0.01, "step": step, "context": {}},
+                    ])
+                result_path.write_text(json.dumps({"metrics": rows}), encoding="utf-8")
+                entries.append({"experiment_id": f"legacy-{seed}", "workload": "raeeg-lop", "protocol": "lop-v1", "method": "probe", "seed": seed, "runner": {"result_path": result_path.name}, "metadata": {"comparison_group": "legacy"}})
+            catalog = root / "catalog.json"
+            catalog.write_text(json.dumps({"schema_version": 1, "worker_work_root": str(root), "experiments": entries}), encoding="utf-8")
+            result = audit_catalog(catalog, minimum_pairs=2, minimum_seeds=3, bootstrap_repeats=100)
+            self.assertEqual(result["status_counts"].get("analyzed"), 3)
+            self.assertEqual(result["analyses"][0]["result"]["status"], "ok")
+
     def test_audit_reports_missing_predictor_and_runs_analysis_when_available(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

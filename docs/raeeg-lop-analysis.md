@@ -9,7 +9,7 @@
 ## 配对与统计契约
 
 - 默认 `lag=1` 按每个实验实际存在的有序 checkpoint stage 配对。stages `[0, 10, 25]` 产生 `0→10` 与 `10→25`，而不是查找不存在的 `9` 或 `24`。
-- `context_policy=aggregate-step` 对同一 stage 的同名指标取均值；`context_policy=exact` 只在完全相同的 context JSON 内配对，防止 subject 或其他上下文串配。不同 seed 还必须具有相同的 `(source stage, outcome stage, context)` 配对网格，避免 subject 集合不一致造成加权偏差。
+- `context_policy=aggregate-step` 对同一 stage 的同名指标取均值；`context_policy=exact` 按稳定任务身份（dataset、subject、split、method、layer 等）配对。`measurement_protocol`、`probe_budget` 和 `metric_role` 等测量元数据仍完整保存，但不会阻止同一任务的 predictor/outcome 配对；需要更严格隔离时把稳定 discriminator 写入 `task_context`。不同 seed 还必须具有相同的 `(source stage, outcome stage, stable context)` 配对网格，避免 subject 集合不一致造成加权偏差。
 - Pearson 与 Spearman 使用全部有效 lagged pair 计算。predictor 或 outcome 无变化时相关系数不可定义，状态为 `insufficient-variation`。
 - 95% CI 使用确定性的 seed-cluster percentile bootstrap。每次重采样以 seed/experiment cluster 为单位，避免把同一 seed 的多个 checkpoint 当成独立样本。
 - `minimum_seeds` 的系统下限是 3；调用者可以提高但不能降低。相同 seed 的重复实验会返回 `blocked-duplicate-seeds`，不能充当独立证据。

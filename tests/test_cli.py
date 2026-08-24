@@ -82,6 +82,13 @@ class CLITests(unittest.TestCase):
         args = parser.parse_args(["target-probe", "--output", "probe.json"])
         self.assertEqual(args.output, "probe.json")
 
+    def test_accelerator_smoke_parser_exposes_offline_controls(self):
+        parser = build_parser()
+        args = parser.parse_args(["accelerator-smoke", "--name", "orangepi", "--repeat", "2", "--skip-vulkan"])
+        self.assertEqual(args.command, "accelerator-smoke")
+        self.assertEqual(args.repeat, 2)
+        self.assertTrue(args.skip_vulkan)
+
     def test_target_audit_accepts_manifest_probe_and_evidence(self):
         parser = build_parser()
         args = parser.parse_args(

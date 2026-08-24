@@ -206,6 +206,7 @@ class WorkerExecutionTests(unittest.TestCase):
     def test_rk3588_npu_requires_a_real_device_node(self):
         self.assertNotIn("rk3588-npu", _accelerators({}))
         self.assertIn("rk3588-npu", _accelerators({"rknpu": ["/dev/rknpu0"]}))
+        self.assertIn("rk3588-npu", _accelerators({"rknpu_drm": ["/dev/dri/renderD129"]}))
 
     def test_target_probe_does_not_infer_backend_readiness(self):
         with mock.patch.dict(os.environ, {"EDGEFORGE_BACKENDS": "python-reference,onnx-runtime"}):

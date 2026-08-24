@@ -4,8 +4,8 @@ V11 的第一步是把“板子型号”与“可执行 Backend”分开。`pyth
 
 本机 PyTorch 路径沿用同一边界：Worker 必须显式设置 `EDGEFORGE_BACKENDS=python-reference,torch-eager,torch-compile`，控制面不会因为发现 PyTorch 文件就自动调度任务。`torch-eager` 和 `torch-compile` manifest 当前只使用 CPU synthetic 输入，真实 CUDA/BrainUICL 结果需要另外的模型与设备证据。
 
-Probe 不是 Backend 验收。`backend_claims.inferred` 始终为空，Worker 仍只默认广告 `python-reference`。`EDGEFORGE_BACKENDS` 只能在管理员确认安装并完成对应 Runtime correctness 后显式设置。尤其是 RK3588 compatible string 只证明 SoC 身份，不证明 NPU 驱动、RKNN Runtime、算子覆盖或量化正确性；只有真实 `/dev/rknpu*` 节点才进入 accelerator advertisement，仍不能单独解锁 RKNN 模型任务。
+Probe 不是 Backend 验收。`backend_claims.inferred` 始终为空，Worker 仍只默认广告 `python-reference`。`EDGEFORGE_BACKENDS` 只能在管理员确认安装并完成对应 Runtime correctness 后显式设置。尤其是 RK3588 compatible string 只证明 SoC 身份，不证明 NPU 驱动、RKNN Runtime、算子覆盖或量化正确性；当前内核可通过 DRM `RKNPU` 节点（例如 `renderD129`）或旧式 `/dev/rknpu*` 节点提供设备证据，但任一节点都不能单独解锁 RKNN 模型任务。
 
 Orange Pi 的后续顺序固定为：保存 target probe → 选择实际存在的 CPU/ONNX/IREE Vulkan 候选 → 传输绑定 digest 的模型 Artifact → Runtime 加载 → numerical correctness → 离线 EEG inference → 冷启动、steady latency、内存和 Artifact size。任一步缺少真实证据时保持 blocked，不使用 Python reference 结果替代部署成功。
 
-Vulkan ICD manifest、loader library 或 DRM device 只作为调查证据。只有 `vulkaninfo --summary` 成功以及目标 Runtime correctness 通过后，才允许把 Vulkan 路径登记为可用 Backend。IREE 仍使用现有 source identity、patch digest、binary allow-list 和 blocked status 边界；V11 Target Probe 不改变这些条件，也不要求下载 LLVM/IREE 整个源码树。
+Vulkan ICD manifest、loader library 或 DRM device 只作为调查证据。现在还会用离线 API smoke 区分 loader 可加载与 physical device 可创建；只有目标 Vulkan Runtime correctness 通过以及模型证据完整后，才允许把 Vulkan 路径登记为可用 Backend。IREE 仍使用现有 source identity、patch digest、binary allow-list 和 blocked status 边界；V11 Target Probe 不改变这些条件，也不要求下载 LLVM/IREE 整个源码树。

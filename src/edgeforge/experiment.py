@@ -160,6 +160,29 @@ class _MetricCollector:
                 if isinstance(key, str):
                     self.flatten(f"{prefix}.{key}" if prefix else key, item, step=step, context=context)
             return
+        # Learning-curve/probe results are commonly represented as a list of
+        # objects (``[{"step": 0, "acc": ...}, ...]``).  The old
+        # normalizer only accepted numeric lists and silently dropped these
+        # observations, which made a fixed-budget probe impossible to audit
+        # after import.  Preserve each scalar row using the row's explicit
+        # step and merge an optional row context without treating the list
+        # index as a checkpoint stage.
+        if isinstance(value, list) and all(isinstance(item, dict) for item in value):
+            for index, item in enumerate(value):
+                row_step = item.get("step", step)
+                try:
+                    row_step = int(row_step) if row_step is not None else None
+                except (TypeError, ValueError):
+                    row_step = step if step is not None else index
+                row_context = dict(context or {})
+                extra_context = item.get("context")
+                if isinstance(extra_context, dict):
+                    row_context.update(extra_context)
+                for key, item_value in item.items():
+                    if key in {"step", "context"} or not isinstance(key, str):
+                        continue
+                    self.flatten(f"{prefix}.{key}" if prefix else key, item_value, step=row_step, context=row_context)
+            return
         if isinstance(value, list) and all(_numeric(item) is not None for item in value):
             for index, item in enumerate(value, start=1):
                 self.add(prefix, item, step=index, context=context)
@@ -192,7 +215,7 @@ def normalize_raeeg_metrics(raw: dict[str, Any]) -> tuple[list[dict[str, Any]], 
                 collector.flatten(f"performance.{key}", performance[key])
 
     for index, task in enumerate(_task_rows(raw), start=1):
-        step_value = task.get("task", task.get("task_id", index))
+        step_value = task.get("task", task.get("task_id", task.get("stage", task.get("checkpoint_stage", index))))
         try:
             step = int(step_value)
         except (TypeError, ValueError):
@@ -200,6 +223,13 @@ def normalize_raeeg_metrics(raw: dict[str, Any]) -> tuple[list[dict[str, Any]], 
         context = {}
         if task.get("subject") is not None:
             context["subject"] = str(task["subject"])
+        # These fields describe the measurement scope, not the experiment
+        # identity.  In particular, seed belongs to ExperimentSpec and must
+        # not be put in metric context: doing so would make exact-context
+        # LoP comparisons across independent seeds look incomparable.
+        for key in ("dataset", "layer", "split", "probe_budget", "method", "measurement_protocol", "metric_role"):
+            if task.get(key) is not None:
+                context[key] = str(task[key]) if key in {"dataset", "layer", "split", "method", "measurement_protocol", "metric_role"} else task[key]
         for key in (
             "plasticity",
             "current_before",
@@ -213,9 +243,33 @@ def normalize_raeeg_metrics(raw: dict[str, Any]) -> tuple[list[dict[str, Any]], 
             "spectrum",
             "spectra",
             "weight_norms",
+            "weight_norm",
+            "norms",
+            "representation",
+            "attention",
+            "activation",
+            "jacobian",
+            "gradient",
+            "optimizer",
+            "probe",
+            "forgetting",
+            "parameters",
+            "parameter",
+            "spectral_collapse",
+            "churn",
         ):
             if key in task:
                 collector.flatten(f"task.{key}", task[key], step=step, context=context)
+        # Older BrainUICL probes called the Transformer representation simply
+        # ``transformer``.  Keep the current canonical ``transformer_1``
+        # predictor available when importing those results, while retaining
+        # the legacy spelling as well.  This is an alias, not a second
+        # measurement, and the collector de-duplicates exact rows.
+        spectra = task.get("spectra") or task.get("spectrum")
+        if isinstance(spectra, dict) and "transformer_1" not in spectra and isinstance(spectra.get("transformer"), dict):
+            collector.flatten("task.spectra.transformer_1", spectra["transformer"], step=step, context=context)
+        if isinstance(spectra, dict) and "transformer" not in spectra and isinstance(spectra.get("transformer_1"), dict):
+            collector.flatten("task.spectra.transformer", spectra["transformer_1"], step=step, context=context)
         before = task.get("current_before") or task.get("before")
         after = task.get("current_after") or task.get("after")
         if isinstance(before, dict) and isinstance(after, dict):
@@ -225,6 +279,14 @@ def normalize_raeeg_metrics(raw: dict[str, Any]) -> tuple[list[dict[str, Any]], 
                 if left is not None and right is not None:
                     collector.add(f"plasticity.{metric}_gain", right - left, step=step, context=context)
 
+    # Keep old-task retention evidence separate from the new-task plasticity
+    # outcome.  Consumers can still query the same metric names, while an
+    # audit or report can filter on this explicit role instead of inferring it
+    # from a task/probe prefix.
+    for item in collector.items:
+        name = str(item.get("name") or "")
+        if name.startswith("task.forgetting.") or name.startswith("task.probe.retention."):
+            item.setdefault("context", {})["metric_role"] = "retention"
     return collector.items, summary if isinstance(summary, dict) else {}
 
 

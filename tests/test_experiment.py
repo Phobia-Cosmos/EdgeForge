@@ -51,6 +51,45 @@ class ExperimentContractTests(unittest.TestCase):
         self.assertEqual(by_name[("task.spectra.transformer_1.effective_rank", 1)]["value"], 12.5)
         self.assertEqual(by_name[("plasticity.acc_gain", 1)]["context"], {"subject": "64"})
 
+    def test_normalizer_preserves_probe_curve_steps_and_legacy_transformer_alias(self):
+        metrics, _summary = normalize_raeeg_metrics(
+            {
+                "tasks": [
+                    {
+                        "stage": 10,
+                        "subject": 1,
+                        "split": "fresh-test",
+                        "spectra": {"transformer": {"effective_rank": 6.0}},
+                        "plasticity": {"curve": [
+                            {"step": 0, "acc": 0.20, "loss": 1.5},
+                            {"step": 4, "acc": 0.40, "loss": 1.0},
+                        ]},
+                    }
+                ]
+            }
+        )
+        by_key = {(item["name"], item["step"]): item for item in metrics}
+        self.assertEqual(by_key[("task.spectra.transformer_1.effective_rank", 10)]["value"], 6.0)
+        self.assertEqual(by_key[("task.plasticity.curve.acc", 0)]["value"], 0.20)
+        self.assertEqual(by_key[("task.plasticity.curve.acc", 4)]["value"], 0.40)
+        self.assertNotIn("checkpoint_stage", by_key[("task.spectra.transformer_1.effective_rank", 10)]["context"])
+
+    def test_normalizer_marks_retention_metrics_as_separate_role(self):
+        metrics, _summary = normalize_raeeg_metrics({
+            "tasks": [{
+                "stage": 2,
+                "forgetting": {"checkpoint_acc_drop": 0.12},
+                "probe": {"retention": {"checkpoint_mf1_drop": 0.08}},
+            }]
+        })
+        roles = {
+            item["name"]: item.get("context", {}).get("metric_role")
+            for item in metrics
+            if "forgetting" in item["name"] or "probe.retention" in item["name"]
+        }
+        self.assertEqual(roles["task.forgetting.checkpoint_acc_drop"], "retention")
+        self.assertEqual(roles["task.probe.retention.checkpoint_mf1_drop"], "retention")
+
 
 if __name__ == "__main__":
     unittest.main()

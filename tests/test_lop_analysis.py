@@ -20,6 +20,24 @@ def _fixture(seed: int, *, group: str = "lop-group"):
 
 
 class LopAnalysisTests(unittest.TestCase):
+    def test_default_analysis_resolves_historical_metric_aliases(self):
+        experiments = []
+        metrics_by_experiment = {}
+        for seed in (1, 2, 3):
+            experiment, _ = _fixture(seed)
+            experiments.append(experiment)
+            metrics_by_experiment[experiment["experiment_id"]] = [
+                {"name": "task.spectra.transformer.effective_rank", "value": 8 - step + seed * 0.01, "step": step, "context": {} }
+                for step in range(3)
+            ] + [
+                {"name": "task.plasticity.acc_gain", "value": step * 0.1 + seed * 0.01, "step": step, "context": {} }
+                for step in range(3)
+            ]
+        result = analyze_lop(experiments, metrics_by_experiment, bootstrap_repeats=100, minimum_pairs=2)
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(result["predictor_resolved"], ["task.spectra.transformer.effective_rank"])
+        self.assertEqual(result["outcome_resolved"], ["task.plasticity.acc_gain"])
+
     def test_lagged_analysis_is_deterministic_and_reports_ci(self):
         experiments, metrics = zip(*[_fixture(seed) for seed in (1, 2, 3)])
         result = analyze_lop(list(experiments), {item["experiment_id"]: values for item, values in zip(experiments, metrics)}, bootstrap_repeats=200, minimum_pairs=3, minimum_seeds=3)
@@ -157,6 +175,20 @@ class LopAnalysisTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "blocked-incomparable-contexts")
         self.assertFalse(result["contexts_consistent"])
+
+    def test_exact_context_ignores_measurement_only_metadata(self):
+        experiments = []
+        metrics = {}
+        for seed in (1, 2, 3):
+            experiment, _ = _fixture(seed)
+            experiments.append(experiment)
+            metrics[experiment["experiment_id"]] = [
+                {"name": "task.spectra.transformer_1.effective_rank", "value": 4 + seed, "step": 0, "context": {"subject": "same", "split": "calibration", "method": "finetune", "measurement_protocol": "checkpoint", "probe_budget": 2}},
+                {"name": "plasticity.acc_gain", "value": 0.1 + seed * 0.01, "step": 1, "context": {"subject": "same", "split": "calibration", "method": "finetune", "measurement_protocol": "probe", "probe_budget": 50}},
+            ]
+        result = analyze_lop(experiments, metrics, context_policy="exact", minimum_pairs=2)
+        self.assertEqual(result["pair_count"], 3)
+        self.assertTrue(result["contexts_consistent"])
 
 
 if __name__ == "__main__":

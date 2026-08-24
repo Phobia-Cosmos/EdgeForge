@@ -1,0 +1,141 @@
+{
+  "actions": [
+    {
+      "action": "prepare-user-directories",
+      "result": {
+        "elapsed_ms": 642.858,
+        "exit_code": 0,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "{\"manifest\": \"/home/orangepi/.config/edgeforge/environment.json\", \"runner\": \"/home/orangepi/.local/share/edgeforge/run-worker.sh\", \"source\": \"/home/orangepi/.local/src/edgeforge\", \"work\": \"/home/orangepi/.local/share/edgeforge/work\"}"
+      }
+    },
+    {
+      "action": "sync-source",
+      "result": {
+        "elapsed_ms": 594.987,
+        "exit_code": 0,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": ""
+      }
+    },
+    {
+      "action": "import-check",
+      "result": {
+        "elapsed_ms": 519.859,
+        "exit_code": 0,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "0.16.1"
+      }
+    }
+  ],
+  "digest": "bf85da8c880fbe43c040c9f15fb9f710dbc57c57cdd937aa448c8ac9020e7324",
+  "inventory": {
+    "architecture": "aarch64",
+    "commands": {
+      "clang": null,
+      "cmake": {
+        "path": "/usr/bin/cmake",
+        "version": "cmake version 3.22.1"
+      },
+      "gcc": {
+        "path": "/usr/bin/gcc",
+        "version": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0"
+      },
+      "git": {
+        "path": "/usr/bin/git",
+        "version": "git version 2.34.1"
+      },
+      "ninja": null,
+      "pip3": {
+        "path": "/usr/bin/pip3",
+        "version": "pip 22.0.2 from /usr/lib/python3/dist-packages/pip (python 3.10)"
+      },
+      "python3": {
+        "path": "/usr/bin/python3",
+        "version": "Python 3.10.12"
+      },
+      "systemctl": {
+        "path": "/usr/bin/systemctl",
+        "version": "systemd 249 (249.11-0ubuntu3.20)"
+      }
+    },
+    "drm_driver_map": {
+      "/sys/class/drm/card0/device/driver": "rockchip-drm",
+      "/sys/class/drm/card1/device/driver": "RKNPU",
+      "/sys/class/drm/renderD128/device/driver": "rockchip-drm",
+      "/sys/class/drm/renderD129/device/driver": "RKNPU"
+    },
+    "drm_nodes": [
+      "/dev/dri/card0",
+      "/dev/dri/card1",
+      "/dev/dri/renderD128",
+      "/dev/dri/renderD129"
+    ],
+    "gpu_userspace": {
+      "libraries": [
+        "/usr/lib/aarch64-linux-gnu/libmali.so.1",
+        "/usr/lib/aarch64-linux-gnu/libOpenCL.so.1",
+        "/usr/lib/aarch64-linux-gnu/libvulkan.so.1"
+      ],
+      "opencl_icd": [
+        "/etc/OpenCL/vendors/mali.icd"
+      ],
+      "vulkan_icd": []
+    },
+    "home": "/home/orangepi",
+    "hostname": "orangepi5ultra",
+    "kernel": "6.1.43-rockchip-rk3588",
+    "npu_platform_devices": [
+      "/sys/bus/platform/devices/fdab0000.npu",
+      "/sys/bus/platform/devices/rknpu_dev.10.auto"
+    ],
+    "python": "3.10.12",
+    "python_modules": {
+      "iree": false,
+      "numpy": true,
+      "onnxruntime": false,
+      "rknn": false,
+      "torch": false
+    },
+    "rknn_runtime": {
+      "demo": {
+        "path": "/usr/bin/rknn_demo",
+        "version": "/usr/bin/rknn_demo: error while loading shared libraries: libjpeg.so.62: cannot open shared object file: No such file or directory"
+      },
+      "device_nodes": [],
+      "libraries": [
+        "/usr/lib/librknnrt.so",
+        "/usr/lib/librknn_api.so"
+      ],
+      "models": [
+        "/usr/share/rknn_demo/mobilenet_ssd.rknn"
+      ],
+      "server": {
+        "error": "Command '['/usr/bin/rknn_server', '--version']' timed out after 5 seconds",
+        "path": "/usr/bin/rknn_server",
+        "version": null
+      }
+    },
+    "user": "orangepi"
+  },
+  "inventory_call": {
+    "elapsed_ms": 6127.909,
+    "exit_code": 0,
+    "status": "succeeded",
+    "stderr": "",
+    "stdout": "{\"architecture\": \"aarch64\", \"commands\": {\"clang\": null, \"cmake\": {\"path\": \"/usr/bin/cmake\", \"version\": \"cmake version 3.22.1\"}, \"gcc\": {\"path\": \"/usr/bin/gcc\", \"version\": \"gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0\"}, \"git\": {\"path\": \"/usr/bin/git\", \"version\": \"git version 2.34.1\"}, \"ninja\": null, \"pip3\": {\"path\": \"/usr/bin/pip3\", \"version\": \"pip 22.0.2 from /usr/lib/python3/dist-packages/pip (python 3.10)\"}, \"python3\": {\"path\": \"/usr/bin/python3\", \"version\": \"Python 3.10.12\"}, \"systemctl\": {\"path\": \"/usr/bin/systemctl\", \"version\": \"systemd 249 (249.11-0ubuntu3.20)\"}}, \"drm_driver_map\": {\"/sys/class/drm/card0/device/driver\": \"rockchip-drm\", \"/sys/class/drm/card1/device/driver\": \"RKNPU\", \"/sys/class/drm/renderD128/device/driver\": \"rockchip-drm\", \"/sys/class/drm/renderD129/device/driver\": \"RKNPU\"}, \"drm_nodes\": [\"/dev/dri/card0\", \"/dev/dri/card1\", \"/dev/dri/renderD128\", \"/dev/dri/renderD129\"], \"gpu_userspace\": {\"libraries\": [\"/usr/lib/aarch64-linux-gnu/libmali.so.1\", \"/usr/lib/aarch64-linux-gnu/libOpenCL.so.1\", \"/usr/lib/aarch64-linux-gnu/libvulkan.so.1\"], \"opencl_icd\": [\"/etc/OpenCL/vendors/mali.icd\"], \"vulkan_icd\": []}, \"home\": \"/home/orangepi\", \"hostname\": \"orangepi5ultra\", \"kernel\": \"6.1.43-rockchip-rk3588\", \"npu_platform_devices\": [\"/sys/bus/platform/devices/fdab0000.npu\", \"/sys/bus/platform/devices/rknpu_dev.10.auto\"], \"python\": \"3.10.12\", \"python_modules\": {\"iree\": false, \"numpy\": true, \"onnxruntime\": false, \"rknn\": false, \"torch\": false}, \"rknn_runtime\": {\"demo\": {\"path\": \"/usr/bin/rknn_demo\", \"version\": \"/usr/bin/rknn_demo: error while loading shared libraries: libjpeg.so.62: cannot open shared object file: No such file or directory\"}, \"device_nodes\": [], \"libraries\": [\"/usr/lib/librknnrt.so\", \"/usr/lib/librknn_api.so\"], \"models\": [\"/usr/share/rknn_demo/mobilenet_ssd.rknn\"], \"server\": {\"error\": \"Command '['/usr/bin/rknn_server', '--version']' timed out after 5 seconds\", \"path\": \"/usr/bin/rknn_server\", \"version\": null}}, \"user\": \"orangepi\"}"
+  },
+  "profile": {
+    "architecture": "aarch64",
+    "role": "arm64-cpu-reference",
+    "ssh_host": "orangepi"
+  },
+  "remote_import_version": "0.16.1",
+  "schema_version": 1,
+  "status": "ready",
+  "target": "orangepi",
+  "version": "0.16.1"
+}

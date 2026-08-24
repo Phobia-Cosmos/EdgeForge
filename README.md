@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.11.0` 候选版在 V8–V10 能力之上增加可审计的目标设备探测，并修复隔离 Worker 工作目录下的 reference model pipeline；模型框架通过受控外部命令接入，IREE 仍是可插拔后端而非系统依赖。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.16.1` development snapshot 在 V16 ARM/RISC-V target setup 之上增加 RK3588 GPU/NPU 用户态 API smoke、DRM RKNPU 识别和 RKNN board-runtime preflight；模型框架通过受控外部命令接入，IREE 仍是可插拔后端而非系统依赖。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)，V10 Model Pipeline 见 [docs/design-v10.md](docs/design-v10.md)，V11 Target Probe 见 [docs/design-v11.md](docs/design-v11.md)，BrainUICL/RA-EEG 迁移见 [docs/raeeg-migration.md](docs/raeeg-migration.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)，V10 Model Pipeline 见 [docs/design-v10.md](docs/design-v10.md)，V11 Target Probe 见 [docs/design-v11.md](docs/design-v11.md)，BrainUICL/RA-EEG 迁移见 [docs/raeeg-migration.md](docs/raeeg-migration.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，双机进度与 LoP 计划见 [docs/sync-progress-and-lop-plan-20260822.md](docs/sync-progress-and-lop-plan-20260822.md)，LoP 统一数学与 FACED/ISRUC 实验计划见 [docs/lop-eeg-unified-plan-20260822.md](docs/lop-eeg-unified-plan-20260822.md)，BrainUICL 指标采集见 [docs/brainuicl-instrumentation-v1.md](docs/brainuicl-instrumentation-v1.md)，LoP 矩阵运行器见 [docs/raeeg-lop-matrix-v1.md](docs/raeeg-lop-matrix-v1.md)，0.14.0 本地结果见 [docs/raeeg-lop-local-results-20260823.md](docs/raeeg-lop-local-results-20260823.md)，0.15.0 retention 结果见 [docs/raeeg-lop-retention-local-results-20260823.md](docs/raeeg-lop-retention-local-results-20260823.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 
@@ -31,6 +31,14 @@ python3 -m edgeforge target-probe --output ./edgeforge-target-probe.json
 ```
 
 清单记录架构、CPU features、板型/SoC、内存、设备节点、内核 GPU/NPU 驱动、Vulkan ICD/loader 和已发现 Runtime 的实际探测结果。`backend_claims.inferred` 固定为空；只有显式配置且通过 Runtime correctness 后，Backend 才能加入 Worker 广告。
+
+ARM/RISC-V 目标的用户目录级准备使用 [docs/ai-compiler-arm-target-setup-v1.md](docs/ai-compiler-arm-target-setup-v1.md) 和 `scripts/configure-arm-target.py`。默认只读；`--apply --sync-source` 只创建 work/log/config、同步排除数据和 checkpoint 的源码，并让 Orange Pi/P550 只广告 `python-reference`。RKNN 文件或 `/dev/dri` 节点不会自动解锁 NPU Backend。
+
+```sh
+PYTHONPATH=src python3 scripts/configure-arm-target.py \
+  --apply --sync-source \
+  --output-root .edgeforge/arm-target-setup/v0.16.1
+```
 
 模型发布前可用 `target-audit` 将 manifest、Target Probe 和模型级 correctness 证据绑定检查。它要求目标架构匹配、Backend 被显式广告、所需 accelerator 出现在真实 probe 中，并且存在同一 manifest digest 的成功模型运行；缺少任一证据都会返回 `blocked` 并以退出码 1 结束：
 
@@ -245,6 +253,30 @@ python3 -m edgeforge experiment-run \
   --accelerator nvidia-gpu \
   --wait
 ```
+
+当前本机 LoP 矩阵入口（只使用本地单机/单 GPU，不提交开发板或多卡任务）见 [docs/raeeg-lop-matrix-v1.md](docs/raeeg-lop-matrix-v1.md)。它会为每个 dataset × method × condition × subject × checkpoint stage 保存 cell bundle，并把同一 subject/seed 的连续 stage 汇总到 trajectory catalog：
+
+```sh
+PYTHONPATH=src /home/undefined/Disk/python-envs/brainuicl/bin/python \
+  scripts/run-raeeg-lop-matrix.py \
+  --manifest config/raeeg-lop-matrix-v14-isruc-local.json \
+  --log-root logs
+```
+
+本地 0.14.0 已验证 ISRUC 五种方法 × 四个 stage 共 20 个 cell，以及 FACED pretrain/mini-CL 两个接口 smoke；所有结果和 SHA-256 清单在 `logs/archive/v0.14.0/raeeg-lop-matrix-local-smoke/`。0.15.0 新增可选 retention 集：probe 只在新任务上更新参数，同时在固定旧任务集上记录 ACC/MF1/loss 变化；这些指标以 `metric_role=retention` 保存，不能替代 LoP outcome 或 BWT。0.15.0 的真实 retention smoke 归档在 `logs/archive/v0.15.0/raeeg-lop-retention-local-smoke/`，bundle 还显式区分 optimizer provenance diagnostic。所有运行只有 seed 4321，audit 会保持 `insufficient-seeds`/`insufficient-pairs`，因此不能据此声称 LoP 已发生。
+
+无标签在线适应前的可观测量可用 [docs/brainuicl-unlabeled-diagnostics-v1.md](docs/brainuicl-unlabeled-diagnostics-v1.md) 中的 `brainuicl-unlabeled-diagnostics.py` 采集；它与 supervised-oracle probe 分开记录，不读取标签值也不更新参数。
+
+在补齐真实多 seed checkpoint 前，可先运行只读多 seed preflight：
+
+```sh
+PYTHONPATH=src /home/undefined/Disk/python-envs/brainuicl/bin/python \
+  scripts/run-raeeg-lop-matrix.py \
+  --manifest config/raeeg-lop-matrix-v14-isruc-multiseed-preflight.json \
+  --dry-run --log-root logs
+```
+
+当前预检结果为 `12 cells = 4 ready + 8 blocked`；4322/4323 的缺失 checkpoint 会被明确列出，不会复用 4321。
 
 批量导入本机已有八组 EEG 实验结果：
 

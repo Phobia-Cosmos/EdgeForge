@@ -83,6 +83,19 @@ def _device_nodes() -> dict[str, list[str]]:
         "drm_render": sorted(str(path) for path in Path("/dev/dri").glob("renderD*")),
         "rknpu": sorted(str(path) for path in Path("/dev").glob("rknpu*")),
     }
+    # On the RK3588 Linux image the RKNPU kernel driver is exposed as a DRM
+    # render node (typically card1/renderD129), not as /dev/rknpu*.  Preserve
+    # both pieces of evidence so older character-node images remain valid.
+    rknpu_drm: list[str] = []
+    for node in sorted(Path("/sys/class/drm").glob("card*")) + sorted(Path("/sys/class/drm").glob("renderD*")):
+        driver = node / "device" / "driver"
+        try:
+            if driver.resolve(strict=True).name.upper() == "RKNPU":
+                rknpu_drm.append(str(Path("/dev/dri") / node.name))
+        except OSError:
+            continue
+    if rknpu_drm:
+        groups["rknpu_drm"] = rknpu_drm
     return {name: paths for name, paths in groups.items() if paths}
 
 
@@ -91,7 +104,7 @@ def _accelerators(device_nodes: dict[str, list[str]] | None = None) -> list[str]
     if shutil.which("nvidia-smi"):
         accelerators.append("nvidia-gpu")
     nodes = device_nodes if device_nodes is not None else _device_nodes()
-    if nodes.get("rknpu"):
+    if nodes.get("rknpu") or nodes.get("rknpu_drm"):
         accelerators.append("rk3588-npu")
     if nodes.get("drm") or nodes.get("drm_render"):
         accelerators.append("drm")
@@ -223,6 +236,33 @@ def _vulkan_evidence() -> dict[str, Any]:
     }
 
 
+def _accelerator_userspace_evidence(device_nodes: dict[str, list[str]] | None = None) -> dict[str, Any]:
+    """Record installed accelerator files without claiming API readiness."""
+
+    opencl_icds = sorted(str(path) for path in Path("/etc/OpenCL/vendors").glob("*.icd"))
+    vulkan_icds = sorted(
+        str(path)
+        for root in (Path("/etc/vulkan/icd.d"), Path("/usr/share/vulkan/icd.d"))
+        for path in root.glob("*.json")
+    )
+    rknn_files = sorted(
+        str(path)
+        for path in (
+            Path("/usr/lib/librknnrt.so"),
+            Path("/usr/lib/librknn_api.so"),
+            Path("/usr/bin/rknn_server"),
+            Path("/usr/bin/rknn_demo"),
+        )
+        if path.exists()
+    )
+    return {
+        "opencl_icd_manifests": opencl_icds,
+        "vulkan_icd_manifests": vulkan_icds,
+        "rknn_runtime_files": rknn_files,
+        "rknpu_drm_nodes": (device_nodes or {}).get("rknpu_drm", []),
+    }
+
+
 def collect_target_probe() -> dict[str, Any]:
     """Collect auditable target evidence without inferring backend readiness."""
     capabilities = collect_capabilities()
@@ -236,6 +276,7 @@ def collect_target_probe() -> dict[str, Any]:
             "kernel_drivers": _kernel_driver_evidence(),
             "runtime_executables": _runtime_evidence(),
             "vulkan": _vulkan_evidence(),
+            "accelerator_userspace": _accelerator_userspace_evidence(capabilities.get("device_nodes")),
         },
         "backend_claims": {
             "advertised": capabilities["backends"],

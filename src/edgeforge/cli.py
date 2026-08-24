@@ -6,6 +6,7 @@ import argparse
 import base64
 import json
 import os
+import platform
 import time
 from pathlib import Path
 from typing import Any
@@ -91,6 +92,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     target_probe = subparsers.add_parser("target-probe", help="collect an auditable local target capability manifest")
     target_probe.add_argument("--output", help="also write the JSON manifest to this path")
+
+    accelerator_smoke = subparsers.add_parser(
+        "accelerator-smoke",
+        help="run an offline GPU/NPU API smoke on the local target",
+    )
+    accelerator_smoke.add_argument("--name", default=platform.node())
+    accelerator_smoke.add_argument("--model", help="board-local RKNN model path")
+    accelerator_smoke.add_argument("--runtime-library", help="board-local librknnrt.so/librknn_api.so")
+    accelerator_smoke.add_argument("--repeat", type=int, default=3)
+    accelerator_smoke.add_argument("--skip-opencl", action="store_true")
+    accelerator_smoke.add_argument("--skip-vulkan", action="store_true")
+    accelerator_smoke.add_argument("--skip-rknn", action="store_true")
+    accelerator_smoke.add_argument("--output", help="also write the JSON smoke result to this path")
 
     target_audit = subparsers.add_parser(
         "target-audit",
@@ -736,6 +750,24 @@ def main(argv: list[str] | None = None) -> None:
                 )
             _print_json(probe)
             return
+        if args.command == "accelerator-smoke":
+            from edgeforge.accelerator_probe import run_accelerator_probe
+
+            result = run_accelerator_probe(
+                name=args.name,
+                model_path=args.model,
+                runtime_library=args.runtime_library,
+                repeat=args.repeat,
+                skip_opencl=args.skip_opencl,
+                skip_vulkan=args.skip_vulkan,
+                skip_rknn=args.skip_rknn,
+            )
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            _print_json(result)
+            raise SystemExit(0 if result["status"] == "pass" else 2 if result["status"] in {"partial", "blocked"} else 1)
         if args.command == "target-audit":
             try:
                 manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))

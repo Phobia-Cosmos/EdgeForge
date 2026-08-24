@@ -2,6 +2,125 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.16.1 - 2026-08-24 (development snapshot)
+
+### Added
+
+- 新增 `edgeforge.accelerator_probe` 与 `scripts/rk3588-accelerator-smoke.py`：在无摄像头、离线、确定性输入下实际执行 Mali OpenCL vector-add、Vulkan loader/device instance 和 RKNN C API `init → query → run → output` smoke。
+- Target Probe 增加 DRM RKNPU driver、platform NPU、OpenCL 用户态、Vulkan loader/ICD 和 OpenCL device evidence；RK3588 的 `card1/renderD129` 不再因为没有 `/dev/rknpu*` 被误报为缺失。
+- RKNN deployment preflight 改为要求板端 `librknnrt.so`/`librknn_api.so` 与任一 RKNPU DRM/character/platform 证据，不要求板端安装 PC 侧 RKNN-Toolkit2 Python 包；新增 `opencl`/`vulkan` capability contracts。
+- 新增 [RK3588 accelerator validation](docs/rk3588-accelerator-validation-v1.md) 手册对照、结果边界和后续 RKNN/EEG adapter 计划。
+
+### Safety
+
+- smoke 只读取显式离线 `.rknn` 文件并使用零输入，不接摄像头、不启动或替换系统 Runtime、不把 Vulkan loader 版本冒充 Mali device；所有结果保留 `scientific_conclusion_allowed=false`。
+- 验证采用用户目录缓存的 RKNPU2 v1.5.2 library/model；系统 1.4.0 demo 的 `Invalid RKNN format` 被保留为版本兼容性证据，不通过软链接伪造 `libjpeg.so.62`。
+- Worker 可识别 DRM RKNPU 作为 accelerator evidence，但默认仍只广告 `python-reference`；实际 `rknn` backend 需模型 conversion、算子覆盖、correctness 和 benchmark 门禁。
+
+### Validation
+
+- Orange Pi RK3588：OpenCL Mali-G610 vector-add PASS（max abs error `0.0`）；系统 RKNN Runtime 1.4.0 与用户缓存 v1.5.2 fallback 对 RK3588 MobileNet 模型均 PASS，3 次零输入输出 deterministic，run 中位数约 `2.20 ms`/`1.94 ms`（diagnostic only）。
+- Orange Pi Vulkan loader 可加载但无 Mali ICD manifest，`vkCreateInstance=-9`，因此 accelerator smoke 总状态为 `partial`，不是硬件不支持结论。
+- Target Probe 记录 `RKNPU` DRM 节点 `/dev/dri/card1`、`/dev/dri/renderD129` 与两个 platform device；完整 JSON、命令输出、测试和 SHA-256 清单归档于 `logs/archive/v0.16.1/rk3588-accelerator-validation/`。
+
+## 0.16.0 - 2026-08-24 (development snapshot)
+
+### Added
+
+- 新增 `scripts/configure-arm-target.py`，支持 Orange Pi `aarch64` 与 P550 `riscv64` 的只读 inventory、用户目录级配置、源码同步、远端 import 检查和内容摘要。
+- ARM/RISC-V Worker 配置模板默认只广告 `python-reference`，不写入真实凭证，也不把 RKNN 共享库或 DRM/RKNPU 驱动文件推断为可用 NPU。
+- Target Probe 增加 RKNN runtime 文件证据，并将 `/dev/rknpu*` 设备节点检查扩展为 glob，区分“厂商文件存在”和“NPU 可执行”。
+- 新增 AI 编译器问题回答与 ARM target 配置说明，明确 `OperatorSpec`、`torch.export` Graph IR、MLIR/LLVM lowering、Triton/IREE/RKNN 边界及 `brainuicl.pt2` 当前未统一下发的原因。
+
+### Safety
+
+- 配置器默认只读；`--apply` 只创建远端用户目录和模板，`--sync-source` 排除数据、checkpoint、日志、`.git` 和缓存，不安装系统包、不复制凭证、不启动 Worker。
+- Orange Pi 的 RKNN 广告保持 blocked，直到真实 `/dev/rknpu*`、Runtime、模型转换、算子覆盖和 numerical correctness 全部通过。
+
+### Validation
+
+- Orange Pi 与 P550 SSH inventory 均通过，架构分别为 `aarch64` 与 `riscv64`。
+- 两个目标均完成用户目录配置、EdgeForge 源码同步和远端 `import edgeforge` 检查；Worker 模板只含 `python-reference`。
+- Orange Pi 实测存在 `librknnrt.so`、`librknn_api.so` 和 demo 模型，但没有 `/dev/rknpu*`；RKNN NPU 仍未通过部署门禁。
+- 新增 ARM 配置器单元测试；完整测试结果记录在本版本发布记录和日志归档中。
+
+## 0.15.0 - 2026-08-23（development snapshot）
+
+### Added
+
+- fixed-budget BrainUICL probe 支持显式 old-task retention 集：参数更新只发生在当前新任务训练批次，保留集只做 eval，输出 ACC/MF1/loss 的 initial/final/AULC 与 drop/delta。
+- retention 指标以 `metric_role=retention` 写入 matrix bundle，并在 `predictor`、`outcome`、`diagnostic` 之外形成独立证据角色；LoP audit 不会把 retention 指标当作 `plasticity.acc_gain` outcome。
+- matrix manifest 支持 `retention: {data_root, subjects, max_files, batch_size}`，dry-run 会检查每个旧任务 subject 的 data/label 文件；trajectory grouping 同时绑定 split 与 retention design，避免跨 protocol 合并。
+- matrix descriptive report 增加 retention ACC/MF1 drop、loss delta 与角色表；缺失 retention 时保留空值，不做插值。
+- instrumentation 增加 `checkpoint-optimizer-provenance-v1`：只记录 colocated optimizer/moment/scheduler 文件的身份和 digest，不加载未知序列化对象；参数快照没有 Adam state 时明确标为 unavailable。
+- fixed-budget probe 保存 Adam 的 lr、weight decay、update steps 和 `state_persisted=false`，matrix 中归入 `metric_role=diagnostic`，避免把 probe-local optimizer 当成历史 optimizer trajectory。
+
+### Safety
+
+- retention 评估不读取 optimizer state、不执行 optimizer update，也不修改 canonical EEG、checkpoint 或 BrainUICL 源码；结果明确标注为 old-task stability diagnostic，不是 BWT 或 LoP 结论。
+- 只有 manifest 显式提供 retention 集时才运行；缺少旧任务文件会阻断 cell，不会复制或猜测旧任务结果。
+
+### Validation
+
+- EdgeForge 自动化测试：`136/136 passed`。
+- ISRUC subject 2 / seed 4321 的真实 retention smoke 成功：2 个新任务序列、1 个旧任务 subject-1 序列、固定预算 0→2；checkpoint retention ACC drop `0.1`、MF1 drop `0.02545`，仅为接口/证据链验证。
+- 真实 matrix retention smoke 成功生成 `predictor/outcome/retention/diagnostic` 四种 metric role；单 stage、单 seed audit 仍为阻断状态，未生成 LoP 科学结论。
+- 当前 parameter-only checkpoint 的 optimizer provenance 为 `status=unavailable, loaded=false`；probe-local Adam 与 retention 的 `optimizer_update=false` 均被记录为 diagnostic/provenance，而不是历史状态。
+- 新增 `config/raeeg-lop-matrix-v15-isruc-multiseed-retention-preflight.json`：12 个 cell 只读预检得到 seed 4321 的 4 个 stage `ready`、seed 4322/4323 的 8 个 stage `blocked`，并明确列出缺失的三份模型参数文件。
+- 运行日志、bundle、catalog、report、audit 和 SHA-256 清单归档于 `logs/archive/v0.15.0/raeeg-lop-retention-local-smoke/`。
+
+## 0.14.0 - 2026-08-23（development snapshot）
+
+### Added
+
+- 新增 `scripts/run-raeeg-lop-matrix.py`，把 FACED/ISRUC 的 dataset、method、condition、subject 和 checkpoint stage 展开为可恢复的本地实验 cell；同一 subject/seed 的 stage 会另外汇总为 trajectory catalog，避免把连续 checkpoint 误判为重复 seed。
+- 每个 cell 同时运行 checkpoint instrumentation 与 supervised-oracle fixed-budget probe，生成 `edgeforge-bundle-v1`、cell catalog、trajectory catalog、描述性 report 和只读 LoP audit，并保存 command/流程状态/stdout/stderr 与输入配置摘要。
+- instrumentation 增加当前 checkpoint 相对 baseline 的参数更新 L2、relative update 与 top-parameter cosine 诊断，用来和 representation drift 分开审计。
+- 新增矩阵 manifest 文档和 `config/raeeg-lop-matrix-v14-local-smoke.json` 本地复现实例；支持 clean/controlled-shift 条件和 checkpoint path template，但本版本不调度多卡、不提交远端任务。
+
+### Safety
+
+- runner 强制 output root 与 BrainUICL、checkpoint、canonical/shift 数据目录 disjoint，拒绝把不同 manifest 混入已有 run；失败 cell 和 audit 阻断状态都会留存。
+- 结果继续标记 `scientific_conclusion_allowed=false`；单 seed、少 stage 的本地 smoke 只验证接口和证据链，不构成 LoP 结论。
+
+### Validation
+
+- EdgeForge 自动化测试：`128/128 passed`。
+- 单机 RTX 4070 SUPER、共享 `brainuicl` 环境上，ISRUC subject 1 / seed 4321 的 stage 0 与 stage 10 两个 cell 均成功，分别生成 486 与 525 条合并指标；audit 正确保持单 seed 阻断。
+- 同一单机上完成 ISRUC subject 2 / seed 4321 的 5 方法 × 4 stage（finetune、EWC、online-EWC、SI、MAS；共 20 cells）；全部成功，trajectory audit 为每种方法形成 3 个 lagged transitions，但因仅 1 个真实 seed 保持 `insufficient-seeds`。
+- FACED subject 1 / seed 4321 的 pretrain 与已有 mini-CL stage 1 两个 cell 均成功；effective rank、parameter update、drift 和 probe 链路可用，但只有 1 个 transition，audit 保持 `insufficient-pairs`。
+- 生成并运行 ISRUC subject 2 的 clean vs label-preserving noise severity 0.5 对照（finetune、4 stages、8 cells）；shift manifest 保存 source/output/label digest，两个条件均成功但各自仅 1 seed，audit 保持 `insufficient-seeds`。
+- 新增 `docs/raeeg-lop-local-results-20260823.md`，集中记录本机 ISRUC/FACED/shift 结果、fresh-gap 符号约定和“数据 shift ≠ LoP”证据边界。
+- 新增 `brainuicl-unlabeled-diagnostics.py`，记录不读取标签、不更新参数的 pseudo-label confidence/entropy/扰动一致性和表示 cosine，明确区分无标签可观测性与 supervised-oracle plasticity。
+- 无标签诊断同时在 ISRUC 和 FACED pretrain smoke 上通过；FACED subject 1 的 noise-0.05 prediction agreement 为 `0.85`，仍只作为接口/可观测性基线。
+- LoP matrix runner 增加 `--with-unlabeled-diagnostics`，可把上述无标签指标按 `metric_role=diagnostic` 合并到同一 cell bundle，但不会改变 predictor/outcome 选择。
+- matrix `--dry-run` 增加只读 input preflight，逐 cell 报告缺失的数据目录、baseline/fresh/checkpoint 文件和 ready/blocked 计数。
+- compact matrix manifest 支持 `seeds` 网格；缺少 seed checkpoint 的 cell 会在 preflight 中阻断，不会复制或冒充已有 seed。
+- `config/raeeg-lop-matrix-v14-isruc-multiseed-preflight.json` 的只读预检生成 12 cells：seed 4321 的 4 个 stage `ready`，seed 4322/4323 的 8 个 stage 明确 `blocked`（checkpoint 不存在）。
+- `matrix-report` 增加 clean 对照与每个 shift condition 的 paired `shift_minus_clean` 描述性 delta，明确标注 domain-shift sensitivity 不等于 LoP outcome。
+- 完成 ISRUC clean/noise 0.5 的 8-cell `--with-unlabeled-diagnostics` 矩阵；bundle 同时保存 predictor、supervised outcome 和 label-free diagnostic，paired report 可比较 entropy/confidence/consistency 的 shift delta。
+- 本次矩阵事件、cell 日志、catalog、audit 和 SHA-256 清单归档在 `logs/archive/v0.14.0/raeeg-lop-matrix-local-smoke/`。
+
+## 0.13.0 - 2026-08-22（development snapshot）
+
+### Added
+
+- BrainUICL/RA-EEG 只读 instrumentation，覆盖 ISRUC/FACED 表示谱、attention、activation、经验 Fisher、梯度干扰、最后层 Jacobian proxy、checkpoint drift 和局部线性诊断。
+- 固定预算 held-out probe 与 AULC/fresh-gap outcome envelope，以及 amplitude/noise/channel-dropout/time-jitter/bandstop 的 provenance-preserving 数据 shift 生成器。
+- LoP metric alias、learning-curve normalizer 和稳定 context pairing，兼容历史 `transformer`/`transformer_1` 与 `task.plasticity`/`plasticity` 命名。
+
+### Safety
+
+- 所有 instrumentation 和 shift 工具都标记为 read-only/controlled derivative，不覆盖外部 BrainUICL、checkpoint 或 canonical EEG；单 seed smoke 不得升级为科学结论。
+- `effective_rank`、Fisher、attention entropy 等保持诊断/代理语义；正式 LoP 仍必须使用 fixed-budget fresh gap、至少 3 个独立 seed 和预注册反事实。
+
+### Validation
+
+- 112/112 EdgeForge 自动化测试通过。
+- ISRUC seed 4321 多阶段 instrumentation/probe pipeline 与 FACED seed 4321 pretrain smoke 通过；多阶段 audit 明确为 `insufficient-seeds`。
+- FACED 5-subject symlink mini-split 的 finetune 1-task checkpoint smoke 通过，并完成 EdgeForge stage-1 指标回收；该结果仅是接口验证。
+- v0.13.0 运行产物及 SHA-256 清单归档于 `logs/archive/v0.13.0/lop-instrumentation-20260822/`。
+
 ## 0.11.0 - 2026-08-21
 
 ### Added
@@ -32,6 +151,8 @@
 - 模型流水线的每个 stage 现在写入 `model_pipeline.<stage>` 版本化事件，保存状态、exit code、耗时和结构化输出摘要。
 - LoP 回归覆盖非连续 checkpoint 配对、exact subject context、scope/method/stage/context-grid/duplicate-seed 阻断、常量指标、缺失证据、最新 task 指标隔离以及 API 幂等持久化。
 - 本机 `target-probe` 和 synthetic pipeline 通过；Orange Pi probe、Runtime correctness 和离线 EEG inference 尚待真实串口/板端验证，因此本版本当前为候选状态。
+
+本地真实 BrainUICL 证据补充：4070S 上 seed 4321 已完成真实六阶段 eager/Inductor 验证；默认 Inductor attention correctness 失败，`inductor-no-pattern` 安全 profile 通过（max error `4.148e-5`，steady latency `0.994 ms`）。Orange Pi/P550 的 V12 探测与 ARM64 preflight 仍保持 blocked，不把板端能力或单 seed 结果升级为部署/LoP 结论。
 
 ## 0.10.2 - 2026-08-20
 

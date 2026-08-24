@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "input_shape": [
+    1,
+    20,
+    512
+  ],
+  "num_heads": 8,
+  "softmax_dim": 1,
+  "seed": 4321,
+  "device": "cuda:0",
+  "torch_version": "2.9.1+cu130",
+  "cuda_version": "13.0",
+  "python_version": "3.12.3",
+  "first_call_ms": {
+    "inductor": 517.4543771427125,
+    "inductor-no-pattern": 75.68321889266372
+  },
+  "comparisons": {
+    "inductor": {
+      "max_abs_error": 0.3559975028038025,
+      "mean_abs_error": 0.08685772866010666,
+      "allclose": false
+    },
+    "inductor-no-pattern": {
+      "max_abs_error": 1.2293457984924316e-07,
+      "mean_abs_error": 2.4238488549599424e-08,
+      "allclose": true
+    }
+  }
+}

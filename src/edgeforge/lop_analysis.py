@@ -19,6 +19,46 @@ ANALYSIS_SCHEMA_VERSION = 1
 DEFAULT_PREDICTOR = "task.spectra.transformer_1.effective_rank"
 DEFAULT_OUTCOME = "plasticity.acc_gain"
 SCIENTIFIC_MINIMUM_SEEDS = 3
+PAIR_CONTEXT_KEYS = ("dataset", "subject", "split", "method", "layer", "task_context", "comparison_group")
+
+# Results produced by different RA-EEG generations used slightly different
+# envelope prefixes.  Keep the v1 defaults stable for API compatibility, but
+# resolve these aliases at analysis time so an imported BrainUICL probe with
+# ``task.spectra.transformer.effective_rank`` and ``task.plasticity.acc_gain``
+# is not incorrectly reported as missing evidence.  ``transformer`` is the
+# semantically preferred name for the current BrainUICL implementation: its
+# one attention module is invoked repeatedly by the encoder rather than being
+# three separately parameterized layer modules.  ``transformer_1`` remains a
+# legacy spelling, not a claim that layer 1 was isolated.
+METRIC_ALIASES: dict[str, tuple[str, ...]] = {
+    "task.spectra.transformer_1.effective_rank": (
+        "task.spectra.transformer_1.effective_rank",
+        "task.spectra.transformer.effective_rank",
+    ),
+    "task.spectra.transformer.effective_rank": (
+        "task.spectra.transformer.effective_rank",
+        "task.spectra.transformer_1.effective_rank",
+    ),
+    "plasticity.acc_gain": (
+        "plasticity.acc_gain",
+        "task.plasticity.acc_gain",
+    ),
+    "task.plasticity.acc_gain": (
+        "task.plasticity.acc_gain",
+        "plasticity.acc_gain",
+    ),
+}
+
+
+def metric_candidates(name: str) -> tuple[str, ...]:
+    """Return equivalent metric spellings in preference order."""
+
+    return METRIC_ALIASES.get(name, (name,))
+
+
+def _resolve_metric_name(metrics: list[dict[str, Any]], name: str) -> str | None:
+    available = {str(item.get("name")) for item in metrics if item.get("name")}
+    return next((candidate for candidate in metric_candidates(name) if candidate in available), None)
 
 
 def _finite(value: Any) -> float | None:
@@ -106,10 +146,26 @@ def _context_key(context: Any) -> str:
     return json.dumps(context if isinstance(context, dict) else {}, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
+def _pair_context_key(context: Any) -> str:
+    """Keep stable task identity while ignoring measurement-only fields.
+
+    Predictor and outcome are normally produced by different adapters and
+    have different ``measurement_protocol``/``probe_budget`` values.  Those
+    fields must remain in the stored metric context for auditability, but
+    should not prevent an exact subject/split pairing.  Callers that need a
+    stricter design can put a stable discriminator in ``task_context``.
+    """
+
+    value = context if isinstance(context, dict) else {}
+    stable = {key: value[key] for key in PAIR_CONTEXT_KEYS if key in value}
+    return json.dumps(stable, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
 def _step_values(metrics: list[dict[str, Any]], name: str) -> dict[int, list[float]]:
     values: dict[int, list[float]] = defaultdict(list)
+    candidates = set(metric_candidates(name))
     for metric in metrics:
-        if metric.get("name") != name or metric.get("step") is None:
+        if metric.get("name") not in candidates or metric.get("step") is None:
             continue
         value = _finite(metric.get("value"))
         if value is not None:
@@ -119,12 +175,13 @@ def _step_values(metrics: list[dict[str, Any]], name: str) -> dict[int, list[flo
 
 def _exact_values(metrics: list[dict[str, Any]], name: str) -> dict[tuple[int, str], float]:
     values: dict[tuple[int, str], list[float]] = defaultdict(list)
+    candidates = set(metric_candidates(name))
     for metric in metrics:
-        if metric.get("name") != name or metric.get("step") is None:
+        if metric.get("name") not in candidates or metric.get("step") is None:
             continue
         value = _finite(metric.get("value"))
         if value is not None:
-            values[(int(metric["step"]), _context_key(metric.get("context")))].append(value)
+            values[(int(metric["step"]), _pair_context_key(metric.get("context")))].append(value)
     return {key: _mean(items) for key, items in values.items()}
 
 
@@ -188,9 +245,17 @@ def analyze_lop(
     )
 
     pairs: list[dict[str, Any]] = []
+    predictor_resolved: set[str] = set()
+    outcome_resolved: set[str] = set()
     for identity in identities:
         experiment_id = str(identity["experiment_id"])
         metrics = metrics_by_experiment.get(experiment_id, [])
+        predictor_name = _resolve_metric_name(metrics, predictor)
+        outcome_name = _resolve_metric_name(metrics, outcome)
+        if predictor_name:
+            predictor_resolved.add(predictor_name)
+        if outcome_name:
+            outcome_resolved.add(outcome_name)
         if context_policy == "exact":
             predictor_values = _exact_values(metrics, predictor)
             outcome_values = _exact_values(metrics, outcome)
@@ -294,6 +359,10 @@ def analyze_lop(
         "reasons": reasons,
         "predictor": predictor,
         "outcome": outcome,
+        "predictor_requested": predictor,
+        "outcome_requested": outcome,
+        "predictor_resolved": sorted(predictor_resolved),
+        "outcome_resolved": sorted(outcome_resolved),
         "lag": lag,
         "context_policy": context_policy,
         "minimum_pairs": minimum_pairs,
