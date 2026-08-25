@@ -91,7 +91,7 @@
 - 用只读 inventory 分离 ARM/RISC-V 架构、Runtime 文件、设备节点和显式 Backend 广告；厂商 RKNN 文件存在不等于 RK3588 NPU 可执行。
 - `scripts/configure-arm-target.py --apply --sync-source` 为 Orange Pi/P550 创建用户目录、源码、work/log/config 和 Worker 启动模板，不安装未知包、不写凭证、不启动远端任务。
 - 明确 `OperatorSpec`、`torch.export` Graph IR 与 MLIR/LLVM/backend lowering 的层次；后端只能通过独立 adapter 消费自己支持的输入格式。
-- Orange Pi 已完成 Mali OpenCL vector-add 与用户目录 RKNPU2 v1.5.2 C API MobileNet smoke；Vulkan loader 可加载但 Mali ICD 缺失，系统 demo 的 `libjpeg.so.62`/Runtime 版本问题单独留存。只有 RKNN conversion、量化、EEG 子图 correctness 和 benchmark 通过后才解除 `rknn` backend blocked。
+- Orange Pi 已完成 Mali OpenCL vector-add、用户目录 RKNPU2 v1.5.2 C API MobileNet smoke，以及用户目录 Rockchip `g610-g24p0` Mali Vulkan loader/instance/physical-device smoke；系统默认 ICD 仍未注册，故 Vulkan candidate 必须通过显式 manifest 和目标绑定证据使用。只有 RKNN conversion、量化、EEG 子图 correctness 和 benchmark 通过后才解除 `rknn` backend blocked。
 - `brainuicl.pt2` 的统一 lowering 暂不扩展为无证据的多后端广播；先绑定 Graph IR digest、layout/dtype contract 和一个真实转换后端。RKNN Toolkit2 只在主机侧负责转换，板端只接收受控 `.rknn` Artifact。
 
 ## 独立研究里程碑

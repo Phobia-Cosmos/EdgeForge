@@ -104,6 +104,14 @@ def build_parser() -> argparse.ArgumentParser:
     accelerator_smoke.add_argument("--skip-opencl", action="store_true")
     accelerator_smoke.add_argument("--skip-vulkan", action="store_true")
     accelerator_smoke.add_argument("--skip-rknn", action="store_true")
+    accelerator_smoke.add_argument(
+        "--vulkan-icd",
+        help="optional user-directory Vulkan ICD manifest for isolated bring-up (never installed)",
+    )
+    accelerator_smoke.add_argument(
+        "--vulkan-loader",
+        help="optional Vulkan loader shared library for isolated bring-up",
+    )
     accelerator_smoke.add_argument("--output", help="also write the JSON smoke result to this path")
 
     target_audit = subparsers.add_parser(
@@ -761,6 +769,8 @@ def main(argv: list[str] | None = None) -> None:
                 skip_opencl=args.skip_opencl,
                 skip_vulkan=args.skip_vulkan,
                 skip_rknn=args.skip_rknn,
+                vulkan_icd_manifest=args.vulkan_icd,
+                vulkan_loader_library=args.vulkan_loader,
             )
             if args.output:
                 output = Path(args.output)

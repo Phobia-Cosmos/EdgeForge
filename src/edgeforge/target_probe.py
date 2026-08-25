@@ -82,10 +82,36 @@ def _parse_cpu_model(cpu_info: str) -> str | None:
     return None
 
 
-def probe_target(*, name: str, ssh_host: str | None = None, timeout_seconds: float = 8.0) -> dict[str, Any]:
-    """Probe local or SSH target and return JSON-safe capability evidence."""
+def _user_vulkan_icd_probe(path: str | Path) -> list[str]:
+    """Build a read-only probe for an explicitly selected user ICD manifest."""
+
+    quoted = shlex.quote(str(Path(path).expanduser()))
+    return [
+        "sh",
+        "-lc",
+        f"manifest={quoted}; if test -f \"$manifest\"; then printf 'manifest=%s\\n' \"$manifest\"; sha256sum \"$manifest\"; else echo absent; fi",
+    ]
+
+
+def probe_target(
+    *,
+    name: str,
+    ssh_host: str | None = None,
+    timeout_seconds: float = 8.0,
+    vulkan_icd_manifest: str | Path | None = None,
+) -> dict[str, Any]:
+    """Probe local or SSH target and return JSON-safe capability evidence.
+
+    ``vulkan_icd_manifest`` is intentionally opt-in.  It records a user-owned
+    manifest as candidate evidence while leaving the API smoke/correctness gate
+    responsible for proving that the manifest actually creates a device.
+    """
+
+    probe_commands: dict[str, list[str]] = dict(PROBES)
+    if vulkan_icd_manifest:
+        probe_commands["vulkan_user_icd"] = _user_vulkan_icd_probe(vulkan_icd_manifest)
     results: dict[str, dict[str, Any]] = {}
-    for key, command in PROBES.items():
+    for key, command in probe_commands.items():
         argv = list(command)
         if ssh_host:
             # SSH concatenates the remote arguments into one command string;
@@ -105,6 +131,7 @@ def probe_target(*, name: str, ssh_host: str | None = None, timeout_seconds: flo
         "vulkan": "unavailable" not in (results["vulkan_info"].get("stdout") or ""),
         "rknpu_char": bool((results["rknpu_device"].get("stdout") or "").strip()) and (results["rknpu_device"].get("stdout") or "").strip() != "absent",
         "rknpu_drm_driver": results["rknpu_drm_driver"].get("stdout"),
+        "vulkan_user_icd": results.get("vulkan_user_icd", {}).get("stdout"),
     }
     fingerprint = hashlib.sha256(json.dumps(fingerprint_payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:24]
     vulkan_output = results["vulkan_info"].get("stdout") or ""
@@ -117,6 +144,7 @@ def probe_target(*, name: str, ssh_host: str | None = None, timeout_seconds: flo
     gpu_userspace_output = results["gpu_userspace"].get("stdout") or ""
     opencl_output = results["opencl_info"].get("stdout") or ""
     vulkan_loader_output = results["vulkan_loader"].get("stdout") or ""
+    vulkan_user_icd_output = results.get("vulkan_user_icd", {}).get("stdout") or ""
     has_rknpu_char = bool((results["rknpu_device"].get("stdout") or "").strip()) and (results["rknpu_device"].get("stdout") or "").strip() != "absent"
     has_rknpu_drm = any("=RKNPU" in line.upper() for line in rknpu_driver_output.splitlines())
     has_rknpu_platform = bool(rknpu_platform_output.strip()) and rknpu_platform_output.strip() != "absent"
@@ -155,7 +183,9 @@ def probe_target(*, name: str, ssh_host: str | None = None, timeout_seconds: flo
             "opencl_userspace": has_opencl_userspace,
             "opencl_device_evidence": "Device Name" in opencl_output and "Mali" in opencl_output,
             "vulkan_loader": has_vulkan_loader,
-            "vulkan_icd_manifest": any(".json" in line and "vulkan" in line.lower() for line in gpu_userspace_output.splitlines()),
+            "vulkan_icd_manifest": any(".json" in line and "vulkan" in line.lower() for line in gpu_userspace_output.splitlines())
+            or (bool(vulkan_user_icd_output.strip()) and "absent" not in vulkan_user_icd_output),
+            "vulkan_user_icd_manifest": bool(vulkan_user_icd_output.strip()) and "absent" not in vulkan_user_icd_output,
         },
         "probes": results,
     }

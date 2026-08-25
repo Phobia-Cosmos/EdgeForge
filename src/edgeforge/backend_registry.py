@@ -35,6 +35,18 @@ BACKENDS: dict[str, dict[str, Any]] = {
         "accelerators": [],
         "requires_explicit_target": True,
     },
+    "opencl": {
+        "kind": "gpu-kernel-runtime",
+        "architectures": ["x86_64", "aarch64"],
+        "accelerators": [],
+        "requires_explicit_target": True,
+    },
+    "vulkan": {
+        "kind": "gpu-runtime",
+        "architectures": ["x86_64", "aarch64"],
+        "accelerators": [],
+        "requires_explicit_target": True,
+    },
     "triton": {
         "kind": "gpu-kernel-runtime",
         "architectures": ["x86_64"],

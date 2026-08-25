@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 
-VERSION = "0.16.1"
+VERSION = "0.16.2"
 
 
 def _load_probe_module():
@@ -102,6 +102,10 @@ def _remote_probe(args: argparse.Namespace) -> tuple[dict[str, Any], str, str]:
         remote_command.extend(["--model", args.model])
     if args.runtime_library:
         remote_command.extend(["--runtime-library", args.runtime_library])
+    if args.vulkan_icd:
+        remote_command.extend(["--vulkan-icd", args.vulkan_icd])
+    if args.vulkan_loader:
+        remote_command.extend(["--vulkan-loader", args.vulkan_loader])
     for flag, enabled in (("--skip-opencl", args.skip_opencl), ("--skip-vulkan", args.skip_vulkan), ("--skip-rknn", args.skip_rknn)):
         if enabled:
             remote_command.append(flag)
@@ -145,6 +149,8 @@ def _run_local(args: argparse.Namespace) -> dict[str, Any]:
         skip_opencl=args.skip_opencl,
         skip_vulkan=args.skip_vulkan,
         skip_rknn=args.skip_rknn,
+        vulkan_icd_manifest=args.vulkan_icd,
+        vulkan_loader_library=args.vulkan_loader,
     )
 
 
@@ -156,6 +162,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--probe-source-root", help=argparse.SUPPRESS)
     parser.add_argument("--model", help="board-local .rknn model; defaults to a user-cache model, then vendor demo")
     parser.add_argument("--runtime-library", help="board-local librknnrt.so/librknn_api.so")
+    parser.add_argument("--vulkan-icd", help="board-local user-directory Vulkan ICD manifest")
+    parser.add_argument("--vulkan-loader", help="board-local Vulkan loader shared library")
     parser.add_argument("--repeat", type=int, default=3)
     parser.add_argument("--skip-opencl", action="store_true")
     parser.add_argument("--skip-vulkan", action="store_true")

@@ -111,7 +111,14 @@ def _summarize_curve(rows: list[dict[str, Any]], keys: tuple[str, ...], prefix: 
         # NumPy < 2.0 exposes the same composite trapezoid rule as ``trapz``;
         # keep the probe runnable in the board/reference environments without
         # changing the metric definition.
-        integrate = getattr(np, "trapezoid", np.trapz)
+        # Do not pass ``np.trapz`` as getattr's default: Python evaluates the
+        # default eagerly, and NumPy 2.5 removed the legacy alias even when the
+        # preferred ``trapezoid`` implementation is available.
+        integrate = getattr(np, "trapezoid", None)
+        if integrate is None:
+            integrate = getattr(np, "trapz", None)
+        if integrate is None:
+            raise RuntimeError("NumPy must provide trapezoid integration")
         result[name + "_aulc"] = float(integrate(values, x) / max(1.0, x[-1]))
     return result
 

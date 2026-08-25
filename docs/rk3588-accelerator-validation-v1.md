@@ -74,3 +74,7 @@ PYTHONPATH=src python3 scripts/model-deploy-preflight.py \
 2. 为 EEG 网络先选一个不含动态 shape/自定义算子的静态子图，完成 FP32 reference → RKNN INT8 子图的逐层误差对照，再扩大算子覆盖；模型转换失败必须保留失败日志。
 3. 若确实需要 Vulkan，向 Orange Pi 镜像提供方确认对应 Mali-G610 Vulkan userspace 包/ICD manifest，先在用户目录或可回滚系统快照中验证；不要用 `libjpeg.so.8` 冒充 `libjpeg.so.62`，也不要把 Mesa software ICD 当作 Mali 结果。
 4. 将本 smoke 注册为 EdgeForge 的 accelerator correctness stage；只有该 stage、模型 correctness 和目标架构/驱动证据同时通过，才允许 Worker 显式广告 `rknn` backend。当前 Worker 仍默认只广告 `python-reference`。
+
+## 0.16.2 后续验证
+
+0.16.1 的“Vulkan ICD 尚未配置”结论针对当时的系统默认搜索路径仍然成立；0.16.2 在不改系统的前提下发现并验证了用户目录 Rockchip `g610-g24p0` ICD candidate。详见 [RK3588 Vulkan 用户态验证](rk3588-vulkan-userspace-validation-v1.md)；两个版本的日志和 digest 独立保存。

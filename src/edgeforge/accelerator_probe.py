@@ -17,6 +17,7 @@ import platform
 import shutil
 import subprocess
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -66,6 +67,72 @@ def _command_output(argv: list[str], timeout: float = 3.0) -> dict[str, Any]:
         "stderr": completed.stderr.strip(),
         "elapsed_ms": round((time.perf_counter() - started) * 1000.0, 3),
     }
+
+
+@contextmanager
+def _temporary_environment(**updates: str | None):
+    """Temporarily set environment variables for a vendor-loader probe.
+
+    Vulkan chooses ICDs from the process environment when the loader is first
+    used.  Keeping the override scoped to the probe prevents a board worker or
+    a caller embedding EdgeForge from accidentally inheriting a diagnostic ICD.
+    ``None`` removes a variable for the duration of the context.
+    """
+
+    previous: dict[str, str | None] = {key: os.environ.get(key) for key in updates}
+    try:
+        for key, value in updates.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        yield
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
+def _vulkan_manifest_evidence(manifest: str | Path | None) -> dict[str, Any]:
+    """Read-only evidence for an optional Vulkan ICD manifest.
+
+    A manifest and a loadable shared object are only *candidate* evidence.  A
+    real Vulkan capability is recorded by :func:`probe_vulkan` after the loader
+    creates an instance and enumerates a physical device.
+    """
+
+    if not manifest:
+        return {"path": None, "status": "not-requested"}
+    path = Path(manifest).expanduser()
+    result: dict[str, Any] = {
+        "path": str(path),
+        "status": "missing",
+        "sha256": None,
+        "library_path": None,
+        "library_exists": False,
+        "library_sha256": None,
+    }
+    try:
+        raw = path.read_bytes()
+        result["sha256"] = hashlib.sha256(raw).hexdigest()
+        payload = json.loads(raw.decode("utf-8"))
+        icd = payload.get("ICD") if isinstance(payload, dict) else None
+        library = icd.get("library_path") if isinstance(icd, dict) else None
+        if isinstance(library, str) and library:
+            library_path = Path(library).expanduser()
+            if not library_path.is_absolute():
+                library_path = path.parent / library_path
+            result["library_path"] = str(library_path)
+            result["library_exists"] = library_path.is_file()
+            if library_path.is_file():
+                result["library_sha256"] = hashlib.sha256(library_path.read_bytes()).hexdigest()
+        result["status"] = "candidate"
+    except (OSError, UnicodeError, json.JSONDecodeError, AttributeError, TypeError) as error:
+        result["status"] = "invalid"
+        result["error"] = str(error)
+    return result
 
 
 def collect_board_evidence() -> dict[str, Any]:
@@ -410,19 +477,79 @@ def _vulkan_version(value: int) -> str:
     return f"{value >> 22}.{(value >> 12) & 0x3FF}.{value & 0xFFF}"
 
 
-def probe_vulkan() -> dict[str, Any]:
-    """Probe the Vulkan loader and attempt instance/physical-device creation."""
+def probe_vulkan(
+    *,
+    icd_manifest: str | Path | None = None,
+    loader_library: str | Path | None = None,
+) -> dict[str, Any]:
+    """Probe the Vulkan loader and attempt instance/physical-device creation.
+
+    ``icd_manifest`` is an opt-in, user-directory override intended for board
+    bring-up.  It is never installed or copied by this function.  This makes it
+    possible to distinguish three cases that otherwise look identical from a
+    package inventory: a working loader, a manifest whose shared object is not
+    an ICD, and a real physical device.  The default path retains the normal
+    system Vulkan search behavior.
+    """
+
+    manifest_evidence = _vulkan_manifest_evidence(icd_manifest)
+    library_name = str(loader_library) if loader_library else "libvulkan.so.1"
+    environment_override = str(Path(icd_manifest).expanduser()) if icd_manifest else None
+    if icd_manifest and (
+        manifest_evidence.get("status") != "candidate"
+        or not manifest_evidence.get("library_exists")
+    ):
+        return _status(
+            "blocked",
+            reason="Vulkan ICD manifest is invalid or its library is missing",
+            loader=library_name,
+            icd_manifest=manifest_evidence,
+            icd_manifest_override=environment_override,
+        )
+    try:
+        # The loader reads VK_ICD_FILENAMES while its global dispatch table is
+        # initialized.  Set it before loading/calling any Vulkan entry point.
+        with _temporary_environment(VK_ICD_FILENAMES=environment_override):
+            lib = ctypes.CDLL(library_name)
+            return _probe_vulkan_loaded_library(lib, library_name, manifest_evidence, environment_override)
+    except OSError as error:
+        return _status(
+            "blocked",
+            reason="Vulkan loader unavailable",
+            error=str(error),
+            loader=library_name,
+            icd_manifest=manifest_evidence,
+        )
+    except Exception as error:
+        return _status(
+            "fail",
+            reason="Vulkan probe exception",
+            error=repr(error),
+            loader=library_name,
+            icd_manifest=manifest_evidence,
+        )
+
+
+def _probe_vulkan_loaded_library(
+    lib: Any,
+    library_name: str,
+    manifest_evidence: dict[str, Any],
+    environment_override: str | None,
+) -> dict[str, Any]:
+    """Run the ABI calls after the loader has been loaded.
+
+    Keeping this in a separate function makes the loader/ICD contract easy to
+    unit-test without requiring Vulkan libraries on the development host.
+    """
 
     try:
-        lib = ctypes.CDLL("libvulkan.so.1")
-    except OSError as error:
-        return _status("blocked", reason="Vulkan loader unavailable", error=str(error))
-    try:
         version = ctypes.c_uint32(0)
-        enumerate_version = lib.vkEnumerateInstanceVersion
-        enumerate_version.argtypes = [ctypes.POINTER(ctypes.c_uint32)]
-        enumerate_version.restype = ctypes.c_int32
-        version_result = int(enumerate_version(ctypes.byref(version)))
+        enumerate_version = getattr(lib, "vkEnumerateInstanceVersion", None)
+        version_result = -1
+        if enumerate_version is not None:
+            enumerate_version.argtypes = [ctypes.POINTER(ctypes.c_uint32)]
+            enumerate_version.restype = ctypes.c_int32
+            version_result = int(enumerate_version(ctypes.byref(version)))
 
         class ExtensionProperties(ctypes.Structure):
             _fields_ = [("extensionName", ctypes.c_char * 256), ("specVersion", ctypes.c_uint32)]
@@ -471,15 +598,21 @@ def probe_vulkan() -> dict[str, Any]:
         create_instance.restype = ctypes.c_int32
         create_result = int(create_instance(ctypes.byref(create_info), None, ctypes.byref(instance)))
         result: dict[str, Any] = {
-            "loader": "libvulkan.so.1",
+            "loader": library_name,
+            "loader_library": library_name,
             "loader_api_version": _vulkan_version(version.value) if version_result == 0 else None,
             "loader_version_result": version_result,
             "global_extension_count": int(extension_count.value),
             "global_extensions": extensions,
             "instance_result": create_result,
+            "icd_manifest_override": environment_override,
+            "icd_manifest": manifest_evidence,
         }
         if create_result != 0 or not instance:
-            reason = "no Vulkan ICD/device registered" if create_result == -9 else "Vulkan instance creation failed"
+            if create_result == -9 and environment_override and manifest_evidence.get("library_exists"):
+                reason = "Vulkan ICD rejected or lacks loader entry points"
+            else:
+                reason = "no Vulkan ICD/device registered" if create_result == -9 else "Vulkan instance creation failed"
             return _status("blocked", reason=reason, **result)
 
         try:
@@ -498,7 +631,14 @@ def probe_vulkan() -> dict[str, Any]:
             destroy_instance.restype = None
             destroy_instance(instance, None)
     except Exception as error:
-        return _status("fail", reason="Vulkan probe exception", error=repr(error))
+        return _status(
+            "fail",
+            reason="Vulkan probe exception",
+            error=repr(error),
+            loader=library_name,
+            icd_manifest=manifest_evidence,
+            icd_manifest_override=environment_override,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -792,11 +932,17 @@ def run_accelerator_probe(
     skip_opencl: bool = False,
     skip_vulkan: bool = False,
     skip_rknn: bool = False,
+    vulkan_icd_manifest: str | Path | None = None,
+    vulkan_loader_library: str | Path | None = None,
 ) -> dict[str, Any]:
     evidence = collect_board_evidence()
     gpu: dict[str, Any] = {
         "opencl": _status("skipped", reason="requested by caller") if skip_opencl else probe_opencl(),
-        "vulkan": _status("skipped", reason="requested by caller") if skip_vulkan else probe_vulkan(),
+        "vulkan": (
+            _status("skipped", reason="requested by caller")
+            if skip_vulkan
+            else probe_vulkan(icd_manifest=vulkan_icd_manifest, loader_library=vulkan_loader_library)
+        ),
     }
     gpu_passes = [item.get("status") == "pass" for item in gpu.values() if item.get("status") != "skipped"]
     gpu["status"] = "pass" if gpu_passes and all(gpu_passes) else ("partial" if any(gpu_passes) else "blocked")

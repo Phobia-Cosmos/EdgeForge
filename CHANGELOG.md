@@ -2,6 +2,29 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.16.2 - 2026-08-25 (development snapshot)
+
+### Added
+
+- `accelerator_probe.probe_vulkan` 和 `rk3588-accelerator-smoke.py` 支持显式的用户目录 Vulkan ICD manifest/loader；探测会记录 manifest、库文件及 SHA-256，并在进程结束后恢复 `VK_ICD_FILENAMES`，不会修改板端系统配置。
+- `target_probe`/`scripts/probe-target.py` 支持 `--vulkan-icd`，将用户目录候选 manifest 与系统 loader、DRM 和 OpenCL 证据分开保存；候选文件仍必须通过 API smoke 才能满足部署门禁。
+- Backend registry 现在显式列出 `opencl` 与 `vulkan` target contracts；它们只声明架构边界，实际 loader/ICD、API smoke、模型 correctness 和 benchmark 仍由 deployment preflight 逐项门禁。
+- 新增 Vulkan 用户态验证证据：Orange Pi RK3588 使用 Rockchip `g610-g24p0` Mali GBM library 在用户目录注册临时 ICD 后，Vulkan loader 创建 instance 并枚举到 Mali-G610 physical device；同时 OpenCL vector-add 与 RKNN C API smoke 均通过。
+- 修复 NumPy 2.5 移除 `np.trapz` 后 fixed-budget LoP curve summary 的兼容性问题，避免在 `np.trapezoid` 已存在时仍提前求值旧别名。
+
+### Safety
+
+- 没有向 Orange Pi `/usr/lib`、`/etc/vulkan` 或系统包数据库写入文件；`g610-g13p0`（当前系统 X11/GBM 包）被明确记录为缺少 Vulkan ICD entry points，未用它冒充成功驱动。
+- Vulkan 结果的正确性范围仍是 loader → instance → physical-device enumeration；没有把它外推为 EEG 模型算子覆盖、模型数值 correctness 或性能结论。RKNN smoke 仍只使用零输入 MobileNet，并标记 `model_correctness=not-evaluated`。
+
+### Validation
+
+- Orange Pi `g610-g24p0` candidate library SHA-256：`4d7cb76a1d073c39a4fee34692e0422b1421ff258045a6cef40e9f91492c89a6`；ICD manifest SHA-256：`b35de60dd3478f8193a1aad4ff522ddec464edbd2cc2b5fd99367851d234b12f`。
+- Vulkan API：loader `1.3.204`、instance result `0`、physical device count `1`、Mali-G610 / `DRIVER_ID_ARM_PROPRIETARY`；OpenCL max absolute error `0.0`；RKNN API `1.4.0` / driver `0.9.6`，三次零输入输出 digest 一致。
+- `g610-g13p0` control candidate 返回 `VK_ERROR_INCOMPATIBLE_DRIVER (-9)` 且没有 `vk_icdGetInstanceProcAddr`，验证了探测逻辑不会把任意 Mali ELF 当作 Vulkan ICD。
+- 以同名 `orangepi` target probe + g24p0 full smoke 驱动 `vulkan` deployment preflight，结果为 `PASS`（execution 未执行，仍需模型 artifact/correctness gate）。
+- 完整证据与命令、测试和清单归档于 `logs/archive/v0.16.2/rk3588-vulkan-userspace-audit/`。
+
 ## 0.16.1 - 2026-08-24 (development snapshot)
 
 ### Added

@@ -89,6 +89,24 @@ class DeploymentPreflightTests(unittest.TestCase):
         self.assertEqual(result["status"], "BLOCKED")
         self.assertTrue(result["missing_alternative_capabilities"])
 
+    def test_vulkan_requires_explicit_icd_and_matching_api_smoke(self):
+        manifest = {
+            "model": {"name": "synthetic-vulkan"},
+            "compiler": {"backend": "vulkan"},
+            "target": {"architecture": "aarch64"},
+        }
+        probe = {
+            "name": "orangepi",
+            "status": "online",
+            "summary": {"architecture": "aarch64"},
+            "runtime_capabilities": {"vulkan_loader": True, "vulkan_icd_manifest": False},
+        }
+        blocked = evaluate_preflight(manifest, probe, {"name": "orangepi", "gpu": {"vulkan": {"status": "pass"}}})
+        self.assertEqual(blocked["status"], "BLOCKED")
+        probe["runtime_capabilities"]["vulkan_icd_manifest"] = True
+        passed = evaluate_preflight(manifest, probe, {"name": "orangepi", "gpu": {"vulkan": {"status": "pass"}}})
+        self.assertEqual(passed["status"], "PASS")
+
 
 if __name__ == "__main__":
     unittest.main()

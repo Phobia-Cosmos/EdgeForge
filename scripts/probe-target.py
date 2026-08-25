@@ -18,10 +18,16 @@ def main() -> None:
     parser.add_argument("--ssh-host")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--timeout-seconds", type=float, default=8.0)
+    parser.add_argument("--vulkan-icd", help="explicit user-directory Vulkan ICD manifest to record")
     parser.add_argument("--log-dir", type=Path, default=Path("logs"))
-    parser.add_argument("--version", default="0.12.0")
+    parser.add_argument("--version", default="0.16.2")
     args = parser.parse_args()
-    result = probe_target(name=args.name, ssh_host=args.ssh_host, timeout_seconds=args.timeout_seconds)
+    result = probe_target(
+        name=args.name,
+        ssh_host=args.ssh_host,
+        timeout_seconds=args.timeout_seconds,
+        vulkan_icd_manifest=args.vulkan_icd,
+    )
     write_probe(args.output, result)
     encoded = json.dumps(result, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     run_id = f"{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}-{args.name}-{hashlib.sha256(encoded).hexdigest()[:8]}"

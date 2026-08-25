@@ -1,0 +1,130 @@
+{
+  "evidence": {
+    "architecture": "aarch64",
+    "drm_nodes": [
+      {
+        "driver": "/sys/bus/platform/drivers/rockchip-drm",
+        "node": "/dev/dri/card0"
+      },
+      {
+        "driver": "/sys/devices/platform/display-subsystem/drm/card0/driver",
+        "node": "/dev/dri/card0-HDMI-A-1"
+      },
+      {
+        "driver": "/sys/devices/platform/display-subsystem/drm/card0/driver",
+        "node": "/dev/dri/card0-Writeback-1"
+      },
+      {
+        "driver": "/sys/bus/platform/drivers/RKNPU",
+        "node": "/dev/dri/card1"
+      },
+      {
+        "driver": "/sys/bus/platform/drivers/rockchip-drm",
+        "node": "/dev/dri/renderD128"
+      },
+      {
+        "driver": "/sys/bus/platform/drivers/RKNPU",
+        "node": "/dev/dri/renderD129"
+      }
+    ],
+    "kernel": "6.1.43-rockchip-rk3588",
+    "mali_firmware": [
+      "/lib/firmware/mali_csffw.bin"
+    ],
+    "opencl_icd_manifests": [
+      "/etc/OpenCL/vendors/mali.icd"
+    ],
+    "rknn_server": {
+      "path": "/usr/bin/rknn_server",
+      "process": {
+        "elapsed_ms": 33.801,
+        "exit_code": 0,
+        "status": "succeeded",
+        "stderr": "",
+        "stdout": "120233"
+      }
+    },
+    "rknpu_char_devices": [],
+    "rknpu_drm_nodes": [
+      "/dev/dri/card1",
+      "/dev/dri/renderD129"
+    ],
+    "rknpu_platform_devices": [
+      "/sys/bus/platform/devices/fdab0000.npu",
+      "/sys/bus/platform/devices/rknpu_dev.10.auto"
+    ],
+    "runtime_libraries": [
+      "/lib/aarch64-linux-gnu/libOpenCL.so.1",
+      "/lib/aarch64-linux-gnu/libmali.so.1",
+      "/lib/aarch64-linux-gnu/libvulkan.so.1",
+      "/usr/lib/aarch64-linux-gnu/libOpenCL.so.1",
+      "/usr/lib/aarch64-linux-gnu/libmali.so.1",
+      "/usr/lib/aarch64-linux-gnu/libvulkan.so.1",
+      "/usr/lib/librknn_api.so",
+      "/usr/lib/librknnrt.so"
+    ],
+    "vulkan_icd_manifests": [],
+    "vulkaninfo": {
+      "path": "/home/orangepi/.cache/edgeforge/rk3588-smoke/vulkan-tools/root/usr/bin/vulkaninfo",
+      "probe": {
+        "elapsed_ms": 7.513,
+        "exit_code": 1,
+        "status": "failed",
+        "stderr": "Cannot create Vulkan instance.\nThis problem is often caused by a faulty installation of the Vulkan driver or attempting to use a GPU that does not support Vulkan.\nERROR at ./vulkaninfo/vulkaninfo.h:649:vkCreateInstance failed with ERROR_INCOMPATIBLE_DRIVER",
+        "stdout": ""
+      }
+    }
+  },
+  "gpu": {
+    "opencl": {
+      "reason": "requested by caller",
+      "status": "skipped"
+    },
+    "status": "blocked",
+    "vulkan": {
+      "global_extension_count": 2,
+      "global_extensions": [
+        "VK_EXT_debug_report",
+        "VK_EXT_debug_utils"
+      ],
+      "icd_manifest": {
+        "library_exists": true,
+        "library_path": "/home/orangepi/.cache/edgeforge/rk3588-vulkan/lib/libmali-valhall-g610-g13p0-gbm.so",
+        "library_sha256": "d760d8b67de2511dd20415098f8778cc50a416ec069cc8e6ce8bcde536acb0ea",
+        "path": "/home/orangepi/.cache/edgeforge/rk3588-vulkan/icd/mali-g610-g13p0.json",
+        "sha256": "2a7db95edca1466ac47d240331e2f524ceaaef26bf1178d2d060065569dd7e1a",
+        "status": "candidate"
+      },
+      "icd_manifest_override": "/home/orangepi/.cache/edgeforge/rk3588-vulkan/icd/mali-g610-g13p0.json",
+      "instance_result": -9,
+      "loader": "libvulkan.so.1",
+      "loader_api_version": "1.3.204",
+      "loader_library": "libvulkan.so.1",
+      "loader_version_result": 0,
+      "reason": "Vulkan ICD rejected or lacks loader entry points",
+      "status": "blocked"
+    }
+  },
+  "manual_reference": "OrangePi_5_Ultra_RK3588_user_manual_v1.0.pdf §3.37",
+  "name": "orangepi-vulkan-candidate",
+  "npu": {
+    "reason": "requested by caller",
+    "status": "skipped"
+  },
+  "probe_mode": "offline-api-smoke",
+  "probed_at_utc": "2026-08-25T09:11:18Z",
+  "result_digest": "34fe3e2e27647efe78df1d43967dc574e7a9218cc53d055c53b8898408fd02f7",
+  "runner": {
+    "elapsed_ms": 2338.252,
+    "version": "0.16.2"
+  },
+  "schema_version": 1,
+  "scientific_conclusion_allowed": false,
+  "status": "blocked",
+  "toolchain_contract": {
+    "board_api": "RKNN C API",
+    "board_runtime": "RKNPU2 librknnrt.so / rknn_server",
+    "camera_used": false,
+    "conversion_host": "Ubuntu PC + RKNN-Toolkit2"
+  }
+}

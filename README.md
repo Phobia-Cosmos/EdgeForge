@@ -1,8 +1,8 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.16.1` development snapshot 在 V16 ARM/RISC-V target setup 之上增加 RK3588 GPU/NPU 用户态 API smoke、DRM RKNPU 识别和 RKNN board-runtime preflight；模型框架通过受控外部命令接入，IREE 仍是可插拔后端而非系统依赖。
+EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.16.2` development snapshot 在 V16 ARM/RISC-V target setup 之上增加 RK3588 GPU/NPU 用户态 API smoke、可选用户目录 Vulkan ICD 验证、DRM RKNPU 识别和 RKNN board-runtime preflight；模型框架通过受控外部命令接入，IREE 仍是可插拔后端而非系统依赖。
 
-完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)，V10 Model Pipeline 见 [docs/design-v10.md](docs/design-v10.md)，V11 Target Probe 见 [docs/design-v11.md](docs/design-v11.md)，BrainUICL/RA-EEG 迁移见 [docs/raeeg-migration.md](docs/raeeg-migration.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，双机进度与 LoP 计划见 [docs/sync-progress-and-lop-plan-20260822.md](docs/sync-progress-and-lop-plan-20260822.md)，LoP 统一数学与 FACED/ISRUC 实验计划见 [docs/lop-eeg-unified-plan-20260822.md](docs/lop-eeg-unified-plan-20260822.md)，BrainUICL 指标采集见 [docs/brainuicl-instrumentation-v1.md](docs/brainuicl-instrumentation-v1.md)，LoP 矩阵运行器见 [docs/raeeg-lop-matrix-v1.md](docs/raeeg-lop-matrix-v1.md)，0.14.0 本地结果见 [docs/raeeg-lop-local-results-20260823.md](docs/raeeg-lop-local-results-20260823.md)，0.15.0 retention 结果见 [docs/raeeg-lop-retention-local-results-20260823.md](docs/raeeg-lop-retention-local-results-20260823.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)，V10 Model Pipeline 见 [docs/design-v10.md](docs/design-v10.md)，V11 Target Probe 见 [docs/design-v11.md](docs/design-v11.md)，BrainUICL/RA-EEG 迁移见 [docs/raeeg-migration.md](docs/raeeg-migration.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，双机进度与 LoP 计划见 [docs/sync-progress-and-lop-plan-20260822.md](docs/sync-progress-and-lop-plan-20260822.md)，LoP 统一数学与 FACED/ISRUC 实验计划见 [docs/lop-eeg-unified-plan-20260822.md](docs/lop-eeg-unified-plan-20260822.md)，BrainUICL 指标采集见 [docs/brainuicl-instrumentation-v1.md](docs/brainuicl-instrumentation-v1.md)，LoP 矩阵运行器见 [docs/raeeg-lop-matrix-v1.md](docs/raeeg-lop-matrix-v1.md)，0.14.0 本地结果见 [docs/raeeg-lop-local-results-20260823.md](docs/raeeg-lop-local-results-20260823.md)，0.15.0 retention 结果见 [docs/raeeg-lop-retention-local-results-20260823.md](docs/raeeg-lop-retention-local-results-20260823.md)，RK3588 Vulkan 用户态验证见 [docs/rk3588-vulkan-userspace-validation-v1.md](docs/rk3588-vulkan-userspace-validation-v1.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 当前硬件基线
 
@@ -37,7 +37,7 @@ ARM/RISC-V 目标的用户目录级准备使用 [docs/ai-compiler-arm-target-set
 ```sh
 PYTHONPATH=src python3 scripts/configure-arm-target.py \
   --apply --sync-source \
-  --output-root .edgeforge/arm-target-setup/v0.16.1
+  --output-root .edgeforge/arm-target-setup/v0.16.2
 ```
 
 模型发布前可用 `target-audit` 将 manifest、Target Probe 和模型级 correctness 证据绑定检查。它要求目标架构匹配、Backend 被显式广告、所需 accelerator 出现在真实 probe 中，并且存在同一 manifest digest 的成功模型运行；缺少任一证据都会返回 `blocked` 并以退出码 1 结束：
@@ -52,7 +52,7 @@ python3 -m edgeforge target-audit \
 
 该审计只判断部署证据是否完整，不把 RK3588 字符串、驱动文件或 `backend_claims.inferred` 当成 NPU/Runtime correctness，也不产生性能或科研结论。完整契约见 [docs/deployment-target-audit.md](docs/deployment-target-audit.md)。
 
-RKNN/OpenCL/Vulkan 的 capability preflight 还要求已保存的 API smoke 证据；例如 RKNN 使用 `scripts/model-deploy-preflight.py --runtime-validation .edgeforge/rk3588-accelerator-smoke-v0.16.1.json`。仅发现 `librknnrt.so` 或 DRM 节点不会自动解锁 backend。
+RKNN/OpenCL/Vulkan 的 capability preflight 还要求已保存的 API smoke 证据；例如 RKNN 使用 `scripts/model-deploy-preflight.py --runtime-validation .edgeforge/rk3588-accelerator-smoke-v0.16.2.json`。Orange Pi 的 Mali Vulkan 用户态包应以 `--vulkan-icd` 显式传入用户目录 manifest，再把同一份 smoke JSON 交给 preflight；仅发现 `librknnrt.so`、DRM 节点或 Vulkan loader 不会自动解锁 backend。
 
 另开终端启动本机 Worker：
 
