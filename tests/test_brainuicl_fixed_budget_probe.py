@@ -27,6 +27,12 @@ class BrainUICLFixedBudgetProbeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             probe.parse_steps("0")
 
+    def test_configure_reproducibility_records_deterministic_contract(self):
+        result = probe.configure_reproducibility(4321)
+        self.assertEqual(result["seed"], 4321)
+        self.assertEqual(result["cublas_workspace_config"], ":4096:8")
+        self.assertTrue(result["deterministic_algorithms"])
+
 
 if __name__ == "__main__":
     unittest.main()

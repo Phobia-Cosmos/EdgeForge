@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "matrix_id": "isruc-lop-v0163-dose-local",
+  "version": "0.16.3",
+  "brainuicl_root": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL",
+  "python": "/home/undefined/Disk/python-envs/brainuicl/bin/python",
+  "output_root": "/home/undefined/Disk/ai-storage/EdgeForge/raeeg-lop-matrix/v0.16.3-dose-local",
+  "audit": {"context_policy": "exact", "minimum_pairs": 3, "minimum_seeds": 3},
+  "defaults": {
+    "seed": 4321,
+    "device": "cuda:0",
+    "max_files": 4,
+    "batch_size": 1,
+    "max_batches": 2,
+    "importance_batches": 2,
+    "importance_top_k": 20,
+    "probe_steps": "0,10,25,50",
+    "train_fraction": 0.5,
+    "lr": 1e-5,
+    "weight_decay": 0.0,
+    "split": "subject-2-dose-local"
+  },
+  "datasets": [{
+    "name": "ISRUC",
+    "data_root": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32",
+    "subjects": [2],
+    "stages": [0, 10, 25, 49],
+    "conditions": [
+      {"name": "clean"},
+      {"name": "noise-s1p0", "data_root": "/home/undefined/Disk/datasets/edgeforge-raeeg-shifts/v0.16.3/isruc-noise-s1p0-subject2"},
+      {"name": "dropout-s0p5", "data_root": "/home/undefined/Disk/datasets/edgeforge-raeeg-shifts/v0.16.3/isruc-dropout-s0p5-subject2"}
+    ],
+    "methods": [{
+      "name": "finetune",
+      "checkpoint_roots": {
+        "0": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain",
+        "10": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL/experiments/regularization_cl_eeg_runs/clean49_bn_frozen_e10_lr1e6_seed4321/finetune/checkpoints/individual_10",
+        "25": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL/experiments/regularization_cl_eeg_runs/clean49_bn_frozen_e10_lr1e6_seed4321/finetune/checkpoints/individual_25",
+        "49": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL/experiments/regularization_cl_eeg_runs/clean49_bn_frozen_e10_lr1e6_seed4321/finetune/checkpoints/individual_49"
+      },
+      "baseline_checkpoint_root": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain",
+      "fresh_checkpoint_root": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain"
+    }]
+  }]
+}

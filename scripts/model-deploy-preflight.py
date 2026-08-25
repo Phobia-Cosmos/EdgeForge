@@ -19,7 +19,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--log-dir", type=Path, default=Path("logs"))
     parser.add_argument("--runtime-validation", type=Path, help="recorded accelerator smoke JSON; never executed")
-    parser.add_argument("--version", default="0.16.2")
+    parser.add_argument("--version", default="0.16.3")
     args = parser.parse_args()
     validation = load_json(args.runtime_validation) if args.runtime_validation else None
     result = evaluate_preflight(load_json(args.manifest), load_json(args.probe), validation)

@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 
-VERSION = "0.16.1"
+VERSION = "0.16.3"
 REMOTE_SOURCE = "~/.local/src/edgeforge"
 REMOTE_BASE = "~/.local/share/edgeforge"
 

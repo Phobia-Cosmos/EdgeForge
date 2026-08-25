@@ -16,6 +16,8 @@ import hashlib
 import importlib.util
 import json
 import math
+import os
+import random
 import sys
 from pathlib import Path
 from typing import Any
@@ -44,6 +46,42 @@ def parse_steps(value: str) -> list[int]:
     if not steps or steps[0] != 0 or steps[-1] <= 0:
         raise ValueError("probe steps must include 0 and at least one positive step")
     return steps
+
+
+def configure_reproducibility(seed: int) -> dict[str, Any]:
+    """Configure best-effort deterministic execution for a probe.
+
+    CUDA convolution/reduction kernels can otherwise choose different
+    algorithms between independent short probes, changing a small fixed-budget
+    plasticity curve enough to look like a stage effect.  The setting is
+    recorded in the result; ``warn_only`` keeps unsupported vendor kernels from
+    turning a diagnostic run into an unexplained crash.
+    """
+
+    os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+    random.seed(seed)
+    np.random.seed(seed % (2**32 - 1))
+    import torch
+
+    torch.manual_seed(seed)
+    cuda_available = bool(torch.cuda.is_available())
+    if cuda_available:
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    try:
+        torch.use_deterministic_algorithms(True, warn_only=True)
+        deterministic_algorithms = True
+    except (AttributeError, RuntimeError):
+        deterministic_algorithms = False
+    return {
+        "seed": int(seed),
+        "cuda_available": cuda_available,
+        "deterministic_algorithms": deterministic_algorithms,
+        "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
+        "cudnn_deterministic": bool(getattr(torch.backends.cudnn, "deterministic", False)),
+        "cudnn_benchmark": bool(getattr(torch.backends.cudnn, "benchmark", False)),
+    }
 
 
 def clone_and_reset(blocks):
@@ -271,8 +309,10 @@ def main() -> None:
         raise SystemExit("train-fraction must be in (0,1)")
     steps = parse_steps(args.probe_steps)
     instrumentation._setup_brainuicl_import(args.brainuicl_root)
+    os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
     import torch
 
+    reproducibility = configure_reproducibility(args.seed)
     device = torch.device(args.device if args.device.startswith("cuda") and torch.cuda.is_available() else "cpu")
     classes = 9 if args.dataset == "FACED" else 5
     pairs = instrumentation._sample_files(args.data_root, args.subject, args.max_files)
@@ -316,6 +356,7 @@ def main() -> None:
 
     probe = {
         "protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "reproducibility": reproducibility,
         "fresh_mode": fresh_mode,
         "budget_steps": steps,
         "optimizer": {

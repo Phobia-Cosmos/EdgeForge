@@ -2,6 +2,28 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.16.3 - 2026-08-25 (development snapshot)
+
+### Added
+
+- 新增 `config/raeeg-lop-matrix-v16.3-dose-local.json`：ISRUC subject 2、finetune、seed 4321、checkpoint stages `0/10/25/49` 的 clean、相对噪声 1.0 和 50% channel-dropout 剂量矩阵。
+- 新增 `config/raeeg-lop-matrix-v16.3-retention-dose-local.json`：在相同矩阵上加入 subject 1 retention set 与无标签 confidence/entropy/consistency 诊断，明确区分 outcome、predictor、retention 和 diagnostic metric roles。
+- 保存两套 12-cell 矩阵的 catalog、trajectory、audit、cell bundle、命令日志、派生 shift manifest 和 SHA-256 清单；原始 ISRUC 数据与 checkpoint 未被修改。
+- fixed-budget probe 现在记录 seed、CUBLAS workspace、cuDNN deterministic 和 `torch.use_deterministic_algorithms` 状态；CUDA 上的重复 probe 已验证输出一致。
+
+### Validation
+
+- 两套矩阵均为 `12/12 succeeded`；每套包含 3 conditions × 4 stages，`scientific_conclusion_allowed=false`。
+- 可复现重跑的 clean 条件 `fresh_gap` 为 `-0.025/-0.075/-0.075/-0.200`（stage `0/10/25/49`）；50% channel-dropout 为 `+0.050/0.000/-0.225/-0.250`；noise 1.0 为 `0.000/0.000/-0.150/-0.200`。正 fresh gap 表示 fresh control 在固定预算后高于 checkpoint，属于 LoP candidate 方向，但本版本只有 seed 4321。
+- retention/无标签诊断已运行：retention accuracy drop、loss delta、normalized entropy、mean confidence、prediction agreement 和 representation cosine 均写入 bundle；这些指标不替代 fixed-budget plasticity outcome。
+- 可复现重跑的三个条件 lagged ER→plasticity audit 都为 `insufficient-seeds`（每组 3 个 stage pairs、1 个 seed；Pearson 分别为 clean `-0.9276`、dropout `+0.5957`、noise `-0.0871`），不构成 LoP 结论。
+
+### Safety
+
+- seed 4322/4323 的 8 个多 seed cells 仍因缺少真实 seed-specific checkpoint 被 preflight 阻断；没有复制 seed 4321，也没有用 shift-induced degradation 冒充 LoP。
+- shift 数据写入 `/home/undefined/Disk/datasets/edgeforge-raeeg-shifts/v0.16.3/`，采用 label symlink 和 source/output digest；原始数据目录保持只读。
+- 0.16.3 结果是单 seed、短预算、subject-2 的描述性验证，不能支持跨数据集、跨方法或因果机制结论。
+
 ## 0.16.2 - 2026-08-25 (development snapshot)
 
 ### Added

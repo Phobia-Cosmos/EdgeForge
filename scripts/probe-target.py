@@ -20,7 +20,7 @@ def main() -> None:
     parser.add_argument("--timeout-seconds", type=float, default=8.0)
     parser.add_argument("--vulkan-icd", help="explicit user-directory Vulkan ICD manifest to record")
     parser.add_argument("--log-dir", type=Path, default=Path("logs"))
-    parser.add_argument("--version", default="0.16.2")
+    parser.add_argument("--version", default="0.16.3")
     args = parser.parse_args()
     result = probe_target(
         name=args.name,
