@@ -1,3 +1,3 @@
 """EdgeForge heterogeneous edge runtime."""
 
-__version__ = "0.16.4"
+__version__ = "0.16.5"

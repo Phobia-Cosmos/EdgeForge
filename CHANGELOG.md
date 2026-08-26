@@ -2,6 +2,26 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.16.5 - 2026-08-26 (development snapshot)
+
+### Added
+
+- 新增 `scripts/simple-transformer-lop.py`：保持 ISRUC `(20,8,3000)` 输入契约，使用时间统计与 delta/theta/alpha/beta/gamma 频带功率前端，以及 2 层、4 头、64 维 Transformer，执行固定预算的 checkpoint-vs-fresh 多 seed LoP 探索。
+- 记录 effective rank、stable rank、attention entropy、target accuracy/loss、retention accuracy/loss 和 fresh-gap，并生成可复核的 JSON 运行结果。
+- 增加原始 BrainUICL Transformer 的同预算对照 probe，避免把简化模型结果误认为完整模型结论。
+
+### Validation
+
+- ISRUC seed 4321/4322/4323、source subjects `1,3,4,5,6,7`、target subjects `9,10,11`、retention subject `2` 的 9 个 stage 均完成；effective-rank→fresh-gap 描述性 Pearson 为 `-0.2264`（9 points）。
+- 简单 Transformer 仅在 seed 4321/4323 的 subject 9 stage 出现 `+0.025` 的轻微 fresh-gap，其余 stage 为 `0`；target stage 2/3 存在 accuracy ceiling effect，不能称为稳定 LoP。
+- 原始 BrainUICL subject 2 stage-0 对照的 fresh-gap 为 `-0.425/-0.375/-0.425`（seed 4321/4322/4323），checkpoint 在该 probe 中明显优于 fresh。
+
+### Safety
+
+- 该 protocol 使用 target labels 做受控 supervised-oracle adaptation，`scientific_conclusion_allowed=false`；结果是 exploratory diagnostic，不是 online unlabeled LoP 证据。
+- retention accuracy 的负 drop 表示 retention accuracy 提升，不应解释为遗忘；正式结论仍需统一 trajectory、更多 stage、seed-cluster bootstrap，并在 FACED 复现。
+- 原始 EEG、checkpoint 和派生数据保存在共享存储，Git 只提交脚本、文档与轻量日志归档。
+
 ## 0.16.4 - 2026-08-26 (development snapshot)
 
 ### Added
