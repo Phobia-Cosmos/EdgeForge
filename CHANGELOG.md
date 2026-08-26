@@ -2,6 +2,27 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.16.4 - 2026-08-26 (development snapshot)
+
+### Added
+
+- 新增 `scripts/brainuicl-multiseed-pretrain.py`，为 ISRUC 使用固定 split-seed 和独立真实训练 seed 生成隔离的三组件 checkpoint、训练日志、验证历史、环境快照与 SHA-256 manifest。
+- 新增 `scripts/brainuicl-faced-multiseed-pretrain.py`，复用 FACED aligned BrainUICL frontend，生成同契约的三 seed 预训练产物。
+- `scripts/brainuicl-model-pipeline.py` 支持 `--dataset FACED`，可对 FACED `(20,32,2500)` 图执行 export、CPU eager、CUDA Inductor、correctness 与 benchmark。
+
+### Validation
+
+- ISRUC seed 4321/4322/4323 均完成 100 epoch 正式预训练，最佳验证准确率分别为 0.6439、0.6511、0.6466；FACED 分别为 0.3047、0.3008、0.3000。
+- 三个 ISRUC seed 的 torch.export graph digest 相同；CPU eager correctness 全部通过，CUDA Inductor correctness 全部通过，最大绝对误差不超过 `2.94e-5`。
+- FACED seed 4321 的 CPU eager 与 CUDA Inductor correctness 通过，输出形状为 `(1,9,20)`；CUDA Inductor 最大绝对误差约 `6.78e-4`，仍在当前容差内。
+- Orange Pi RK3588 重新完成 OpenCL vector-add、RKNN C API/MobileNet runtime 和显式 Vulkan ICD loader/physical-device smoke；这些是 runtime/API 证据，不是完整 EEG 模型部署结论。
+
+### Safety
+
+- 每个 seed 使用独立初始化和独立 checkpoint 路径，未复制或覆盖 4321；固定 split-seed 只用于保持 subject partition 一致。
+- 预训练完成不等于 LoP 结论；仍需在每个 seed 上重新运行相同 CL trajectory、fresh control、retention set 和 seed-cluster bootstrap。
+- RKNN/OpenCL/Vulkan 仍未宣称 BrainUICL EEG 模型级 correctness；主机 RKNN Toolkit2 conversion 与板端 EEG 子图验证是后续工作。
+
 ## 0.16.3 - 2026-08-25 (development snapshot)
 
 ### Added

@@ -24,6 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint-root", type=Path, required=True)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--artifact-root", type=Path, required=True)
+    parser.add_argument("--dataset", choices=("ISRUC", "FACED"), default="ISRUC")
     parser.add_argument("--seed", type=int, default=4321)
     parser.add_argument("--subject", type=int, default=1)
     parser.add_argument("--repeats", type=int, default=5)
@@ -40,11 +41,12 @@ def setup_imports(root: Path) -> None:
 
 def load_model(args: argparse.Namespace):
     import torch
-    from model.pretrain_net import FeatureExtractor, SleepMLP, TransformerEncoder
+    from model.pretrain_net import FeatureExtractor, FeatureExtractorFACED, SleepMLP, TransformerEncoder
 
     device = torch.device(args.device if args.device.startswith("cuda") and torch.cuda.is_available() else "cpu")
-    model_args = SimpleNamespace(dataset="ISRUC", device=device)
-    blocks = [FeatureExtractor(model_args), TransformerEncoder(model_args), SleepMLP(model_args)]
+    model_args = SimpleNamespace(dataset=args.dataset, device=device)
+    extractor = FeatureExtractorFACED(model_args) if args.dataset == "FACED" else FeatureExtractor(model_args)
+    blocks = [extractor, TransformerEncoder(model_args), SleepMLP(model_args)]
     for block, name in zip(blocks, ("feature_extractor", "feature_encoder", "sleep_classifier")):
         checkpoint = args.checkpoint_root / f"{name}_parameter_{args.seed}.pkl"
         if not checkpoint.is_file():
@@ -54,7 +56,7 @@ def load_model(args: argparse.Namespace):
     return blocks, device
 
 
-def make_wrapper(blocks):
+def make_wrapper(blocks, dataset):
     import torch
 
     class Model(torch.nn.Module):
@@ -63,9 +65,14 @@ def make_wrapper(blocks):
             self.blocks = torch.nn.ModuleList(modules)
 
         def forward(self, x):
-            values = x.reshape(-1, 8, 3000)
-            eog = values[:, :2]
-            eeg = values[:, 2:]
+            if dataset == "FACED":
+                values = x.reshape(-1, 32, 2500)
+                eog = values[:, :1]
+                eeg = values[:, 1:]
+            else:
+                values = x.reshape(-1, 8, 3000)
+                eog = values[:, :2]
+                eeg = values[:, 2:]
             return self.blocks[2](self.blocks[1](self.blocks[0](eeg, eog)))
 
     return Model(blocks).eval()
@@ -83,8 +90,9 @@ def sample_input(args: argparse.Namespace, device):
     if path is None:
         raise FileNotFoundError(f"no sample sequence found for subject {args.subject} under {args.data_root}")
     values = np.load(path).astype("float32", copy=False)
-    if values.shape != (20, 8, 3000):
-        raise ValueError(f"expected (20, 8, 3000), got {values.shape}")
+    expected = (20, 32, 2500) if args.dataset == "FACED" else (20, 8, 3000)
+    if values.shape != expected:
+        raise ValueError(f"expected {expected}, got {values.shape}")
     return torch.from_numpy(values).unsqueeze(0).to(device), str(path)
 
 
@@ -121,7 +129,7 @@ def run_compiled(args: argparse.Namespace):
     import torch
 
     blocks, device = load_model(args)
-    model = make_wrapper(blocks)
+    model = make_wrapper(blocks, args.dataset)
     if args.compile_backend != "eager":
         backend = "inductor" if args.compile_backend == "inductor-no-pattern" else args.compile_backend
         options = {"pattern_matcher": False} if args.compile_backend == "inductor-no-pattern" else None
@@ -146,12 +154,13 @@ def main() -> None:
     import torch
 
     if args.stage == "transform":
-        save_json(args.artifact_root / "transform.json", {"stage": "transform", "status": "validated", "dataset": "ISRUC", "sample_shape": [1, 20, 8, 3000]})
+        sample_shape = [1, 20, 32, 2500] if args.dataset == "FACED" else [1, 20, 8, 3000]
+        save_json(args.artifact_root / "transform.json", {"stage": "transform", "status": "validated", "dataset": args.dataset, "sample_shape": sample_shape})
         return
 
     if args.stage == "export":
         blocks, device = load_model(args)
-        model = make_wrapper(blocks)
+        model = make_wrapper(blocks, args.dataset)
         sample, sample_path = sample_input(args, device)
         with torch.no_grad():
             reference = model(sample).detach().cpu()
