@@ -46,6 +46,25 @@ COMPONENTS = ("fusion", "transformer_1", "classifier_input")
 EPS = 1e-12
 
 
+def _load_edgeforge_lop_metrics():
+    """Load the shared LoP metric library when the script is run directly.
+
+    The instrumentation script is intentionally runnable without an installed
+    EdgeForge package (the matrix runner invokes it by path).  Keep the
+    dependency lazy so the existing read-only checkpoint adapter still has a
+    clear import boundary and BrainUICL never needs an EdgeForge dependency.
+    """
+
+    try:
+        from edgeforge import lop_metrics
+    except ModuleNotFoundError:
+        source_root = Path(__file__).resolve().parents[1] / "src"
+        if str(source_root) not in sys.path:
+            sys.path.insert(0, str(source_root))
+        from edgeforge import lop_metrics
+    return lop_metrics
+
+
 def _sha256(path: Path, chunk_size: int = 1024 * 1024) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -873,6 +892,64 @@ def _collect_representations(blocks, batches, device, max_batches: int, dataset:
     return {name: torch.cat(values, dim=0) for name, values in collected.items()}, used
 
 
+def shared_lop_metrics(
+    representations: dict[str, Any],
+    *,
+    reference_representations: dict[str, Any] | None = None,
+    blocks: Iterable[Any] | None = None,
+    max_observations: int = 0,
+) -> dict[str, Any]:
+    """Apply the shared EdgeForge LoP definitions to BrainUICL outputs.
+
+    ``_forward`` exposes ``[batch, sequence, feature]`` tensors for the
+    fusion, Transformer and classifier-input stages.  Keeping this adapter at
+    the checkpoint boundary means the BrainUICL training loop is untouched,
+    while all downstream models use the same rank/activation/CKA definitions
+    as the synthetic EEG and image diagnostics.
+    """
+
+    lop_metrics = _load_edgeforge_lop_metrics()
+    layers: dict[str, Any] = {}
+    for name, values in representations.items():
+        item: dict[str, Any] = {
+            "feature_axis": -1,
+            "spectrum": lop_metrics.spectral_summary(
+                values,
+                feature_axis=-1,
+                center=True,
+                max_observations=max_observations,
+            ),
+            "activation": lop_metrics.activation_summary(values, kind="unknown"),
+        }
+        if reference_representations is not None and name in reference_representations:
+            reference = reference_representations[name]
+            item["cka_to_reference"] = lop_metrics.linear_cka(
+                values,
+                reference,
+                feature_axis=-1,
+                max_observations=max_observations,
+            )
+            item["procrustes_residual_to_reference"] = lop_metrics.procrustes_residual(
+                values,
+                reference,
+                feature_axis=-1,
+                max_observations=max_observations,
+            )
+        layers[name] = item
+
+    parameters: dict[str, Any] = {}
+    if blocks is not None:
+        for block_name, block in zip(CHECKPOINT_NAMES, blocks):
+            parameters[block_name] = lop_metrics.parameter_norm_summary(block)
+    return {
+        "status": "computed",
+        "protocol": "edgeforge-lop-metrics-v1",
+        "representation_layout": "[batch, sequence, feature]",
+        "layers": layers,
+        "parameters": parameters,
+    }
+
+
 def _canonical_metric_views(spectra: dict[str, Any], drift: dict[str, Any], attention: dict[str, Any], importance: dict[str, Any], norms: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     """Add stable LoP-facing aliases while retaining detailed diagnostics."""
 
@@ -932,6 +1009,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--max-batches", type=int, default=1)
     parser.add_argument("--importance-batches", type=int, default=1)
     parser.add_argument("--importance-top-k", type=int, default=20)
+    parser.add_argument(
+        "--lop-max-observations",
+        type=int,
+        default=0,
+        help="bound observations per representation for shared EdgeForge LoP SVD/CKA (0 = all)",
+    )
     parser.add_argument("--linearity-epsilon", type=float, default=1e-3)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
@@ -989,6 +1072,13 @@ def main() -> None:
         baseline_optimizer_state = _optimizer_state_provenance(args.baseline_checkpoint_root.resolve())
         del baseline_blocks
 
+    shared_metrics = shared_lop_metrics(
+        representations,
+        reference_representations=baseline_representations if args.baseline_checkpoint_root is not None else None,
+        blocks=blocks,
+        max_observations=args.lop_max_observations,
+    )
+
     representation_view, attention_view, importance_view, norm_view = _canonical_metric_views(spectra, drift, attention, importance, norms)
     context = {
         "dataset": str(args.dataset),
@@ -1009,6 +1099,10 @@ def main() -> None:
         "probe_budget": representation_batches,
         "measurement_protocol": "brainuicl-checkpoint-instrumentation-v1",
         "spectra": spectra,
+        # Shared metric implementation used by the architecture-agnostic
+        # EdgeForge diagnostics.  The historical ``spectra`` field remains
+        # intact for existing matrix/catalog consumers.
+        "lop_metrics": shared_metrics,
         "jacobian": jacobian,
         "local_linearity": linearity,
         "representation": representation_view,
@@ -1025,6 +1119,7 @@ def main() -> None:
     }
     metrics: list[dict[str, Any]] = []
     _flatten_metrics(task["spectra"], "task.spectra", stage=args.checkpoint_stage, context=context, output=metrics)
+    _flatten_metrics(task["lop_metrics"], "task.lop_metrics", stage=args.checkpoint_stage, context=context, output=metrics)
     _flatten_metrics(task["jacobian"], "task.jacobian", stage=args.checkpoint_stage, context=context, output=metrics)
     _flatten_metrics(task["local_linearity"], "task.local_linearity", stage=args.checkpoint_stage, context=context, output=metrics)
     _flatten_metrics(task["representation"], "task.representation", stage=args.checkpoint_stage, context=context, output=metrics)
@@ -1057,6 +1152,7 @@ def main() -> None:
             "max_batches": args.max_batches,
             "importance_batches": args.importance_batches,
             "importance_top_k": args.importance_top_k,
+            "lop_max_observations": args.lop_max_observations,
             "linearity_epsilon": args.linearity_epsilon,
         },
         "source": {
@@ -1085,6 +1181,7 @@ def main() -> None:
             "representation_drift_status": drift.get("status", "computed") if isinstance(drift, dict) else "computed",
             "attention_entropy_status": attention.get("status", "unavailable"),
             "importance_status": importance.get("status", "unavailable"),
+            "lop_metrics_status": shared_metrics.get("status", "unavailable"),
             "optimizer_state_status": optimizer_state.get("status", "unavailable"),
             "weight_norm_global_l2": float(norms["global_l2"]),
         },

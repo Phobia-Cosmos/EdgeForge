@@ -71,6 +71,24 @@ class BrainUICLInstrumentationTests(unittest.TestCase):
         self.assertEqual(summary["top_parameters"][0]["name"], "feature_encoder.weight")
         self.assertLessEqual(summary["top_parameters"][0]["cosine_to_reference"], 1.0)
 
+    def test_shared_lop_metrics_uses_explicit_token_feature_axis(self):
+        representations = {
+            "fusion": torch.randn(2, 20, 8),
+            "transformer_1": torch.randn(2, 20, 8),
+            "classifier_input": torch.randn(2, 20, 4),
+        }
+        blocks = [torch.nn.Linear(3, 2), torch.nn.LayerNorm(2), torch.nn.Linear(2, 1)]
+        result = instrumentation.shared_lop_metrics(
+            representations,
+            blocks=blocks,
+            max_observations=16,
+        )
+        self.assertEqual(result["protocol"], "edgeforge-lop-metrics-v1")
+        self.assertEqual(result["representation_layout"], "[batch, sequence, feature]")
+        self.assertEqual(result["layers"]["transformer_1"]["feature_axis"], -1)
+        self.assertEqual(result["layers"]["transformer_1"]["spectrum"]["max_observations"], 16)
+        self.assertEqual(result["parameters"]["feature_extractor"]["status"], "computed")
+
 
 if __name__ == "__main__":
     unittest.main()

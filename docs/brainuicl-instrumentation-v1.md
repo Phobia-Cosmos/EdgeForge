@@ -30,6 +30,8 @@
 
 脚本还输出 activation near-zero/dormancy 诊断、梯度 Gram/cosine（至少两个 calibration batch 时）、最后线性层 Jacobian feature-factor、有限差分局部线性度、checkpoint 参数更新范数，以及 canonical aliases：`task.attention.layer_1.{entropy,head_entropy,max_probability,offdiag_mass}`、`task.importance.<block>.{mean,max,nonzero_fraction}` 和 `task.weight_norm.<block>.l2`。BrainUICL 代码实际复用同一个 attention module 三次，因此 `layer_1` 是历史兼容的汇总别名，不表示三个独立参数层；主 attention 归一化轴仍记录为 `dim=1`。
 
+此外，`task.lop_metrics` 是与架构无关的 EdgeForge 共享指标入口。它直接消费 `_forward` 的真实 `[batch, sequence, feature]` 输出，在每个 `fusion`、`transformer_1` 和 `classifier_input` 层显式使用 `feature_axis=-1`，调用 `edgeforge.lop_metrics.spectral_summary`、`activation_summary`，并在提供 baseline 时计算 CKA/Procrustes；三个模型 block 的参数状态同时由 `parameter_norm_summary` 记录。该段输出不会改变 BrainUICL 的训练或 checkpoint，只增加 `edgeforge-lop-metrics-v1` 诊断字段。需要限制 SVD/CKA 的观测数时可传 `--lop-max-observations N`，默认 `0` 表示使用当前 calibration batch 的全部 token。
+
 ## 输出指标
 
 输出同时提供一个 `tasks` 行和 EdgeForge `metrics` envelope。默认 LoP predictor 是唯一的 `task.spectra.transformer_1.effective_rank` 行，因此可以直接交给 `raeeg-metrics-v1` 归一化器。
