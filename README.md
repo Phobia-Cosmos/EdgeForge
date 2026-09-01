@@ -164,6 +164,27 @@ python3 -m edgeforge gate-evaluations --token "$EDGEFORGE_TOKEN"
 
 ## RA-EEG 实验
 
+### EEG decoder registry 与 LoP 诊断
+
+可替换的 EEG 前端/上下文/分类头位于 [`src/edgeforge/eeg_models`](src/edgeforge/eeg_models)，registry 名称包括 `eegnet`、`tcn`、`transformer`、`conformer`、`shallowconvnet`、`deepconvnet`、`fbcnet`、`tsception`、`atcnet`、`cnn_lstm`、`eeg_graph`、`lop_mlp` 和 `brainuicl`。每个 decoder 都实现 `model(x) -> logits`、`forward_bundle(x)` 和 `representation_specs()`；`[B,C,S]` 与 `[B,T,C,S]` 输入可以共用同一诊断适配器。LoP/NTK/Hessian 诊断器见 [`src/edgeforge/lop_diagnostics.py`](src/edgeforge/lop_diagnostics.py)，统一 envelope 转换见 [`src/edgeforge/lop_envelope.py`](src/edgeforge/lop_envelope.py)，其中 `MetricConfig.freeze_batch_norm` 会在诊断期间冻结 BatchNorm running statistics 并恢复调用方模式；参数谱被标为 checkpoint-only，表示谱/Jacobian/NTK/Hessian 被标为 calibration/objective-dependent。
+
+运行不依赖外部 EEG 数据的 registry smoke：
+
+```sh
+cd /home/undefined/Desktop/EdgeForge
+PYTHONPATH=src /home/undefined/UbuntuData/python-envs/research/bin/python \
+  scripts/eeg_lop_diagnostics.py --data synthetic-eeg --architectures all \
+  --tasks 3 --train-samples 24 --eval-samples 16 --epochs 1 --batch-size 8 \
+  --length 64 --channels 4 --classes 3 --probe-steps 0,1,2 \
+  --output-dir logs/lop-diagnostics-registry-smoke
+```
+
+该输出只验证模型/指标 plumbing；正式 LoP 结论必须使用固定 calibration manifest、至少三个独立 seed、多个 checkpoint stage、相同 fresh-vs-warm 预算和 old-task retention。完整指标边界见 [`docs/eeg-lop-metrics-baseline-20260827.md`](docs/eeg-lop-metrics-baseline-20260827.md) 与模板 [`config/eeg-lop-diagnostics.example.json`](config/eeg-lop-diagnostics.example.json)。
+
+诊断目标可通过 `--objective` 选择 `cross_entropy`、`mse`、`mse_to_zero`、`output_mean` 或 `output_norm`，并通过 `--label-source true|pseudo|none` 明确标签权限；`pseudo` 会从当前 logits 生成伪标签，`none` 只适用于不需要标签的目标。训练仍使用 stream 自带标签，诊断 objective 只决定 gradient/Hessian/Fisher 的测量，不会改变训练过程。
+
+真实 BrainUICL checkpoint 缺失时，先用 `experiments/raeeg_lop_probe.py --preflight-only`；适配器会返回结构化 `blocked-by-checkpoint`/`blocked-by-data` 报告，不会将 synthetic smoke 冒充真实 EEG 证据。
+
 模型级流水线使用一个 JSON manifest 描述模型、数据集、变换和后端命令。[config/model-pipeline-synthetic.json](config/model-pipeline-synthetic.json) 是可运行的标准库 reference baseline，覆盖六个 stage；adapter 通过已安装的 `edgeforge.reference_model_pipeline` 模块启动，因此可以在独立 Worker `work_root` 中运行。真实 BrainUICL 接入时只需替换对应 argv，并将 Worker 的 `--work-root` 指向受信任工作区：
 
 ```sh
@@ -211,6 +232,18 @@ PYTHONPATH=src python3 -m edgeforge lop-audit \
   --catalog config/raeeg-local-catalog.json \
   --summary
 ```
+
+如果要检查是否达到 LoP 的固定预算要求，使用本地只读 requirement gate；它只把 `fresh_gap > 0` 作为主 outcome，要求相同设计与 stage grid、至少三个真实 seed，并按 seed cluster 输出 95% CI：
+
+```sh
+PYTHONPATH=src python3 scripts/evaluate-raeeg-lop-gate.py \
+  --catalog logs/<run>/trajectory-catalog.json \
+  --required-stage 0 --required-stage 10 --required-stage 25 \
+  --output logs/<run>/lop-gate.json \
+  --markdown-output logs/<run>/lop-gate.md
+```
+
+返回 `candidate` 也不等于科学结论；`scientific_conclusion_allowed` 始终为 `false`。replay、forgetting、BWT 和 old-task retention 会单独列在 `retention_inventory`，不能替代 fresh-gap。
 
 审计发现 `plasticity.acc_gain` 不等于 LoP 证据；必须同时存在可配对的 ER predictor 和至少 3 个不重复 seed。当前 catalog 中 EWC、Online-EWC、SI、MAS、Finetune 有 plasticity，但缺少 `task.spectra.transformer_1.effective_rank`；BrainUICL、SPR、PuriDivER 的登记 source 路径也需要先修复，因此它们目前都不能报告 LoP 结果。
 

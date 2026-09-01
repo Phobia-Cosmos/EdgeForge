@@ -455,7 +455,7 @@ def main() -> None:
         "instrumentation": "brainuicl-fixed-budget-probe-v1",
         "status": "succeeded",
         "read_only": True,
-        "config": {"dataset": args.dataset, "subject": args.subject, "seed": args.seed, "checkpoint_stage": args.checkpoint_stage, "method": args.method, "split": args.split, "probe_steps": steps, "lr": args.lr, "weight_decay": args.weight_decay, "device": str(device), "retention_data_root": (None if args.retention_data_root is None else str(args.retention_data_root.resolve())), "retention_subjects": sorted(set(args.retention_subject)), "retention_max_files": args.retention_max_files, "retention_batch_size": args.retention_batch_size},
+        "config": {"dataset": args.dataset, "subject": args.subject, "seed": args.seed, "checkpoint_stage": args.checkpoint_stage, "method": args.method, "split": args.split, "task_order": [args.checkpoint_stage], "probe_steps": steps, "probe_budget": steps[-1], "optimizer": probe["optimizer"], "lr": args.lr, "weight_decay": args.weight_decay, "model_structure": {"name": "BrainUICL"}, "fresh_warm_protocol": probe["protocol"], "device": str(device), "retention_data_root": (None if args.retention_data_root is None else str(args.retention_data_root.resolve())), "retention_subjects": sorted(set(args.retention_subject)), "retention_max_files": args.retention_max_files, "retention_batch_size": args.retention_batch_size},
         "source": {
             "checkpoint_digests": [{"path": str(path), "sha256": digest(path)} for path in checkpoint_paths],
             "fresh_checkpoint_digests": [{"path": str(path), "sha256": digest(path)} for path in fresh_paths],

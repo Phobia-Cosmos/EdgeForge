@@ -1,6 +1,6 @@
 import unittest
 
-from edgeforge.experiment import ExperimentSpec, normalize_raeeg_metrics
+from edgeforge.experiment import ExperimentSpec, build_experiment_bundle, normalize_raeeg_metrics
 
 
 def valid_spec():
@@ -89,6 +89,55 @@ class ExperimentContractTests(unittest.TestCase):
         }
         self.assertEqual(roles["task.forgetting.checkpoint_acc_drop"], "retention")
         self.assertEqual(roles["task.probe.retention.checkpoint_mf1_drop"], "retention")
+
+    def test_edgeforge_adapter_converts_diagnostic_tree_without_metrics_array(self):
+        payload = valid_spec()
+        payload["experiment_id"] = "eeg-diagnostic-tree"
+        payload["workload"] = "eeg-lop"
+        payload["runner"]["adapter"] = "edgeforge-bundle-v1"
+        spec = ExperimentSpec.from_payload(payload)
+        bundle = build_experiment_bundle(
+            spec,
+            {
+                "protocol": "generic",
+                "config": {"data": "synthetic-eeg"},
+                "runs": [
+                    {
+                        "architecture": "eegnet",
+                        "stages": [
+                            {
+                                "stage": 0,
+                                "metrics": {
+                                    "layers": {
+                                        "temporal": {
+                                            "spectrum": {"effective_rank": 2.0}
+                                        }
+                                    }
+                                },
+                            }
+                        ],
+                    }
+                ],
+            },
+            source_path="diagnostics.json",
+            source_bytes=b"{}",
+            environment={},
+        )
+        self.assertEqual(bundle["metrics"][0]["name"], "task.spectra.temporal.effective_rank")
+
+    def test_edgeforge_adapter_accepts_blocked_preflight_without_metrics(self):
+        payload = valid_spec()
+        payload["experiment_id"] = "eeg-blocked"
+        payload["runner"]["adapter"] = "edgeforge-bundle-v1"
+        spec = ExperimentSpec.from_payload(payload)
+        bundle = build_experiment_bundle(
+            spec,
+            {"status": "blocked", "preflight": {"blockers": [{"kind": "checkpoint"}]}},
+            source_path="blocked.json",
+            source_bytes=b"{}",
+            environment={},
+        )
+        self.assertEqual(bundle["metrics"], [])
 
 
 if __name__ == "__main__":

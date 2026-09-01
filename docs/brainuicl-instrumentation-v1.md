@@ -4,10 +4,21 @@
 
 ## 快速运行
 
-使用共享的 `brainuicl` 环境（运行前先确认 `/home/undefined/Disk/README.md` 中的环境登记）：
+在执行完整 checkpoint probe 前，建议先运行 BrainUICL 适配器的只读 preflight。它只检查 `split.json`、数据/标签文件配对、checkpoint 参数文件和 manifest 字节摘要，不加载 EEG 数组或模型参数；缺少外部挂载时会写出 `status=blocked`、`block_reason=blocked-by-checkpoint|blocked-by-data|blocked-by-split-manifest` 的 JSON/Markdown 报告。
 
 ```bash
-/home/undefined/Disk/python-envs/brainuicl/bin/python \
+PYTHONPATH=. /home/undefined/UbuntuData/python-envs/research/bin/python \
+  experiments/raeeg_lop_probe.py \
+  --dataset ISRUC --stages 0,10,25 --preflight-only \
+  --output logs/brainuicl-lop-preflight.json
+```
+
+`preflight.blockers[]` 保存精确路径、stage/subject、缺失文件和数量；它是证据门禁，不会用 synthetic 数据填充真实实验。
+
+使用已登记的共享 `research` 环境（本机路径为 `/home/undefined/UbuntuData/python-envs/research/bin/python`；若你的 BrainUICL fork 锁定旧版 PyTorch，请改用单独的兼容环境，不要覆盖共享环境）：
+
+```bash
+/home/undefined/UbuntuData/python-envs/research/bin/python \
   scripts/brainuicl-instrumentation.py \
   --brainuicl-root /home/undefined/Desktop/bci/code/tta_security/BrainUICL \
   --dataset ISRUC \
@@ -34,7 +45,7 @@
 
 ## 输出指标
 
-输出同时提供一个 `tasks` 行和 EdgeForge `metrics` envelope。默认 LoP predictor 是唯一的 `task.spectra.transformer_1.effective_rank` 行，因此可以直接交给 `raeeg-metrics-v1` 归一化器。
+输出同时提供一个 `tasks` 行和 EdgeForge `metrics` envelope（`envelope.schema=edgeforge-bundle-v1`）。默认 LoP predictor 是唯一的 `task.spectra.transformer_1.effective_rank` 行，因此可以直接交给 `edgeforge-bundle-v1` importer 或 `raeeg-metrics-v1` 归一化器。`context.metric_role` 会显式标注 predictor/outcome/retention/diagnostic；blocked preflight 也保留空的 envelope 和完整阻塞 provenance。
 
 ### Spectrum
 
@@ -48,7 +59,7 @@
 
 ### Attention entropy
 
-BrainUICL 的 `MultiHeadAttention` 不返回 attention probability，且实现的是 `softmax(dim=1)`。脚本通过 forward pre-hook 读取同一模块的 Q/K 权重重建该概率，不改外部源码；输出的主指标是跨 head 轴的 entropy，并同时保存 conventional key-axis entropy 作为诊断。报告必须保留 `normalization_axis=1`，不能把它解释成标准 key-normalized attention entropy。
+BrainUICL 的 `MultiHeadAttention` 实现的是 `softmax(dim=1)` 跨 head 归一化。当前本地 `util_block.py` 暴露 `last_attention_prob`，instrumentation 优先读取该缓存；对未暴露缓存的旧 checkpoint 仍可通过 forward pre-hook 读取 Q/K 权重重建概率，不改模型数值。输出的主指标是跨 head 轴的 entropy，并同时保存 conventional key-axis entropy 作为单独诊断。报告必须保留 `normalization_axis=1`，不能把它解释成标准 key-normalized attention entropy。
 
 ### Importance
 

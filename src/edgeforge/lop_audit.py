@@ -83,6 +83,76 @@ def _entry_identity(entry: dict[str, Any], source_digest: str | None = None) -> 
     }
 
 
+def load_catalog_evidence(
+    catalog_path: str | Path,
+    *,
+    methods: list[str] | None = None,
+) -> dict[str, Any]:
+    """Load catalog experiments and normalized metrics without analyzing them.
+
+    This is shared by local read-only analysis commands.  Invalid or missing
+    source files remain in the returned experiment list with empty metrics so
+    a gate can explain exactly why evidence is incomplete.
+    """
+
+    path = Path(catalog_path).resolve()
+    catalog = _load_json(path)
+    if catalog.get("schema_version") != 1 or not isinstance(catalog.get("experiments"), list):
+        raise ValueError("unsupported catalog schema; expected schema_version=1 and experiments[]")
+    root = Path(str(catalog.get("worker_work_root") or path.parent)).expanduser().resolve()
+    defaults = catalog.get("defaults") or {}
+    method_filter = {str(item).strip() for item in (methods or []) if str(item).strip()}
+    experiments: list[dict[str, Any]] = []
+    metrics_by_experiment: dict[str, list[dict[str, Any]]] = {}
+    records: list[dict[str, Any]] = []
+    for raw_entry in catalog["experiments"]:
+        entry = _merge(defaults, raw_entry) if isinstance(raw_entry, dict) else {}
+        if not isinstance(entry, dict):
+            continue
+        if method_filter and str(entry.get("method") or "") not in method_filter:
+            continue
+        experiment_id = str(entry.get("experiment_id") or "")
+        relative = str((entry.get("runner") or {}).get("result_path") or "")
+        source = (root / relative).resolve() if relative else Path("/")
+        record: dict[str, Any] = {
+            "experiment_id": experiment_id,
+            "method": entry.get("method"),
+            "source_path": relative,
+            "source_exists": source.is_file() and source.is_relative_to(root),
+            "status": "missing-source",
+        }
+        # Keep the complete catalog entry for gate design checks (dataset,
+        # model, split and runner provenance), while preserving the compact
+        # identity shape expected by the existing audit analyzer.
+        identity = dict(entry)
+        identity.setdefault("spec", {"metadata": dict(entry.get("metadata") or {})})
+        identity["spec"] = dict(identity["spec"] or {}) if isinstance(identity.get("spec"), dict) else {}
+        identity["spec"].setdefault("metadata", dict(entry.get("metadata") or {}))
+        experiments.append(identity)
+        metrics: list[dict[str, Any]] = []
+        if record["source_exists"]:
+            try:
+                raw = _load_json(source)
+                metrics = _normalized_metrics(raw)
+                record["source_digest"] = _digest(source)
+                record["metric_count"] = len(metrics)
+                record["status"] = "loaded"
+            except (OSError, ValueError) as error:
+                record["status"] = "invalid-source"
+                record["error"] = str(error)
+        metrics_by_experiment[experiment_id] = metrics
+        records.append(record)
+    return {
+        "catalog": catalog,
+        "catalog_path": str(path),
+        "worker_work_root": str(root),
+        "method_filter": sorted(method_filter),
+        "experiments": experiments,
+        "metrics_by_experiment": metrics_by_experiment,
+        "records": records,
+    }
+
+
 def audit_catalog(
     catalog_path: str | Path,
     *,

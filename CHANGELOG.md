@@ -2,6 +2,21 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## Unreleased - next EEG/LoP diagnostics baseline
+
+### Added
+
+- 新增本地 `scripts/evaluate-raeeg-lop-gate.py` requirement gate：以 fixed-budget `fresh_gap` 为唯一 LoP 主 outcome，验证跨 seed 的设计/stage 可比性、方向一致性和 seed-cluster bootstrap CI；replay/retention 只作为独立 inventory。
+- 矩阵 bundle 和 fixed-budget probe 补充 task order、probe budget、optimizer/lr、model structure 与 fresh/warm protocol provenance，便于 gate 直接审计。
+- 通用 EEG LoP CLI 现在从 decoder registry 动态解析 `--architectures all`，并支持通过配置或命令行选择诊断 objective 与标签来源。
+- gradient、Hessian 和 empirical-Fisher 诊断统一复用 `edgeforge.lop_diagnostics.objective_loss`；`pseudo` 标签不会误用 stream 中保留的 oracle 标签，`none` 可用于输出均值/范数等无标签目标。
+- objective、label source 会写入诊断 JSON、Markdown 和 `edgeforge-bundle-v1` metric context，方便审计监督、伪标签和 SSL 对照。
+
+### Validation
+
+- EdgeForge 全量测试：`193 passed, 3 subtests`；BrainUICL 全量测试：`136 passed, 12 subtests`；两侧 compileall 通过。
+- 无标签 `output_mean` smoke 已验证 gradient/metric envelope 路径可运行；真实 EEG 仍需外部数据与 checkpoint，科学结论门禁保持关闭。
+
 ## 0.16.5 - 2026-08-26 (development snapshot)
 
 ### Added

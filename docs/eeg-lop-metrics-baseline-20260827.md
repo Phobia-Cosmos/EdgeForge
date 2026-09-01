@@ -1,6 +1,6 @@
 # EEG 基础网络的 LoP 指标基线
 
-本文档把 LoP 论文中的指标落到常见 EEG 解码结构，并给出一个不依赖真实数据挂载的可复现实验入口。实现位于 [`src/edgeforge/lop_metrics.py`](../src/edgeforge/lop_metrics.py) 和 [`scripts/eeg_lop_diagnostics.py`](../scripts/eeg_lop_diagnostics.py)。脚本默认生成合成 EEG/图像流，不下载数据、不读取外部 checkpoint，也不会把 smoke 结果升级成 LoP 科学结论。
+本文档把 LoP 论文中的指标落到常见 EEG 解码结构，并给出一个不依赖真实数据挂载的可复现实验入口。模型组件位于 [`src/edgeforge/eeg_models/`](../src/edgeforge/eeg_models/)，轻量汇总指标位于 [`src/edgeforge/lop_metrics.py`](../src/edgeforge/lop_metrics.py)，曲率与统一报告位于 [`src/edgeforge/lop_diagnostics.py`](../src/edgeforge/lop_diagnostics.py)，envelope 转换位于 [`src/edgeforge/lop_envelope.py`](../src/edgeforge/lop_envelope.py)，实验入口位于 [`scripts/eeg_lop_diagnostics.py`](../scripts/eeg_lop_diagnostics.py)。脚本默认生成合成 EEG/图像流，不下载数据、不读取外部 checkpoint，也不会把 smoke 结果升级成 LoP 科学结论。
 
 ## 1. 先固定 LoP 的主结果
 
@@ -69,9 +69,11 @@ effective rank 低说明谱能量更集中，但不自动说明性能低；它�
 
 ### 3.2 Jacobian/NTK
 
-脚本支持一个有界的 sampled parameter Jacobian：对每个样本取模型输出的标量均值，计算该标量对所有可训练参数的梯度，得到 `[samples, parameters]` 矩阵，并报告其谱和 `J Jᵀ` 的 NTK 代理。它不是完整 logits Jacobian，也不是精确 Hessian/GGN；在真实 EEG 上应记录 `sample_count`、`parameter_dim` 和 scalar selector。
+脚本支持一个有界的 sampled parameter Jacobian：对每个样本取模型输出的标量均值，计算该标量对所有可训练参数的梯度，得到 `[samples, parameters]` 矩阵，并报告其谱和 `J Jᵀ` 的 NTK 代理（JSON 中 `ntk` 对 kernel 矩阵本身做 SVD，同时保留 `ntk_eigenvalues`）。它不是完整 logits Jacobian，也不是精确 Hessian/GGN；在真实 EEG 上应记录 `sample_count`、`parameter_dim` 和 scalar selector。
 
 如果只分析线性分类器 `z=Wh`，`h` 的 Gram/谱是最后层 feature-factor 的精确部分；这仍然不能代表 Conv、Transformer、BatchNorm 和 optimizer state 的全参数曲率。
+
+`parameter_spectral_summary(model)` 是与之相反的 checkpoint-only probe：Linear/Conv weight 按 `[out, -1]` 展平后做 SVD，报告 `sigma_max`、condition number、effective/stable rank 和截断奇异值；bias、LayerNorm scale 等一维参数标记为 skipped。它不接受 calibration batch，因此不能用来替代表示谱或 NTK。
 
 ### 3.3 激活与表示漂移
 
@@ -84,6 +86,10 @@ ReLU 的 zero fraction 可以称为 dead fraction；GELU、ELU、LayerNorm 输�
 标准 `nn.MultiheadAttention` 的 attention 权重通常沿最后一个 key/token 轴归一化；BrainUICL 的自定义实现沿 `dim=1` 跨 head 归一化。脚本在结果中保存 `normalization_axis` 和 `normalization_length`，不能跨实现直接比较 entropy 数值。无 attention 的 EEGNet/TCN 不应人为填充 attention 指标。
 
 参数 L2 和 checkpoint delta 描述状态变化，不是 Adam 的真实 moment/update 轨迹。若 checkpoint 没有 optimizer state，应明确记录 unavailable。
+
+序列输入有一个容易漏掉的轴约定：内置 decoder 会把 `[B,T,C,S]` 展平为 epoch batch，再把 bundle 表征恢复为 `[B,T,...]`。因此卷积 tap 的 spec 带 `sequence_axis_policy="prepend"`，诊断器会把单 epoch 布局中的 `feature_axis=1` 自动调整为 `2`；token/embedding 的 `feature_axis=-1` 不变。`MetricConfig.feature_axes` 是最终覆盖值，适合自定义布局或刻意测量序列轴；结果同时记录 `axis_source` 和 `sequence_axis_adjusted`，避免把 `T` 误当成通道特征。
+
+曲率入口是 `hessian_vector_product`（`g = ∇θ L`，`H·v = ∇θ(g·v)`）、`hessian_top_eigenvalue_summary`（power iteration）、`hutchinson_trace_summary`（Rademacher trace estimator）和小模型专用 `exact_hessian_matrix`。它们的结果必须绑定 `objective`、batch、label/pseudo-label source、reduction、train/eval/BN 状态；同一网络在换 calibration 数据或换 CE/NT-Xent/consistency 后得到的是不同 Hessian。完整 Hessian 的存储/计算通常随参数数目平方增长，生产实验优先使用 HVP、top eigenvalue、trace 或最后一层/GGN 近似。
 
 ## 4. 常见 EEG 解码器的测量点
 
@@ -109,7 +115,7 @@ DeepConvNet 按 conv block 逐层记录；TCN 要分别记录不同 dilation blo
 
 ### EEG smoke
 
-在共享 `research` 环境中运行：
+在共享 `research` 环境中运行（`--architectures all` 会枚举当前 registry 的全部 EEG decoder）：
 
 ```bash
 cd /home/undefined/Desktop/EdgeForge
@@ -122,7 +128,20 @@ PYTHONPATH=src /home/undefined/UbuntuData/python-envs/research/bin/python \
   --output-dir logs/lop-diagnostics-smoke-all
 ```
 
-结果文件：[`synthetic-eeg-lop-diagnostics.md`](../logs/lop-diagnostics-smoke-all-v2/synthetic-eeg-lop-diagnostics.md) 和对应 JSON。该 smoke 的参数量约为 Transformer 27,939、EEGNet 4,203、TCN 4,635；这只是验证适配器是否可运行，不是模型规模公平比较。
+结果文件写入命令指定的 `--output-dir`，并包含 architecture、representation taps、attention axis、Jacobian/NTK 和（启用时）Hessian provenance。不同 decoder 的参数量和前端归纳偏置不同；这只是验证适配器是否可运行，不是模型规模公平比较。
+
+JSON 同时写出 `metrics[]` 和 `envelope.schema=edgeforge-bundle-v1`。每一行包含 `namespace/name/value/step/context`，其中 `context.metric_role` 明确区分 `predictor`（rank-like spectrum）、`outcome`（fixed-budget fresh-vs-warm）、`retention`（旧任务评估）和 `diagnostic`（NTK/Hessian/Fisher/gradient/attention 等）。因此可以把该 JSON 作为 `edgeforge-bundle-v1` 的结果文件交给 Worker；`runs` 树仍保留完整曲线和诊断细节。`metrics[]` 是存储格式，不会改变“只有 fresh gap 才是 LoP 主 outcome”的科学口径。
+
+若需要在 smoke 中验证曲率接口，可对单一小模型开启有限的 matrix-free probe：
+
+```bash
+PYTHONPATH=src /home/undefined/UbuntuData/python-envs/research/bin/python \
+  scripts/eeg_lop_diagnostics.py --data synthetic-eeg --architectures brainuicl \
+  --tasks 2 --train-samples 8 --eval-samples 8 --epochs 1 --batch-size 4 \
+  --length 32 --channels 4 --classes 3 --probe-steps 0,1,2 \
+  --hessian-mode power --hessian-iterations 4 --hessian-probes 2 \
+  --output-dir logs/lop-diagnostics-hessian-smoke
+```
 
 在这个小样本、单 seed 测试中，Transformer 在后一个阶段的 `fresh_gap_final` 约为 `-0.0625`，TCN 约为 `+0.5`，EEGNet 约为 `0`。这说明 fixed-budget gap 对架构、任务阶段和随机样本都很敏感，也说明不能用一次正 gap 宣称 LoP。各层 ER、CKA、梯度和 attention 只提供后续机制分析的观测量。
 

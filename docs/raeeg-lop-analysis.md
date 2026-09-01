@@ -54,6 +54,20 @@ python3 -m edgeforge lop-analyze --token "$EDGEFORGE_TOKEN" \
 
 对于还没有导入 SQLite 的本地结果，`lop-audit --catalog <catalog.json>` 提供只读的一键审计。它读取 catalog 指向的 `metrics.json`/`RESULTS.json`，运行同一套归一化器，按方法/协议/comparison group 检查 source 是否存在、predictor/outcome 是否存在、stage 是否可配对、seed 是否足够，并在证据可用时调用本分析器。`--summary` 输出方法级状态，包括 `replay_values`、predictor/outcome 覆盖率和分析的 pair/seed 数量；该命令不会上传原始结果，也不会把 `status=ok` 变成科学结论。
 
+### LoP requirement gate
+
+`scripts/evaluate-raeeg-lop-gate.py` 是比滞后相关更严格的本地只读门禁。它的唯一主 outcome 是 fixed-budget fresh-vs-warm gap（默认 `task.plasticity.fresh_gap`，兼容历史 `plasticity.fresh_gap_final`），并要求同一 dataset、subject、split、task order、probe budget、optimizer、learning rate、model structure、stage/transition grid 和至少三个不重复真实 seed。每个 stage/transition 按 seed 聚合 gap，并用 seed-cluster percentile bootstrap 生成 95% CI；只有所有 stage 的 seed-level gap 严格为正且 CI 下界也大于零时才返回 `candidate`。
+
+```sh
+PYTHONPATH=src python3 scripts/evaluate-raeeg-lop-gate.py \
+  --catalog logs/<run>/trajectory-catalog.json \
+  --required-stage 0 --required-stage 10 --required-stage 25 \
+  --output logs/<run>/lop-gate.json \
+  --markdown-output logs/<run>/lop-gate.md
+```
+
+`candidate` 只表示当前 preregistered requirement checks 通过，输出仍固定为 `scientific_conclusion_allowed=false`。`blocked-incomparable-stages` 表示不同 seed 的 stage/transition 网格不同；`blocked-incomparable-design`、`blocked-missing-design` 和 `blocked-metric-role` 分别表示固定预算设计不一致、设计字段缺失或 fresh-gap 被错误标成 retention/diagnostic；`blocked-inconsistent-direction` 表示跨 seed/stage 出现正负方向混合；`insufficient-seeds`、`insufficient-stages` 或 `insufficient-direction` 表示证据量或方向置信度不足。replay、forgetting、BWT 和 old-task retention 只写入 `retention_inventory`，永远不会被替换成 LoP 主 outcome。
+
 审计状态的含义是：`missing-source` 表示 catalog 路径失效；`missing-predictor` 表示有 plasticity 但没有 ER 指标；`missing-outcome` 表示缺少 plasticity 指标；`candidate` 表示两类指标都存在，之后仍需通过 stage、context、seed 和统计门槛。正则化或 replay 方法只有在补齐同一协议下的 ER trajectory、future plasticity、checkpoint stage 和至少 3 个真实 seed 后，才能进入正式 LoP 分析。
 
 审计器允许 `--predictor` 指定其它已记录指标，例如 `task.importance.mean`，但这类输出的 `analysis_scope` 是 `exploratory-custom-association`，不会伪装成 `lop-er-plasticity`。在当前 seed 4321 catalog 上，EWC、Online-EWC、SI、MAS、Finetune 均可形成 48 个 importance→plasticity 相邻 task pair，但因只有一个 seed 统一为 `insufficient-seeds`；EWC、Online-EWC、SI、MAS 的 Pearson 分别约为 `-0.0414`、`0.0336`、`-0.0796`、`0.0031`，Finetune 因 predictor 无变化无法定义相关系数。这是覆盖性验证，不是 LoP 机制或方法排名结论。

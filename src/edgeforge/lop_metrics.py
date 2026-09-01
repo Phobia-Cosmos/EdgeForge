@@ -309,15 +309,26 @@ def jacobian_summary(jacobian: Any, *, residual: Any | None = None) -> dict[str,
     result: dict[str, Any] = {
         "status": "computed",
         "scope": "sampled-parameter-jacobian",
+        "output_selector": "per-sample mean of all model outputs",
         "sample_count": rows,
         "parameter_dim": parameters,
+        "data_dependent": True,
         "jacobian": spectral_summary(jacobian, feature_axis=1, center=True),
     }
+    result["jacobian"]["data_dependent"] = True
     kernel = jacobian @ jacobian.T
     kernel_eigenvalues = torch.linalg.eigvalsh((kernel + kernel.T) / 2.0).clamp_min(0.0)
     if kernel_eigenvalues.numel():
-        kernel_values = kernel_eigenvalues.flip(0).reshape(-1, 1)
-        result["ntk"] = spectral_summary(kernel_values, feature_axis=1, center=False)
+        # ``K`` itself is the Gram/kernel matrix.  Taking the SVD of the
+        # matrix (rather than of a column containing its eigenvalues) preserves
+        # the complete NTK spectrum; the latter would always have rank one and
+        # silently turn effective-rank diagnostics into a meaningless value.
+        result["ntk"] = spectral_summary(kernel, feature_axis=-1, center=False)
+        # Keep dependency provenance at the nested metric level as well as on
+        # the enclosing Jacobian record; downstream flatteners often consume
+        # ``jacobian.ntk`` directly.
+        result["ntk"]["data_dependent"] = True
+        result["ntk_eigenvalues"] = kernel_eigenvalues.flip(0).tolist()
         result["ntk_trace"] = float(kernel.trace().item())
         result["ntk_max_eigenvalue"] = float(kernel_eigenvalues.max().item())
     if residual is not None:
@@ -349,27 +360,34 @@ def sampled_parameter_jacobian(
         raise ValueError("model has no trainable parameters")
     if forward_fn is None:
         forward_fn = lambda module, batch: module(batch)
+    list_input = False
     if isinstance(inputs, torch.Tensor):
         samples = [inputs[index : index + 1] for index in range(min(int(inputs.shape[0]), max_samples))]
     elif isinstance(inputs, (tuple, list)) and inputs and all(isinstance(item, torch.Tensor) for item in inputs):
         count = min(int(inputs[0].shape[0]), max_samples)
-        samples = [tuple(item[index : index + 1] for item in inputs) for index in range(count)]
+        list_input = isinstance(inputs, list)
+        samples = [
+            ([item[index : index + 1] for item in inputs] if list_input else tuple(item[index : index + 1] for item in inputs))
+            for index in range(count)
+        ]
     else:
         raise TypeError("inputs must be a tensor or a tuple/list of tensors")
     rows: list[Any] = []
     was_training = bool(model.training)
     model.eval()
-    for sample in samples:
-        output = forward_fn(model, sample)
-        if not isinstance(output, torch.Tensor):
-            raise TypeError("forward_fn must return a tensor")
-        scalar = output.float().reshape(-1).mean()
-        gradients = torch.autograd.grad(scalar, parameters, retain_graph=False, allow_unused=True)
-        rows.append(torch.cat([
-            (gradient if gradient is not None else torch.zeros_like(parameter)).detach().float().reshape(-1)
-            for parameter, gradient in zip(parameters, gradients)
-        ]).cpu())
-    model.train(was_training)
+    try:
+        for sample in samples:
+            output = forward_fn(model, sample)
+            if not isinstance(output, torch.Tensor):
+                raise TypeError("forward_fn must return a tensor")
+            scalar = output.float().reshape(-1).mean()
+            gradients = torch.autograd.grad(scalar, parameters, retain_graph=False, allow_unused=True)
+            rows.append(torch.cat([
+                (gradient if gradient is not None else torch.zeros_like(parameter)).detach().float().reshape(-1)
+                for parameter, gradient in zip(parameters, gradients)
+            ]).cpu())
+    finally:
+        model.train(was_training)
     if not rows:
         return torch.empty((0, sum(int(parameter.numel()) for parameter in parameters)))
     return torch.stack(rows)
@@ -465,6 +483,7 @@ def parameter_norm_summary(model: Any, reference: Any | None = None) -> dict[str
         rows.append(row)
     result: dict[str, Any] = {
         "status": "computed",
+        "data_dependent": False,
         "global_l2": math.sqrt(total_sq),
         "parameter_count": sum(int(value.numel()) for value in current.values()),
         "parameters": rows,
@@ -479,6 +498,51 @@ def parameter_norm_summary(model: Any, reference: Any | None = None) -> dict[str
     else:
         result["reference_provided"] = False
     return result
+
+
+def parameter_spectral_summary(model: Any, *, max_singular_values: int = 16) -> dict[str, Any]:
+    """Summarize singular-value geometry of trainable weight tensors.
+
+    Convolutional kernels are reshaped to ``[out_channels, -1]``; linear
+    weights already have that orientation.  Bias and one-dimensional scale
+    parameters are reported as ``skipped`` because assigning them a matrix
+    spectrum would be arbitrary.  No input batch is consumed, so this is a
+    checkpoint/state diagnostic rather than a data-dependent representation
+    metric.
+    """
+
+    torch = _torch()
+    rows: dict[str, Any] = {}
+    for name, parameter in model.named_parameters():
+        value = parameter.detach().float()
+        if value.ndim < 2:
+            rows[name] = {
+                "status": "skipped",
+                "reason": "parameter has fewer than two dimensions",
+                "shape": [int(item) for item in value.shape],
+                "data_dependent": False,
+            }
+            continue
+        matrix = value.reshape(int(value.shape[0]), -1)
+        summary = spectral_summary(matrix, feature_axis=1, center=False)
+        singular = torch.linalg.svdvals(matrix)
+        limit = max(0, int(max_singular_values))
+        summary.update(
+            {
+                "status": "computed",
+                "tensor_shape": [int(item) for item in value.shape],
+                "matrix_shape": [int(item) for item in matrix.shape],
+                "top_singular_values": singular[:limit].tolist() if limit else [],
+                "data_dependent": False,
+            }
+        )
+        rows[name] = summary
+    return {
+        "status": "computed",
+        "data_dependent": False,
+        "max_singular_values": int(max_singular_values),
+        "parameters": rows,
+    }
 
 
 def gradient_summary(gradients: Any) -> dict[str, Any]:
@@ -502,6 +566,7 @@ def gradient_summary(gradients: Any) -> dict[str, Any]:
         negative = None
     return {
         "status": "computed",
+        "data_dependent": True,
         "batch_count": int(values.shape[0]),
         "parameter_dim": int(values.shape[1]),
         "norm_mean": float(norms.mean().item()),
@@ -541,15 +606,17 @@ def capture_representations(
     was_training = bool(model.training)
     model.eval()
     count = 0
-    with torch.no_grad():
-        for batch in batches:
-            if max_batches > 0 and count >= max_batches:
-                break
-            forward_fn(model, batch)
-            count += 1
-    for handle in handles:
-        handle.remove()
-    model.train(was_training)
+    try:
+        with torch.no_grad():
+            for batch in batches:
+                if max_batches > 0 and count >= max_batches:
+                    break
+                forward_fn(model, batch)
+                count += 1
+    finally:
+        for handle in handles:
+            handle.remove()
+        model.train(was_training)
     result: dict[str, Any] = {}
     for name, values in collected.items():
         if not values:
@@ -557,6 +624,45 @@ def capture_representations(
         else:
             result[name] = torch.cat(values, dim=0)
     return result
+
+
+def _move_batch_value(value: Any, device: Any) -> Any:
+    """Recursively move tensor/multi-input payloads for probe helpers."""
+
+    torch = _torch()
+    if isinstance(value, torch.Tensor):
+        return value.to(device)
+    if isinstance(value, tuple):
+        return tuple(_move_batch_value(item, device) for item in value)
+    if isinstance(value, list):
+        return [_move_batch_value(item, device) for item in value]
+    if isinstance(value, Mapping):
+        return {key: _move_batch_value(item, device) for key, item in value.items()}
+    return value
+
+
+def _extract_logits_value(output: Any) -> Any:
+    """Extract a tensor from tensor/bundle/mapping model outputs."""
+
+    torch = _torch()
+    if isinstance(output, torch.Tensor):
+        return output
+    if hasattr(output, "logits"):
+        return _extract_logits_value(output.logits)
+    if isinstance(output, Mapping):
+        for key in ("logits", "output", "outputs", "prediction", "pred"):
+            if key in output:
+                try:
+                    return _extract_logits_value(output[key])
+                except TypeError:
+                    continue
+    if isinstance(output, (tuple, list)):
+        for item in output:
+            try:
+                return _extract_logits_value(item)
+            except TypeError:
+                continue
+    raise TypeError("model output does not contain a logits tensor")
 
 
 def evaluate_classifier(model: Any, batches: Iterable[Any], *, forward_fn: Callable[[Any, Any], Any] | None = None) -> dict[str, float]:
@@ -581,9 +687,9 @@ def evaluate_classifier(model: Any, batches: Iterable[Any], *, forward_fn: Calla
             if not isinstance(batch, (tuple, list)) or len(batch) != 2:
                 raise ValueError("evaluation batches must be (inputs, labels)")
             inputs, labels = batch
-            inputs = inputs.to(model_device)
+            inputs = _move_batch_value(inputs, model_device)
             labels = labels.to(model_device)
-            logits = forward_fn(model, inputs)
+            logits = _extract_logits_value(forward_fn(model, inputs))
             if logits.ndim > 2:
                 logits = logits.reshape(-1, logits.shape[-1])
                 labels = labels.reshape(-1)
@@ -653,9 +759,9 @@ def fixed_budget_probe(
                 model_device = next(model.parameters()).device
             except StopIteration:
                 model_device = torch.device("cpu")
-            inputs = inputs.to(model_device)
+            inputs = _move_batch_value(inputs, model_device)
             labels = labels.to(model_device)
-            logits = forward_fn(model, inputs)
+            logits = _extract_logits_value(forward_fn(model, inputs))
             if logits.ndim > 2:
                 logits = logits.reshape(-1, logits.shape[-1])
                 labels = labels.reshape(-1)
@@ -697,3 +803,36 @@ def fixed_budget_probe(
             "fresh_acc_gain": fresh_acc - fresh_curve[0]["accuracy"],
         },
     }
+
+
+# Curvature estimators and the unified model diagnostic live in a dedicated
+# module, but are re-exported here for backwards compatibility with callers
+# that already import ``edgeforge.lop_metrics``.  ``lop_diagnostics`` imports
+# this module lazily inside ``diagnose_model`` so the two modules remain safe
+# to import in either order (and PyTorch stays optional at import time).
+from .lop_diagnostics import (  # noqa: E402  (intentional compatibility export)
+    calibration_manifest_digest,
+    calibration_manifest_provenance,
+    DiagnosticsConfig,
+    LoPDiagnostics,
+    LoPMetricConfig,
+    MetricConfig,
+    diagnose_model,
+    empirical_fisher_diagonal,
+    empirical_fisher_summary,
+    estimate_hessian_trace,
+    exact_hessian_matrix,
+    fisher_diagonal,
+    fisher_summary,
+    hessian_hvp,
+    hessian_top_eigenvalue,
+    hessian_top_eigenvalue_summary,
+    hessian_vector_product,
+    hessian_trace,
+    hutchinson_trace,
+    hutchinson_trace_summary,
+    hvp,
+    power_iteration_top_eigenvalue,
+    split_batch,
+    top_hessian_eigenvalue,
+)

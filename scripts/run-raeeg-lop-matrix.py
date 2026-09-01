@@ -625,6 +625,17 @@ def _merge_bundle(manifest: dict[str, Any], cell: dict[str, Any], cell_id: str, 
                 metrics.append(row)
     comparison_group = f"{cell['dataset']}:{condition_name}"
     relative_bundle = str((cell_dir / "bundle.json").relative_to(cell_dir.parent.parent))
+    probe_steps = cell.get("probe_steps", "0,5,10")
+    try:
+        probe_budget = max(int(item.strip()) for item in str(probe_steps).split(",") if item.strip())
+    except (TypeError, ValueError):
+        probe_budget = None
+    task_order = []
+    for item in cell.get("stages", []):
+        try:
+            task_order.append(int(item))
+        except (TypeError, ValueError):
+            continue
     spec = {
         "schema_version": 1,
         "experiment_id": cell_id,
@@ -642,6 +653,12 @@ def _merge_bundle(manifest: dict[str, Any], cell: dict[str, Any], cell_id: str, 
             "subject": str(cell["subject"]),
             "checkpoint_stage": int(cell["checkpoint_stage"]),
             "split": cell["split"],
+            "task_order": task_order,
+            "probe_budget": probe_budget,
+            "optimizer": {"name": "Adam", "lr": cell.get("lr"), "weight_decay": cell.get("weight_decay", 0.0), "scope": "target-train-only", "state_persisted": False},
+            "lr": cell.get("lr"),
+            "model_structure": {"name": "BrainUICL"},
+            "fresh_warm_protocol": "supervised-oracle-fixed-budget-heldout-v1",
             "retention": copy.deepcopy(cell.get("retention")),
             "scientific_conclusion_allowed": False,
             "note": "matrix cell; instrumentation/probe evidence is descriptive and single-cell results are not a LoP conclusion",

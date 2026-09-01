@@ -60,6 +60,28 @@ class LopMetricsTests(unittest.TestCase):
         self.assertEqual(summary["sample_count"], 3)
         self.assertEqual(summary["parameter_dim"], 2)
         self.assertIn("ntk_trace", summary)
+        self.assertTrue(summary["jacobian"]["data_dependent"])
+        self.assertTrue(summary["ntk"]["data_dependent"])
+
+    def test_ntk_spectrum_uses_kernel_matrix_not_eigenvalue_column(self):
+        jacobian = torch.eye(3)
+        summary = lop_metrics.jacobian_summary(jacobian)
+        self.assertEqual(summary["ntk"]["rank_ceiling"], 3)
+        self.assertAlmostEqual(summary["ntk"]["effective_rank"], 3.0, places=5)
+        self.assertEqual(len(summary["ntk_eigenvalues"]), 3)
+
+    def test_parameter_spectrum_is_checkpoint_only(self):
+        model = nn.Sequential(nn.Linear(3, 2), nn.LayerNorm(2))
+        summary = lop_metrics.parameter_spectral_summary(model, max_singular_values=2)
+        self.assertFalse(summary["data_dependent"])
+        self.assertIn("0.weight", summary["parameters"])
+        self.assertEqual(len(summary["parameters"]["0.weight"]["top_singular_values"]), 2)
+        self.assertEqual(summary["parameters"]["0.bias"]["status"], "skipped")
+
+    def test_curvature_aliases_remain_available_from_legacy_module(self):
+        self.assertIs(lop_metrics.hvp, lop_metrics.hessian_vector_product)
+        self.assertIs(lop_metrics.fisher_diagonal, lop_metrics.empirical_fisher_diagonal)
+        self.assertIs(lop_metrics.fisher_summary, lop_metrics.empirical_fisher_summary)
 
     def test_local_linearity_is_deterministic_for_same_seed(self):
         model = nn.Sequential(nn.Linear(2, 4), nn.Tanh(), nn.Linear(4, 2))
@@ -76,6 +98,22 @@ class LopMetricsTests(unittest.TestCase):
         evaluation = train
         result = lop_metrics.fixed_budget_probe(warm, fresh, train, evaluation, steps=(0, 1), lr=0.01, seed=21)
         self.assertIn("fresh_gap_final", result["outcome"])
+        self.assertEqual(result["steps"], [0, 1])
+
+    def test_fixed_budget_probe_accepts_multi_input_eeg_batches(self):
+        class TwoInput(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.linear = nn.Linear(2, 2)
+
+            def forward(self, inputs):
+                left, right = inputs
+                return self.linear(torch.cat((left, right), dim=-1))
+
+        warm = TwoInput()
+        fresh = TwoInput()
+        train = [((torch.randn(3, 1), torch.randn(3, 1)), torch.tensor([0, 1, 0]))]
+        result = lop_metrics.fixed_budget_probe(warm, fresh, train, train, steps=(0, 1), lr=0.01, seed=7)
         self.assertEqual(result["steps"], [0, 1])
 
 

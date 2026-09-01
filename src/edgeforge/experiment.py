@@ -300,9 +300,24 @@ def build_experiment_bundle(
 ) -> dict[str, Any]:
     adapter = spec.runner["adapter"]
     if adapter == "edgeforge-bundle-v1":
-        if not isinstance(raw.get("metrics"), list):
-            raise ValueError("EdgeForge bundle result requires a metrics array")
-        metrics = raw["metrics"]
+        has_trajectory = isinstance(raw.get("runs"), list) or isinstance(raw.get("tasks"), list)
+        if isinstance(raw.get("metrics"), list) and (raw["metrics"] or not has_trajectory):
+            metrics = raw["metrics"]
+        elif isinstance(raw.get("runs"), list) or isinstance(raw.get("tasks"), list):
+            # Generic EEG/BrainUICL diagnostic reports may carry the rich
+            # trajectory tree without a precomputed flat envelope.  Convert
+            # at the Worker boundary so a producer cannot accidentally make
+            # the result non-importable merely by omitting ``metrics[]``.
+            from edgeforge.lop_envelope import diagnostic_to_metrics
+
+            metrics = diagnostic_to_metrics(raw)
+        elif raw.get("status") == "blocked":
+            # A read-only preflight is still a valid evidence artifact.  It
+            # contains no research rows, but preserving an empty envelope
+            # lets the control plane record the exact blocker provenance.
+            metrics = []
+        else:
+            raise ValueError("EdgeForge bundle result requires a metrics array or diagnostic runs/tasks")
         summary = raw.get("summary") or {}
     else:
         metrics, summary = normalize_raeeg_metrics(raw)
@@ -310,6 +325,7 @@ def build_experiment_bundle(
         "schema_version": 1,
         "experiment_id": spec.experiment_id,
         "workload": spec.workload,
+        "scientific_conclusion_allowed": False,
         "spec": spec.to_dict(),
         "metrics": metrics,
         "summary": summary,
