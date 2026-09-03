@@ -2,6 +2,24 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.17.0 - 2026-09-03 (development snapshot)
+
+### Added
+
+- 新增 `scripts/create-eeg-mini-split.py`，从本地 ISRUC processed 数据只读抽取 source/target/retention 小划分，保留 data-label 配对并生成源/输出 SHA-256 manifest。
+- 新增 `scripts/benchmark-eeg-architectures.py`，在同一 raw EEG 输入和固定 CPU 预算下比较 `lop_mlp`、`eegnet`、`tcn`、`transformer` 与 `brainuicl`，输出 accuracy、macro-F1、loss、参数量、CPU latency、effective/stable rank、attention entropy 和 fresh-gap。
+- 新增 [EEG 架构功效与 LoP 实验说明](docs/eeg-architecture-accuracy-lop-v1.md) 与真实 EEG 数据发布边界说明 [data/README.md](data/README.md)。
+
+### Validation
+
+- ISRUC mini split 固定为 source subjects `1,3,4`、target `2`、retention `5`，每个 subject 一个文件，共 5 个文件、约 9.3 MiB；抽取器配对与 hash 校验通过。
+- 五种结构各运行 seed `4321/4322/4323`，共 15 个 CPU smoke runs；训练、target adaptation、fresh/checkpoint 对照和指标采集均通过。
+- 结果仅用于 pipeline/architecture utility smoke。由于样本极小、单 epoch 预算和 target accuracy ceiling，`fresh_gap` 不支持正式 LoP 或结构优越性结论；真实 EEG 与 checkpoint 未提交 Git。
+
+### Safety
+
+- mini split 保存在共享数据盘 `/home/undefined/Disk/datasets/edgeforge-eeg-mini/v0.17.0`，仓库只提交抽取器、实验契约和说明，不上传人体 EEG payload。
+
 ## Unreleased - next EEG/LoP diagnostics baseline
 
 ### Added
