@@ -23,7 +23,7 @@ class EEGMiniSplitTests(unittest.TestCase):
                 np.save(source / str(subject) / "label" / "1.npy", np.arange(20, dtype=np.int64) % 5)
             output = root / "out"
             script = Path(__file__).parents[1] / "scripts" / "create-eeg-mini-split.py"
-            subprocess.run([sys.executable, str(script), "--source-root", str(source), "--output-root", str(output), "--source-subjects", "1", "--target-subject", "2", "--retention-subject", "5", "--selection-strategy", "label-diversity", "--public-release"], check=True)
+            subprocess.run([sys.executable, str(script), "--source-root", str(source), "--output-root", str(output), "--source-subjects", "1", "--target-subjects", "2", "--retention-subjects", "5", "--selection-strategy", "label-diversity", "--public-release"], check=True)
             manifest = json.loads((output / "manifest.json").read_text())
             self.assertEqual(len(manifest["records"]), 3)
             self.assertTrue(manifest["public_release"])
@@ -31,6 +31,18 @@ class EEGMiniSplitTests(unittest.TestCase):
             self.assertTrue(all(item["file"] == "1" for item in manifest["records"]))
             self.assertTrue(all(item["source_data_sha256"] == item["output_data_sha256"] for item in manifest["records"]))
             self.assertTrue((output / "source/1/data/1.npy").is_file())
+
+    def test_subject_roles_cannot_overlap(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            source.mkdir()
+            script = Path(__file__).parents[1] / "scripts" / "create-eeg-mini-split.py"
+            result = subprocess.run([sys.executable, str(script), "--source-root", str(source), "--output-root", str(root / "out"), "--source-subjects", "1", "--target-subjects", "1", "--retention-subjects", "2"], capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("must not overlap", result.stderr)
 
 
 if __name__ == "__main__":

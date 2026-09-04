@@ -2,6 +2,20 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.18.0 - 2026-09-04 (development snapshot)
+
+### Added
+
+- 新增约 183 MiB 的 ISRUC-Sleep medium subset：20 个互斥 subject、每个 5 个文件、共 2,000 个 EEG epoch；8 个 source、8 个 target、4 个 retention subject。
+- 抽取器支持多个 target/retention subjects，并拒绝跨角色 subject 重叠。
+- 架构 benchmark 对每个 target 文件独立使用前 10 epoch 适配、后 10 epoch held-out evaluation，避免按拼接位置切分造成 subject leakage。
+
+### Validation
+
+- 200 个 `.npy` data/label 文件均与 manifest SHA-256 一致；单文件最大约 1.83 MiB，低于 GitHub 100 MiB 限制。
+- source、target-adaptation、target-evaluation、retention 四个部分均覆盖全部 5 类。
+- 抽取器与版本 unittest、compileall 和五架构 medium-data CPU smoke 通过。
+
 ## 0.17.1 - 2026-09-04 (development snapshot)
 
 ### Added

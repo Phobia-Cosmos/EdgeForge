@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a tiny, reproducible ISRUC split outside the repository.
+"""Create a small, reproducible ISRUC split outside the repository.
 
 The source tree contains human EEG data and is never modified.  This command
 copies only paired data/label files into a user-selected local directory and
@@ -61,8 +61,8 @@ def main() -> None:
     parser.add_argument("--source-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--source-subjects", type=int, nargs="+", default=[1, 3, 4])
-    parser.add_argument("--target-subject", type=int, default=2)
-    parser.add_argument("--retention-subject", type=int, default=5)
+    parser.add_argument("--target-subject", "--target-subjects", dest="target_subjects", type=int, nargs="+", default=[2])
+    parser.add_argument("--retention-subject", "--retention-subjects", dest="retention_subjects", type=int, nargs="+", default=[5])
     parser.add_argument("--files-per-subject", type=int, default=1)
     parser.add_argument("--selection-strategy", choices=("first", "label-diversity"), default="first")
     parser.add_argument("--public-release", action="store_true", help="write a portable manifest without local absolute paths")
@@ -81,9 +81,12 @@ def main() -> None:
 
     groups: dict[str, list[int]] = {
         "source": list(dict.fromkeys(args.source_subjects)),
-        "target": [args.target_subject],
-        "retention": [args.retention_subject],
+        "target": list(dict.fromkeys(args.target_subjects)),
+        "retention": list(dict.fromkeys(args.retention_subjects)),
     }
+    assigned = [subject for subjects in groups.values() for subject in subjects]
+    if len(assigned) != len(set(assigned)):
+        raise ValueError("subjects must not overlap across source, target and retention groups")
     records: list[dict[str, object]] = []
     for group, subjects in groups.items():
         for subject in subjects:

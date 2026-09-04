@@ -61,6 +61,34 @@ def read_group(root: Path, group: str) -> tuple[torch.Tensor, torch.Tensor, list
     return torch.from_numpy(np.concatenate(values, axis=0)), torch.from_numpy(np.concatenate(labels, axis=0)), names
 
 
+def read_target_halves(root: Path) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, list[str]]:
+    train_values: list[np.ndarray] = []
+    train_labels: list[np.ndarray] = []
+    eval_values: list[np.ndarray] = []
+    eval_labels: list[np.ndarray] = []
+    names: list[str] = []
+    for data_path in sorted((root / "target").glob("*/data/*.npy"), key=lambda p: (int(p.parent.parent.name), int(p.stem))):
+        label_path = root / "target" / data_path.parent.parent.name / "label" / data_path.name
+        data = np.load(data_path, allow_pickle=False)
+        target = np.load(label_path, allow_pickle=False).reshape(-1)
+        if data.shape != (20, 8, 3000) or target.shape != (20,):
+            raise ValueError(f"invalid pair {data_path}: {data.shape=} {target.shape=}")
+        train_values.append(data[:10].astype(np.float32, copy=False))
+        train_labels.append(target[:10].astype(np.int64, copy=False))
+        eval_values.append(data[10:].astype(np.float32, copy=False))
+        eval_labels.append(target[10:].astype(np.int64, copy=False))
+        names.append(str(data_path))
+    if not train_values:
+        raise RuntimeError(f"no target files found under {root}")
+    return (
+        torch.from_numpy(np.concatenate(train_values, axis=0)),
+        torch.from_numpy(np.concatenate(train_labels, axis=0)),
+        torch.from_numpy(np.concatenate(eval_values, axis=0)),
+        torch.from_numpy(np.concatenate(eval_labels, axis=0)),
+        names,
+    )
+
+
 def model_config(name: str) -> EEGModelConfig:
     options = {}
     if name == "lop_mlp":
@@ -191,12 +219,9 @@ def main() -> None:
     output = args.output_root.resolve()
     output.mkdir(parents=True, exist_ok=True)
     source_x, source_y, source_files = read_group(root, "source")
-    target_x, target_y, target_files = read_group(root, "target")
+    target_train_x, target_train_y, target_eval_x, target_eval_y, target_files = read_target_halves(root)
     retention_x, retention_y, retention_files = read_group(root, "retention")
-    pivot = max(1, len(target_x) // 2)
-    target_train_x, target_eval_x = target_x[:pivot], target_x[pivot:]
-    target_train_y, target_eval_y = target_y[:pivot], target_y[pivot:]
-    metadata = {"schema": "edgeforge.eeg-architecture-benchmark.v1", "dataset": "ISRUC", "data_root": str(root), "source_files": source_files, "target_files": target_files, "retention_files": retention_files, "input_shape": [8, 3000], "classes": 5, "epochs": args.epochs, "adapt_steps": args.adapt_steps, "device": "cpu", "scientific_conclusion_allowed": False}
+    metadata = {"schema": "edgeforge.eeg-architecture-benchmark.v1", "dataset": "ISRUC", "data_root": str(root), "source_files": source_files, "target_files": target_files, "retention_files": retention_files, "target_split": "first 10 epochs of every file for adaptation; last 10 for held-out evaluation", "input_shape": [8, 3000], "classes": 5, "epochs": args.epochs, "adapt_steps": args.adapt_steps, "device": "cpu", "scientific_conclusion_allowed": False}
     (output / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     all_runs: list[dict] = []
     for name in args.architectures:
