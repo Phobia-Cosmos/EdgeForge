@@ -16,6 +16,8 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
+
 
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -25,10 +27,24 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def files_for_subject(source: Path, subject: int, count: int) -> list[tuple[Path, Path]]:
+def label_diversity_score(label_path: Path) -> tuple[int, int, float, int]:
+    """Prefer files whose two halves and full sequence contain more classes."""
+    labels = np.load(label_path, allow_pickle=False).reshape(-1)
+    if labels.shape != (20,):
+        raise ValueError(f"expected 20 labels in {label_path}, got {labels.shape}")
+    counts = np.bincount(labels.astype(np.int64), minlength=5)
+    probabilities = counts[counts > 0] / labels.size
+    entropy = float(-(probabilities * np.log(probabilities)).sum())
+    half_coverage = min(len(np.unique(labels[:10])), len(np.unique(labels[10:])))
+    return half_coverage, len(np.unique(labels)), entropy, -int(label_path.stem)
+
+
+def files_for_subject(source: Path, subject: int, count: int, selection_strategy: str) -> list[tuple[Path, Path]]:
     data_dir = source / str(subject) / "data"
     label_dir = source / str(subject) / "label"
     files = sorted(data_dir.glob("*.npy"), key=lambda item: int(item.stem))
+    if selection_strategy == "label-diversity":
+        files.sort(key=lambda item: label_diversity_score(label_dir / item.name), reverse=True)
     pairs: list[tuple[Path, Path]] = []
     for data_path in files[:count]:
         label_path = label_dir / data_path.name
@@ -48,6 +64,8 @@ def main() -> None:
     parser.add_argument("--target-subject", type=int, default=2)
     parser.add_argument("--retention-subject", type=int, default=5)
     parser.add_argument("--files-per-subject", type=int, default=1)
+    parser.add_argument("--selection-strategy", choices=("first", "label-diversity"), default="first")
+    parser.add_argument("--public-release", action="store_true", help="write a portable manifest without local absolute paths")
     args = parser.parse_args()
     source = args.source_root.resolve()
     output = args.output_root.resolve()
@@ -69,40 +87,42 @@ def main() -> None:
     records: list[dict[str, object]] = []
     for group, subjects in groups.items():
         for subject in subjects:
-            for data_path, label_path in files_for_subject(source, subject, args.files_per_subject):
+            for data_path, label_path in files_for_subject(source, subject, args.files_per_subject, args.selection_strategy):
                 destination_data = output / group / str(subject) / "data" / data_path.name
                 destination_label = output / group / str(subject) / "label" / label_path.name
                 destination_data.parent.mkdir(parents=True, exist_ok=True)
                 destination_label.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(data_path, destination_data)
                 shutil.copy2(label_path, destination_label)
-                records.append(
-                    {
+                record = {
                         "group": group,
                         "subject": subject,
                         "file": data_path.stem,
-                        "source_data": str(data_path),
-                        "source_label": str(label_path),
-                        "output_data": str(destination_data),
-                        "output_label": str(destination_label),
+                        "source_data": str(data_path.relative_to(source)) if args.public_release else str(data_path),
+                        "source_label": str(label_path.relative_to(source)) if args.public_release else str(label_path),
+                        "output_data": str(destination_data.relative_to(output)) if args.public_release else str(destination_data),
+                        "output_label": str(destination_label.relative_to(output)) if args.public_release else str(destination_label),
                         "source_data_sha256": sha256(data_path),
                         "source_label_sha256": sha256(label_path),
                         "output_data_sha256": sha256(destination_data),
                         "output_label_sha256": sha256(destination_label),
                     }
-                )
+                records.append(record)
     manifest = {
         "schema": "edgeforge.eeg-mini-split.v1",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "dataset": "ISRUC group1 processed npy float32",
-        "source_root": str(source),
-        "output_root": str(output),
+        "source_url": "https://sleeptight.isr.uc.pt/ISRUC_Sleep/",
+        "citation": "Khalighi et al., ISRUC-Sleep, Computer Methods and Programs in Biomedicine 124 (2016), 180-192",
+        "source_root": None if args.public_release else str(source),
+        "output_root": "." if args.public_release else str(output),
         "shape_contract": {"data": [20, 8, 3000], "label": [20]},
         "groups": groups,
         "files_per_subject": args.files_per_subject,
+        "selection_strategy": args.selection_strategy,
         "records": records,
-        "public_release": False,
-        "release_note": "Human EEG payload; keep local unless license, ethics and de-identification permit publication.",
+        "public_release": args.public_release,
+        "release_note": "Public mini subset authorized for repository publication by the repository owner." if args.public_release else "Local human EEG subset; do not publish without explicit authorization.",
     }
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": "ok", "output_root": str(output), "records": len(records), "manifest": str(output / "manifest.json")}, sort_keys=True))

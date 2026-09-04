@@ -2,6 +2,19 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.17.1 - 2026-09-04 (development snapshot)
+
+### Added
+
+- 发布约 9.3 MiB 的 ISRUC-Sleep CPU mini split，按 source subjects `1,3,4`、target subject `2` 和 retention subject `5` 隔离，并为每个 data/label 文件保存 SHA-256。
+- 抽取器新增 `label-diversity` 确定性选样策略和 `--public-release` 可移植 manifest，避免选择整段单一类别文件和泄露本机绝对路径。
+- 新增数据卡，记录公开来源、引用、处理格式、用途、限制及防止 subject leakage 的使用要求。
+
+### Validation
+
+- 公开子集选择文件 `1/3.npy`、`3/16.npy`、`4/0.npy`、`2/45.npy` 和 `5/30.npy`；source 聚合覆盖 5 类，target/retention 各覆盖 4 类，target 前后半段各覆盖 3 类。
+- 抽取器 unittest、版本一致性测试、SHA-256 校验和五架构单 seed CPU smoke 通过。
+
 ## 0.17.0 - 2026-09-03 (development snapshot)
 
 ### Added

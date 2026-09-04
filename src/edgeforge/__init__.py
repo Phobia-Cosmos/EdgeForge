@@ -1,6 +1,6 @@
 """EdgeForge heterogeneous edge runtime."""
 
-__version__ = "0.17.0"
+__version__ = "0.17.1"
 
 # The envelope converter has no optional runtime dependencies and is safe to
 # expose at the package boundary.  Keep the import small so importing
