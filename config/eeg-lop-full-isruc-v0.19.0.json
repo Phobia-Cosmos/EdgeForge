@@ -1,0 +1,71 @@
+{
+  "schema": "edgeforge.eeg-lop-full-experiment.v1",
+  "experiment_version": "0.19.0",
+  "dataset": "ISRUC-Sleep Group I",
+  "primary_outcome": "task.plasticity.fresh_gap",
+  "fresh_gap_definition": "fresh_accuracy - warm_accuracy at the same held-out target data and fixed update budget",
+  "model_selection_rule": "calibration only; freeze architecture, learning rate and budgets before confirmatory runs",
+  "resources": {
+    "minimum_output_free_gib": 8,
+    "recommended_host_memory_gib": 24,
+    "accelerator": "one CUDA GPU; do not split a single trajectory across devices",
+    "raw_payload_copy": false
+  },
+  "phases": {
+    "calibration": {
+      "architectures": ["lop_mlp", "eegnet", "tcn", "transformer", "brainuicl"],
+      "seeds": [4321, 4322, 4323],
+      "orders": ["random-a"],
+      "target_limit": 12,
+      "source_epochs": 10,
+      "budgets": [0, 5, 10, 25, 50, 100],
+      "batch_size": 64,
+      "source_lr": 0.002,
+      "adapt_lr": 0.001,
+      "source_eval_fraction": 0.2,
+      "retention_max_samples": 2048,
+      "freeze_batch_norm": true,
+      "purpose": "lock learning adequacy and compute budget; not a LoP result"
+    },
+    "confirmatory": {
+      "architectures": ["tcn", "transformer", "brainuicl"],
+      "seeds": [4321, 4322, 4323, 4324, 4325, 4326, 4327, 4328, 4329, 4330],
+      "orders": ["random-a", "random-b"],
+      "target_limit": null,
+      "source_epochs": 30,
+      "budgets": [0, 5, 10, 25, 50, 100, 200],
+      "batch_size": 64,
+      "source_lr": 0.002,
+      "adapt_lr": 0.001,
+      "source_eval_fraction": 0.2,
+      "retention_max_samples": 4096,
+      "freeze_batch_norm": true,
+      "purpose": "primary natural LoP estimate on two preregistered task orders"
+    },
+    "data-composition": {
+      "architectures": ["transformer", "brainuicl"],
+      "seeds": [4321, 4322, 4323, 4324, 4325, 4326, 4327, 4328, 4329, 4330],
+      "orders": ["label-shift-ascending", "label-shift-descending"],
+      "target_limit": null,
+      "source_epochs": 30,
+      "budgets": [0, 5, 10, 25, 50, 100, 200],
+      "batch_size": 64,
+      "source_lr": 0.002,
+      "adapt_lr": 0.001,
+      "source_eval_fraction": 0.2,
+      "retention_max_samples": 4096,
+      "freeze_batch_norm": true,
+      "purpose": "test whether subject composition and shift order change later plasticity"
+    }
+  },
+  "acceptance": {
+    "minimum_independent_seeds": 10,
+    "minimum_target_stages": 50,
+    "source_accuracy_above_majority": 0.1,
+    "fresh_learning_accuracy_gain": 0.05,
+    "bootstrap_repeats": 10000,
+    "alpha": 0.05,
+    "multiple_comparison": "Holm across preregistered architecture-budget primary tests",
+    "scientific_conclusion_allowed_before_complete_audit": false
+  }
+}

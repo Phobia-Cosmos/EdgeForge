@@ -1,6 +1,6 @@
 # 版本与日志策略
 
-EdgeForge 使用语义化版本 `MAJOR.MINOR.PATCH`。协议不兼容、任务或 IR 语义不兼容时增加 MAJOR；增加向后兼容能力时增加 MINOR；仅修复兼容问题时增加 PATCH。当前开发线为 `0.16.4` ISRUC/FACED 多 seed 预训练与主机后端验证 snapshot，V2–V16 的契约保持兼容；Orange Pi 的 RK3588 accelerator smoke 是 runtime/API 证据，真实 BrainUICL EEG 模型 Runtime 仍需单独完成 conversion、算子覆盖与数值门禁后才能标记部署稳定。
+EdgeForge 使用语义化版本 `MAJOR.MINOR.PATCH`。协议不兼容、任务或 IR 语义不兼容时增加 MAJOR；增加向后兼容能力时增加 MINOR；仅修复兼容问题时增加 PATCH。当前开发线为 `0.19.0` 完整 ISRUC continuous-LoP 实验设计 snapshot，V2–V18 的契约保持兼容；该版本冻结完整数据 split、任务顺序与多 seed 矩阵，但在长实验和统计审计完成前不产生 LoP 科学结论。
 
 每个版本必须同时留下四类记录：`CHANGELOG.md` 的用户可见变更、`releases/vX.Y.Z.md` 的发布验证证据、`EDGEFORGE_LOG_DIR/vX.Y.Z/` 的进程 JSONL 日志，以及控制面 SQLite 中的 release/event/task/benchmark 结构化数据。只写其中一种不能视为完整发布。
 
@@ -15,3 +15,5 @@ JSONL 文件名使用 UTC 启动时间、PID 和随机 run id，因此同版本�
 版本归档索引由 `scripts/index-version-archives.py` 写入 `logs/archive/ARCHIVE_INDEX.json`。当前 0.10.1、0.10.2、0.11.0 和 0.12.0 均有独立归档与 SHA-256 清单；V11 BrainUICL 编译验证和 V12 目标探测/preflight 记录不会覆盖旧版本。
 
 0.16.4 的多 seed 预训练与后端证据归档于 `logs/archive/v0.16.4/raeeg-multiseed-backend-validation/`；大 checkpoint 保存在共享盘并由 manifest/SHA-256 绑定。
+
+0.19.0 的完整 ISRUC portable plan 归档于 `logs/archive/v0.19.0/isruc-full-plan/`；原始 EEG、逐 stage checkpoint 与长实验输出保存在共享数据盘，Git 只保存 plan、配置、命令、摘要和哈希。

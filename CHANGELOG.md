@@ -2,6 +2,19 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.19.0 - 2026-09-04 (development snapshot)
+
+### Added
+
+- 合并连续 EEG subject-stream LoP runner、trajectory adapter、严格 gate、数据构成分析和 synthetic positive control；远端部分运行表明检测链能识别注入的 plasticity impairment，但真实 EEG 尚无一致 LoP 方向。
+- 新增完整 ISRUC 只读计划生成器，固定 98 个可用 subject、4,276 对文件、85,520 epochs 的 30 source / 50 target / 18 retention 无交叉划分，并生成两个随机顺序和一对 label-shift 对向顺序。
+- 新增 `calibration`、`confirmatory` 和 `data-composition` 三阶段运行配置与可恢复 orchestration CLI；正式矩阵使用 10 个独立 seed、50 个 target stages 和固定 fresh/warm budgets，原始数据与大模型产物均保留在共享数据盘。
+
+### Evidence boundary
+
+- medium subset 上 BrainUICL 的平均 fresh-gap 在 budget 5/10 为正，TCN 在 budget 10/25 为小幅正值，但存在零值或负值的 seed/subject cells；严格 gate 因方向不一致而不通过，这不是“没有 LoP”的结论。
+- 完整计划只冻结实验设计，尚未把长实验结果写成科学结论；只有 source/fresh 学习充分性、完整多 seed trajectory、cluster bootstrap 和多重比较审计都通过后才能升级证据状态。
+
 ## 0.18.0 - 2026-09-04 (development snapshot)
 
 ### Added
