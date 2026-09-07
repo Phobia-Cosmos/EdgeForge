@@ -123,6 +123,7 @@ def _command(
         "--adapt-lr", str(phase["adapt_lr"]),
         "--source-eval-fraction", str(phase["source_eval_fraction"]),
         "--retention-max-samples", str(phase["retention_max_samples"]),
+        "--input-scale", str(phase.get("input_scale", 1.0)),
         "--device", device,
         "--resume",
     ]

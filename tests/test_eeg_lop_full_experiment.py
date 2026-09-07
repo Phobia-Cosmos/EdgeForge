@@ -41,6 +41,7 @@ class FullLoPExperimentTests(unittest.TestCase):
                     "adapt_lr": 0.001,
                     "source_eval_fraction": 0.2,
                     "retention_max_samples": 20,
+                    "input_scale": 100000.0,
                     "freeze_batch_norm": True,
                 }
             }
@@ -59,6 +60,7 @@ class FullLoPExperimentTests(unittest.TestCase):
         self.assertIn("--resume", records[0]["command"])
         self.assertIn("--source-eval-fraction", records[0]["command"])
         self.assertIn("--source-checkpoint-root", records[0]["command"])
+        self.assertIn("--input-scale", records[0]["command"])
         self.assertIn("--freeze-batch-norm", records[0]["command"])
         self.assertEqual({item["architecture"] for item in records}, {"tcn", "transformer"})
 

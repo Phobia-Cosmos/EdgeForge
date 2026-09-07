@@ -207,6 +207,16 @@ def limit_samples(
     return values[indexes], labels[indexes], selected.tolist()
 
 
+def scale_inputs(values: torch.Tensor, input_scale: float) -> torch.Tensor:
+    """Apply the fixed physical-unit conversion used by a protocol version."""
+    scale = float(input_scale)
+    if not np.isfinite(scale) or scale <= 0.0:
+        raise ValueError("input_scale must be finite and positive")
+    if scale == 1.0:
+        return values
+    return values * scale
+
+
 def validate_subject_roles(source: Iterable[int], target: Iterable[int], retention: Iterable[int]) -> None:
     role_values = {
         "source": [int(item) for item in source],
@@ -568,6 +578,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
     source_eval_fraction = float(getattr(args, "source_eval_fraction", 0.0))
     retention_max_samples = getattr(args, "retention_max_samples", None)
+    input_scale = float(getattr(args, "input_scale", 1.0))
     resume = bool(getattr(args, "resume", False))
     freeze_batch_norm = bool(getattr(args, "freeze_batch_norm", False))
     source_checkpoint_argument = getattr(args, "source_checkpoint_root", None)
@@ -576,6 +587,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("source_eval_fraction must be in [0, 1)")
     if retention_max_samples is not None and int(retention_max_samples) <= 0:
         raise ValueError("retention_max_samples must be positive when supplied")
+    if not np.isfinite(input_scale) or input_scale <= 0.0:
+        raise ValueError("input_scale must be finite and positive")
     validate_subject_roles(args.source_subjects, args.target_subjects, args.retention_subjects)
     device = torch.device(args.device)
     source_x, source_y, source_eval_x, source_eval_y, source_train_files, source_eval_files = read_source_split(
@@ -584,6 +597,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         source_eval_fraction,
     )
     retention_x, retention_y, retention_files = read_group(root, "retention", args.retention_subjects)
+    source_x = scale_inputs(source_x, input_scale)
+    source_eval_x = scale_inputs(source_eval_x, input_scale)
+    retention_x = scale_inputs(retention_x, input_scale)
     retention_original_samples = int(retention_x.shape[0])
     retention_x, retention_y, retention_sample_indexes = limit_samples(
         retention_x,
@@ -595,9 +611,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         train_x, train_y, eval_x, eval_y, files = read_target_stage(root, int(subject))
         target_stages.append({
             "subject": int(subject),
-            "train_x": train_x,
+            "train_x": scale_inputs(train_x, input_scale),
             "train_y": train_y,
-            "eval_x": eval_x,
+            "eval_x": scale_inputs(eval_x, input_scale),
             "eval_y": eval_y,
             "files": files,
         })
@@ -610,6 +626,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "target_subject_order": [int(item) for item in args.target_subjects],
         "retention_subjects": [int(item) for item in args.retention_subjects],
         "source_eval_fraction": source_eval_fraction,
+        "input_scale": input_scale,
+        "input_scaling": "multiply every EEG sample by input_scale before model forward",
         "source_split": (
             "last ceil(files * source_eval_fraction) files per source subject are held out"
             if source_eval_fraction > 0.0
@@ -691,6 +709,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 "seed": int(seed),
                 "source_subjects": [int(item) for item in args.source_subjects],
                 "source_eval_fraction": source_eval_fraction,
+                "input_scale": input_scale,
                 "source_train_files": _file_fingerprints(source_train_files),
                 "source_eval_files": _file_fingerprints(source_eval_files),
                 "source_epochs": int(args.epochs),
@@ -920,6 +939,12 @@ def parse_args() -> argparse.Namespace:
         help="Deterministically cap the fixed retention set to this many epochs.",
     )
     parser.add_argument(
+        "--input-scale",
+        type=float,
+        default=1.0,
+        help="Multiply loaded EEG amplitudes by this fixed protocol scale before training/evaluation.",
+    )
+    parser.add_argument(
         "--source-checkpoint-root",
         type=Path,
         default=None,
@@ -950,6 +975,8 @@ def parse_args() -> argparse.Namespace:
         parser.error("--source-eval-fraction must be in [0, 1)")
     if args.retention_max_samples is not None and args.retention_max_samples <= 0:
         parser.error("--retention-max-samples must be positive")
+    if not np.isfinite(args.input_scale) or args.input_scale <= 0.0:
+        parser.error("--input-scale must be finite and positive")
     try:
         validate_subject_roles(args.source_subjects, args.target_subjects, args.retention_subjects)
     except ValueError as error:

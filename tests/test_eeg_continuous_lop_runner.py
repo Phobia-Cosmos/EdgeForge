@@ -76,6 +76,13 @@ class ContinuousLoPRunnerTests(unittest.TestCase):
         self.assertTrue(torch.equal(first_y, labels[first_indexes]))
         self.assertTrue(torch.equal(second_y, labels[second_indexes]))
 
+    def test_input_scale_is_applied_without_mutating_unit_scale(self):
+        values = torch.tensor([[1.0, -2.0]])
+        self.assertTrue(torch.equal(module.scale_inputs(values, 1.0), values))
+        self.assertTrue(torch.equal(module.scale_inputs(values, 100.0), values * 100.0))
+        with self.assertRaises(ValueError):
+            module.scale_inputs(values, 0.0)
+
     def test_subject_roles_must_be_unique_and_disjoint(self):
         module.validate_subject_roles([1, 2], [3, 4], [5])
         with self.assertRaisesRegex(ValueError, "mutually exclusive"):
