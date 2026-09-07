@@ -1,5 +1,7 @@
 # ISRUC 全量 EEG 持续学习 LoP 实验方案 v0.19
 
+> v0.19.1 calibration revision: fixed input scale and phase-aware audit are recorded in `releases/v0.19.1.md`. The external calibration lock is `/home/undefined/ai-storage/EdgeForge/eeg-lop-full/v0.19.1/protocol/calibration-lock.json`; its digest-bound contents authorize the frozen formal matrix but do not authorize a scientific LoP conclusion.
+
 ## 1. 当前证据与本版本目标
 
 远端同步的 `docs/eeg-continuous-lop.md` 记录的是开发性部分结果，不是全量 ISRUC 的 LoP 结论。该运行使用 diversity-selected 的 `v0.18.0` 子集：20 名受试者中 8 名用于 source、8 名用于 target、4 名用于 retention，每名仅取 5 个文件，共 2,000 个 EEG epochs；5 种架构、3 个 seed 形成 15 条 trajectory、120 个 target stage 和 600 个 stage-budget observation。严格 gate 没有被任何架构通过，结果保持 `scientific_conclusion_allowed=false`。
@@ -89,7 +91,7 @@ BrainUICL 是 primary model，因为它最接近项目原始 EEG 网络，也是
 - fixed-budget probe 中冻结 BatchNorm running mean/variance，但 affine 参数保持可训练；否则不同历史的 batch statistics 会混入 LoP。是否冻结、受影响 module 数量和 buffer digest 必须写入 metadata。LayerNorm 不使用 running statistics，无需按 BatchNorm 处理。
 - budgets 是同一条适应曲线上的 checkpoint，不是七次独立随机训练。`B=200` 的 warm 状态用于进入下一 subject；其余 budget 只做测量。
 
-calibration 必须先验证“模型确实学会 source”和“fresh 分支在给定预算确实能学习”。最低 adequacy gate 使用配置中的两个阈值：held-out source accuracy 相对 source majority-class accuracy 的提升至少 `0.10`；fresh 从 `B=0` 到 calibration 最大预算的 accuracy gain 至少 `0.05`。同时报告 macro-F1、loss、confusion matrix 与每类召回率，防止多数类准确率通过但五分类能力失效。建议以 architecture 在 3 个 calibration seeds × 12 stages 上的中位数和 seed-cluster 95% CI 判定，而不是任取一个成功 cell。若正式三架构之一不通过 gate，只能修正训练/预算并创建新的 protocol/config 版本后重新跑全部 calibration，不能直接进入 confirmatory，也不能用 target confirmatory 数据调参。
+calibration 必须先验证“模型确实学会 source”和“fresh 分支在给定预算确实能学习”。最低 adequacy gate 使用配置中的两个阈值：held-out source accuracy 相对 source majority-class accuracy 的提升至少 `0.10`；fresh 从 `B=0` 到 calibration 最大预算的 accuracy gain 至少 `0.05`。同时报告 macro-F1、loss、confusion matrix 与每类召回率，防止多数类准确率通过但五分类能力失效。calibration 使用实际的 `3 seeds × 12 stages` 样本门槛，并按 architecture×seed 的 fresh gain 中位数验收；单个困难 subject transition 保留为 warning，不单独使整条 calibration 失效。正式 confirmatory/data-composition 仍使用 10 seeds、50 stages、逐 stage 严格 gate。若正式三架构之一不通过 gate，只能修正训练/预算并创建新的 protocol/config 版本后重新跑全部 calibration，不能直接进入 confirmatory，也不能用 target confirmatory 数据调参。
 
 ## 6. 必须采集的指标
 

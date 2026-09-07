@@ -2,6 +2,23 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.19.1 - 2026-09-07 (development snapshot)
+
+### Added
+
+- 固定 ISRUC processed float32 输入的 label-free `input_scale=100000.0`，并将尺度写入 runner metadata、source checkpoint signature、manifest 与版本配置，修复小振幅输入导致的梯度过小问题。
+- 分析器新增 phase-specific acceptance：calibration 按实际 seeds/stages 与 architecture×seed fresh-gain median 验收，正式 confirmatory/data-composition 继续使用 10 seeds、50 stages 和严格逐 stage gate；困难 transition 保留为 warning。
+- 新增 `scripts/create-eeg-lop-calibration-lock.py`，生成 digest-bound calibration lock，锁定后续正式架构、seed、顺序、预算、输入尺度和 BatchNorm policy。
+
+### Validation
+
+- v0.19.1 calibration 的 15 条 trajectory 全部完成，1,080/1,080 budget cells 生成；phase-aware audit 为 `candidate-evidence-ready`，blocking issues 为 0，scientific conclusion 仍关闭。
+- EdgeForge 全量 unittest：229 tests passed；分析器与 calibration lock 脚本通过 `py_compile`。
+
+### Evidence boundary
+
+- calibration 只证明训练链路和正式矩阵的运行前提满足；warm 优于 fresh 的负 `fresh_gap` 仍属于 positive transfer 描述，不能称为 LoP。正式 LoP 结论须等待 confirmatory 与 data-composition 完整运行及 cluster bootstrap/Holm 审计。
+
 ## 0.19.0 - 2026-09-04 (development snapshot)
 
 ### Added

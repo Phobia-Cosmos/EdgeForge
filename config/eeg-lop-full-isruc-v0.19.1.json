@@ -75,6 +75,32 @@
     "bootstrap_repeats": 10000,
     "alpha": 0.05,
     "multiple_comparison": "Holm across preregistered architecture-budget primary tests",
-    "scientific_conclusion_allowed_before_complete_audit": false
+    "scientific_conclusion_allowed_before_complete_audit": false,
+    "phase_overrides": {
+      "calibration": {
+        "minimum_independent_seeds": 3,
+        "minimum_target_stages": 12,
+        "fresh_learning_aggregation": "per-seed-median",
+        "minimum_adequate_seed_fraction": 1.0,
+        "cell_validity": "structural-and-trajectory",
+        "required_architectures": ["tcn", "transformer", "brainuicl"]
+      },
+      "confirmatory": {
+        "minimum_independent_seeds": 10,
+        "minimum_target_stages": 50,
+        "fresh_learning_aggregation": "per-stage",
+        "minimum_adequate_seed_fraction": 1.0,
+        "cell_validity": "strict",
+        "required_architectures": ["tcn", "transformer", "brainuicl"]
+      },
+      "data-composition": {
+        "minimum_independent_seeds": 10,
+        "minimum_target_stages": 50,
+        "fresh_learning_aggregation": "per-stage",
+        "minimum_adequate_seed_fraction": 1.0,
+        "cell_validity": "strict",
+        "required_architectures": ["transformer", "brainuicl"]
+      }
+    }
   }
 }

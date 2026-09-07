@@ -56,6 +56,26 @@ def _config():
     }
 
 
+def _calibration_config():
+    config = _config()
+    config["phases"] = {
+        "calibration": {
+            "architectures": ["transformer"],
+            "seeds": [11, 12],
+            "orders": ["random-a"],
+            "target_limit": None,
+            "source_epochs": 3,
+            "budgets": [0, 5],
+            "batch_size": 8,
+            "source_lr": 0.002,
+            "adapt_lr": 0.001,
+            "source_eval_fraction": 0.2,
+            "retention_max_samples": 100,
+        }
+    }
+    return config
+
+
 def _metadata(order):
     return {
         "schema": "edgeforge.eeg-continuous-architecture-lop.v1",
@@ -152,6 +172,25 @@ class FullLoPAnalysisTests(unittest.TestCase):
         self.assertEqual({row["valid_cell_count"] for row in result["architecture_budget_statistics"]}, {7})
         invalid = [row for row in result["cells"] if not row["valid"]]
         self.assertTrue(all("fresh_learning_insufficient" in row["invalid_reasons"] for row in invalid))
+
+    def test_calibration_uses_seed_trajectory_median_and_keeps_warning_cells(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = analysis.analyze(
+                _write_inputs(Path(directory), weak_stage=("random-a", 11, 0))[:1],
+                _plan(),
+                _calibration_config(),
+                phase_name="calibration",
+                bootstrap_repeats=20,
+            )
+
+        self.assertEqual(result["status"], "candidate-evidence-ready")
+        self.assertTrue(result["audit"]["learning_adequacy_passed"])
+        self.assertTrue(result["audit"]["sample_size_passed"])
+        self.assertEqual(result["audit"]["valid_cell_count"], result["audit"]["expected_cell_count"])
+        self.assertEqual(result["acceptance"]["fresh_learning_aggregation"], "per-seed-median")
+        self.assertEqual(result["acceptance"]["minimum_independent_seeds"], 2)
+        self.assertTrue(any(issue["severity"] == "warning" for issue in result["audit"]["issues"]))
+        self.assertEqual(result["trajectory_learning_audit"][0]["stage_insufficient_count"], 1)
 
     def test_missing_run_and_inconsistent_gap_block_completeness(self):
         with tempfile.TemporaryDirectory() as directory:

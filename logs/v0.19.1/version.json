@@ -1,0 +1,28 @@
+{
+  "version": "0.19.1",
+  "date": "2026-09-07",
+  "component": "full-isruc-continuous-lop-calibration",
+  "dataset": "ISRUC-Sleep Group I",
+  "input_scale": 100000.0,
+  "calibration": {
+    "architectures": ["lop_mlp", "eegnet", "tcn", "transformer", "brainuicl"],
+    "seeds": [4321, 4322, 4323],
+    "order": "random-a",
+    "target_stages": 12,
+    "budgets": [0, 5, 10, 25, 50, 100],
+    "expected_runs": 15,
+    "expected_cells": 1080,
+    "completed_runs": 15,
+    "valid_cells": 1080,
+    "phase_aware_audit": "candidate-evidence-ready",
+    "scientific_conclusion_allowed": false
+  },
+  "plan_digest": "7503fb2fdc896f45a1ab19f2962d27b7227303a43859091d77fa9beafaa130d2",
+  "config_sha256": "18b6f4a7df57bdfa62ab8357bd71c675d116a3d90551d5242646f0fd4617bb62",
+  "manifest_sha256": "fb85b5a78548b3663e2b442563d448e0ad614fbaaddbc161d270185e3be7b0b9",
+  "analysis_sha256": "eb84536b7fbabf6ed01856d52b5c23e4bd0cdd870cbdebaba3d5f63b516d0594",
+  "calibration_lock_sha256": "157f8c123c92f5c8adfcf89eeec41c8e2c84dd93ba09770c471d94f3c5b6211e",
+  "calibration_lock_digest": "2385b24bcd11c17147e59e7df5fda1793e9b724fa1266f252047d3208ef9de4e",
+  "status": "calibration-passed-formal-run-pending",
+  "scientific_conclusion_allowed": false
+}

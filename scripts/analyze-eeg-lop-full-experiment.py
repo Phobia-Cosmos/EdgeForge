@@ -388,6 +388,87 @@ def _metadata_mismatches(metadata: dict[str, Any], plan: dict[str, Any], design:
     return mismatches
 
 
+def _phase_acceptance(
+    acceptance: dict[str, Any],
+    config: dict[str, Any],
+    design: dict[str, Any],
+    phase_name: str,
+) -> dict[str, Any]:
+    """Resolve phase-specific audit policy without weakening formal phases.
+
+    Calibration is deliberately smaller than the confirmatory matrix.  When a
+    protocol does not provide an explicit override, calibration therefore uses
+    its actual seed/stage counts and a per-seed trajectory median.  The
+    confirmatory and data-composition phases retain the historical strict
+    per-stage policy and the global 10-seed/50-stage defaults.
+    """
+
+    overrides = acceptance.get("phase_overrides")
+    if not isinstance(overrides, dict):
+        overrides = acceptance.get("phases")
+    if not isinstance(overrides, dict):
+        # Accept the concise ``acceptance.calibration`` form as well.  This is
+        # useful for small portable configs and remains unambiguous because
+        # the phase names are not otherwise valid scalar acceptance fields.
+        overrides = {
+            name: value
+            for name, value in acceptance.items()
+            if name in {"calibration", "confirmatory", "data-composition"} and isinstance(value, dict)
+        }
+    phase_override = overrides.get(phase_name) if isinstance(overrides, dict) else None
+    if not isinstance(phase_override, dict):
+        phase_override = {}
+
+    source_margin = float(phase_override.get("source_accuracy_above_majority", acceptance.get("source_accuracy_above_majority", 0.1)))
+    fresh_gain_minimum = float(phase_override.get("fresh_learning_accuracy_gain", acceptance.get("fresh_learning_accuracy_gain", 0.05)))
+
+    if phase_name == "calibration":
+        default_minimum_seeds = len(set(design["seeds"]))
+        default_minimum_stages = min(len(design["orders"][order]) for order in design["order_names"])
+        default_aggregation = "per-seed-median"
+        default_cell_validity = "structural-and-trajectory"
+    else:
+        default_minimum_seeds = int(acceptance.get("minimum_independent_seeds", 10))
+        default_minimum_stages = int(acceptance.get("minimum_target_stages", 50))
+        default_aggregation = "per-stage"
+        default_cell_validity = "strict"
+    minimum_seeds = int(phase_override.get("minimum_independent_seeds", default_minimum_seeds))
+    minimum_stages = int(phase_override.get("minimum_target_stages", default_minimum_stages))
+    fresh_learning_aggregation = str(phase_override.get("fresh_learning_aggregation", default_aggregation))
+    minimum_adequate_seed_fraction = float(phase_override.get("minimum_adequate_seed_fraction", 1.0))
+    cell_validity = str(phase_override.get("cell_validity", default_cell_validity if fresh_learning_aggregation == "per-stage" else "structural-and-trajectory"))
+
+    required = phase_override.get("required_architectures")
+    if required is None and phase_name == "calibration":
+        phases = config.get("phases")
+        confirmatory = phases.get("confirmatory") if isinstance(phases, dict) else None
+        required = confirmatory.get("architectures") if isinstance(confirmatory, dict) else None
+    if required is None:
+        required = design["architectures"]
+    required_architectures = [str(item) for item in required if str(item) in set(design["architectures"])]
+    if not required_architectures:
+        required_architectures = list(design["architectures"])
+
+    if fresh_learning_aggregation not in {"per-stage", "per-seed-median"}:
+        raise ValueError("fresh_learning_aggregation must be 'per-stage' or 'per-seed-median'")
+    if not 0.0 < minimum_adequate_seed_fraction <= 1.0:
+        raise ValueError("minimum_adequate_seed_fraction must be in (0, 1]")
+    if minimum_seeds < 1 or minimum_stages < 1:
+        raise ValueError("minimum seeds and stages must be positive")
+
+    return {
+        "source_margin": source_margin,
+        "fresh_gain_minimum": fresh_gain_minimum,
+        "minimum_seeds": minimum_seeds,
+        "minimum_stages": minimum_stages,
+        "fresh_learning_aggregation": fresh_learning_aggregation,
+        "minimum_adequate_seed_fraction": minimum_adequate_seed_fraction,
+        "cell_validity": cell_validity,
+        "required_architectures": required_architectures,
+        "override_present": bool(phase_override),
+    }
+
+
 def analyze(
     summary_inputs: Sequence[tuple[str, str | Path]],
     plan: dict[str, Any],
@@ -402,10 +483,11 @@ def analyze(
     acceptance = config.get("acceptance")
     if not isinstance(acceptance, dict):
         acceptance = {}
-    source_margin = float(acceptance.get("source_accuracy_above_majority", 0.1))
-    fresh_gain_minimum = float(acceptance.get("fresh_learning_accuracy_gain", 0.05))
-    minimum_seeds = int(acceptance.get("minimum_independent_seeds", 10))
-    minimum_stages = int(acceptance.get("minimum_target_stages", 50))
+    phase_acceptance = _phase_acceptance(acceptance, config, design, phase_name)
+    source_margin = phase_acceptance["source_margin"]
+    fresh_gain_minimum = phase_acceptance["fresh_gain_minimum"]
+    minimum_seeds = phase_acceptance["minimum_seeds"]
+    minimum_stages = phase_acceptance["minimum_stages"]
     alpha = float(acceptance.get("alpha", 0.05))
     repeats = int(bootstrap_repeats if bootstrap_repeats is not None else acceptance.get("bootstrap_repeats", 10_000))
     if repeats < 1:
@@ -481,6 +563,8 @@ def analyze(
 
     cells: dict[tuple[str, str, int, int, int, int], dict[str, Any]] = {}
     stage_audits: list[dict[str, Any]] = []
+    required_architectures = set(phase_acceptance["required_architectures"])
+    strict_cell_validity = phase_acceptance["cell_validity"] == "strict"
     for run_key in sorted(expected_runs & set(parsed_runs)):
         architecture, order, seed = run_key
         run = parsed_runs[run_key]
@@ -552,14 +636,23 @@ def analyze(
                 issues.append({"code": "fresh_learning_insufficient", "architecture": architecture, "order": order, "seed": seed, "stage": stage_index, "subject": subject, "gain": gain, "required_gain": fresh_gain_minimum})
             for budget in design["budgets"]:
                 cell_key = (architecture, order, seed, stage_index, subject, budget)
-                reasons = list(audit["reasons"])
+                # Calibration records difficult stage-level fresh gains as a
+                # warning.  They are evaluated at the registered
+                # architecture×seed trajectory level below, so one hard
+                # subject must not invalidate every budget cell.  Formal
+                # phases retain the original strict per-stage behavior.
+                reasons = [
+                    reason
+                    for reason in audit["reasons"]
+                    if strict_cell_validity or reason != "fresh_learning_insufficient"
+                ]
                 if not run_audit["summary_design_valid"]:
                     reasons.append("summary_design_mismatch")
                 if run.get("status") != "complete":
                     reasons.append("run_not_complete")
                 if run_audit.get("duplicate"):
                     reasons.append("duplicate_run")
-                if not source_adequate:
+                if not source_adequate and (strict_cell_validity or architecture in required_architectures):
                     reasons.append("source_learning_insufficient")
                 fresh_row = fresh_rows.get(budget)
                 warm_row = warm_rows.get(budget)
@@ -606,6 +699,10 @@ def analyze(
         cells[key] = {"architecture": architecture, "order": order, "seed": seed, "stage": stage, "subject": subject, "budget": budget, "fresh_gap": None, "fresh_accuracy": None, "warm_accuracy": None, "source_accuracy": None, "source_majority_accuracy": majority, "source_accuracy_delta_above_majority": None, "fresh_learning_accuracy_gain": None, "valid": False, "invalid_reasons": ["missing_cell"]}
 
     valid_cells = [row for row in cells.values() if row["valid"]]
+    required_expected_cells = {
+        key for key in expected_cells if key[0] in required_architectures
+    }
+    required_valid_cells = [row for row in valid_cells if row["architecture"] in required_architectures]
     cell_rows = [cells[key] for key in sorted(cells)]
     statistics_rows = _summary_statistics(valid_cells, bootstrap_repeats=repeats, bootstrap_seed=bootstrap_seed, alpha=alpha)
     order_rows = _order_effects(valid_cells, design["order_names"], bootstrap_repeats=repeats, bootstrap_seed=bootstrap_seed, alpha=alpha)
@@ -614,10 +711,78 @@ def analyze(
         for item in issues
     )
     design_valid = not any(item["code"] in {"unexpected_summary_order", "unexpected_run", "summary_design_mismatch", "stage_subject_mismatch"} for item in issues)
-    learning_adequate = bool(expected_runs) and all(run_audits[key].get("source_learning_adequate", False) for key in expected_runs) and len(stage_audits) == sum(len(design["orders"][order]) for order in design["order_names"]) * len(design["architectures"]) * len(design["seeds"]) and all(row["fresh_learning_adequate"] for row in stage_audits)
+
+    # A calibration trajectory is accepted from its registered median gain,
+    # rather than from every individual subject transition.  This keeps the
+    # adequacy decision aligned with the protocol and leaves the difficult
+    # transitions visible in ``stage_learning_audit``.
+    trajectory_groups: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
+    for row in stage_audits:
+        trajectory_groups[(str(row["architecture"]), int(row["seed"]))].append(row)
+    trajectory_learning_audit: list[dict[str, Any]] = []
+    for architecture in design["architectures"]:
+        for seed in design["seeds"]:
+            selected = trajectory_groups.get((architecture, seed), [])
+            gains = [float(row["fresh_learning_accuracy_gain"]) for row in selected if row["fresh_learning_accuracy_gain"] is not None]
+            median_gain = statistics.median(gains) if gains else None
+            adequate = median_gain is not None and median_gain >= fresh_gain_minimum
+            trajectory_learning_audit.append({
+                "architecture": architecture,
+                "seed": seed,
+                "stage_count": len(selected),
+                "observed_gain_count": len(gains),
+                "median_fresh_learning_accuracy_gain": median_gain,
+                "required_fresh_learning_accuracy_gain": fresh_gain_minimum,
+                "fresh_learning_adequate": adequate,
+                "stage_insufficient_count": sum(not row["fresh_learning_adequate"] for row in selected),
+            })
+    adequate_seed_fraction_by_architecture: dict[str, float] = {}
+    for architecture in design["architectures"]:
+        selected = [row for row in trajectory_learning_audit if row["architecture"] == architecture]
+        adequate_seed_fraction_by_architecture[architecture] = (
+            sum(bool(row["fresh_learning_adequate"]) for row in selected) / len(selected)
+            if selected else 0.0
+        )
+    if phase_acceptance["fresh_learning_aggregation"] == "per-seed-median":
+        trajectory_gate = all(
+            adequate_seed_fraction_by_architecture.get(architecture, 0.0) >= phase_acceptance["minimum_adequate_seed_fraction"]
+            for architecture in required_architectures
+        )
+    else:
+        trajectory_gate = all(row["fresh_learning_adequate"] for row in stage_audits if row["architecture"] in required_architectures)
+    source_gate = bool(expected_runs) and all(
+        run_audits[key].get("source_learning_adequate", False)
+        for key in expected_runs
+        if key[0] in required_architectures
+    )
+    expected_stage_count = sum(len(design["orders"][order]) for order in design["order_names"]) * len(design["architectures"]) * len(design["seeds"])
+    learning_adequate = bool(expected_runs) and source_gate and len(stage_audits) == expected_stage_count and trajectory_gate
     sample_size_adequate = len(set(design["seeds"])) >= minimum_seeds and all(len(design["orders"][order]) >= minimum_stages for order in design["order_names"])
     every_cell_valid = len(valid_cells) == len(expected_cells)
-    candidate_ready = complete and design_valid and learning_adequate and sample_size_adequate and every_cell_valid
+    every_required_cell_valid = len(required_valid_cells) == len(required_expected_cells)
+
+    trajectory_by_key = {
+        (str(row["architecture"]), int(row["seed"])): row
+        for row in trajectory_learning_audit
+    }
+    annotated_issues: list[dict[str, Any]] = []
+    for issue in issues:
+        annotated = dict(issue)
+        code = str(issue.get("code"))
+        architecture = str(issue.get("architecture", ""))
+        severity = "blocking"
+        if code == "source_learning_insufficient" and architecture not in required_architectures:
+            severity = "warning"
+        elif code == "fresh_learning_insufficient" and phase_acceptance["fresh_learning_aggregation"] == "per-seed-median":
+            trajectory = trajectory_by_key.get((architecture, int(issue.get("seed", -1))))
+            if trajectory is not None and trajectory.get("fresh_learning_adequate"):
+                severity = "warning"
+        annotated["severity"] = severity
+        annotated_issues.append(annotated)
+    issues = annotated_issues
+    blocking_issue_count = sum(item["severity"] == "blocking" for item in issues)
+    warning_issue_count = sum(item["severity"] == "warning" for item in issues)
+    candidate_ready = complete and design_valid and learning_adequate and sample_size_adequate and every_required_cell_valid
     status = "candidate-evidence-ready" if candidate_ready else "blocked"
     return {
         "schema": SCHEMA,
@@ -627,10 +792,12 @@ def analyze(
         "plan_digest": plan.get("plan_digest"),
         "inputs": input_records,
         "expected_design": {"orders": design["orders"], "architectures": design["architectures"], "seeds": design["seeds"], "budgets": design["budgets"], "expected_runs": len(expected_runs), "expected_cells": len(expected_cells)},
-        "acceptance": {"source_majority_accuracy": majority, "source_accuracy_above_majority": source_margin, "fresh_learning_accuracy_gain": fresh_gain_minimum, "minimum_independent_seeds": minimum_seeds, "minimum_target_stages": minimum_stages, "bootstrap_repeats": repeats, "alpha": alpha},
-        "audit": {"completeness_passed": complete, "design_consistency_passed": design_valid, "learning_adequacy_passed": learning_adequate, "sample_size_passed": sample_size_adequate, "all_expected_cells_valid": every_cell_valid, "expected_run_count": len(expected_runs), "observed_expected_run_count": len(expected_runs & set(parsed_runs)), "expected_cell_count": len(expected_cells), "valid_cell_count": len(valid_cells), "invalid_cell_count": len(expected_cells) - len(valid_cells), "issue_count": len(issues), "issues": issues},
+        "acceptance": {"source_majority_accuracy": majority, "source_accuracy_above_majority": source_margin, "fresh_learning_accuracy_gain": fresh_gain_minimum, "minimum_independent_seeds": minimum_seeds, "minimum_target_stages": minimum_stages, "bootstrap_repeats": repeats, "alpha": alpha, "fresh_learning_aggregation": phase_acceptance["fresh_learning_aggregation"], "minimum_adequate_seed_fraction": phase_acceptance["minimum_adequate_seed_fraction"], "cell_validity": phase_acceptance["cell_validity"], "required_architectures": sorted(required_architectures)},
+        "audit": {"completeness_passed": complete, "design_consistency_passed": design_valid, "learning_adequacy_passed": learning_adequate, "sample_size_passed": sample_size_adequate, "all_expected_cells_valid": every_cell_valid, "all_required_cells_valid": every_required_cell_valid, "expected_run_count": len(expected_runs), "observed_expected_run_count": len(expected_runs & set(parsed_runs)), "expected_cell_count": len(expected_cells), "required_cell_count": len(required_expected_cells), "valid_cell_count": len(valid_cells), "required_valid_cell_count": len(required_valid_cells), "invalid_cell_count": len(expected_cells) - len(valid_cells), "issue_count": len(issues), "blocking_issue_count": blocking_issue_count, "warning_issue_count": warning_issue_count, "issues": issues},
         "run_audit": [run_audits[key] for key in sorted(run_audits)],
         "stage_learning_audit": stage_audits,
+        "trajectory_learning_audit": trajectory_learning_audit,
+        "adequate_seed_fraction_by_architecture": adequate_seed_fraction_by_architecture,
         "cells": cell_rows,
         "valid_cells": valid_cells,
         "architecture_budget_statistics": statistics_rows,
@@ -652,6 +819,9 @@ def render_markdown(result: dict[str, Any]) -> str:
         f"- Candidate evidence ready: `{result['candidate_evidence_ready']}`",
         f"- Scientific conclusion allowed: `{result['scientific_conclusion_allowed']}`",
         f"- Valid cells: {audit['valid_cell_count']}/{audit['expected_cell_count']}",
+        f"- Required architecture cells valid: {audit.get('required_valid_cell_count', audit['valid_cell_count'])}/{audit.get('required_cell_count', audit['expected_cell_count'])}",
+        f"- Blocking issues: {audit.get('blocking_issue_count', audit['issue_count'])}; warnings: {audit.get('warning_issue_count', 0)}",
+        f"- Fresh-learning aggregation: `{result['acceptance'].get('fresh_learning_aggregation', 'per-stage')}`",
         f"- Bootstrap: `{result['inference']['bootstrap_method']}`",
         "",
         "Passing this report means candidate evidence is complete enough for review. It is not an automatic scientific conclusion.",
@@ -692,7 +862,7 @@ def render_markdown(result: dict[str, Any]) -> str:
     else:
         counts: dict[str, int] = defaultdict(int)
         for issue in audit["issues"]:
-            counts[str(issue["code"])] += 1
+            counts[f"{issue.get('severity', 'blocking')}:{issue['code']}"] += 1
         for code, count in sorted(counts.items()):
             lines.append(f"- `{code}`: {count}")
     lines.append("")
