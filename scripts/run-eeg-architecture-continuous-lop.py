@@ -27,6 +27,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from edgeforge import lop_metrics
+
 from edgeforge.eeg_models import EEGModelConfig, build_eeg_decoder
 
 
@@ -34,6 +36,7 @@ DEFAULT_SOURCE_SUBJECTS = (1, 3, 4, 6, 7, 9, 10, 21)
 DEFAULT_TARGET_SUBJECTS = (2, 11, 12, 13, 14, 15, 16, 17)
 DEFAULT_RETENTION_SUBJECTS = (5, 18, 19, 20)
 DEFAULT_BUDGETS = (0, 5, 10, 25, 50)
+ADAPTATION_STRATEGIES = ("plain", "source_replay", "l2_sp", "replay_l2_sp")
 
 
 def seed_all(seed: int) -> None:
@@ -183,6 +186,110 @@ def evaluate(model: torch.nn.Module, batches: list[tuple[torch.Tensor, torch.Ten
     }
 
 
+def _gradient_probe(
+    model: torch.nn.Module,
+    batch: tuple[torch.Tensor, torch.Tensor],
+    device: torch.device,
+) -> dict[str, Any]:
+    """Measure one deterministic target-loss gradient without updating state."""
+    was_training = bool(model.training)
+    model.eval()
+    values, target = (item.to(device) for item in batch)
+    parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    try:
+        logits = model(values)
+        loss = F.cross_entropy(logits, target)
+        gradients = torch.autograd.grad(loss, parameters, allow_unused=True)
+        flattened = [gradient.detach().float().reshape(-1) for gradient in gradients if gradient is not None]
+        if not flattened:
+            return {"status": "unavailable", "reason": "model produced no parameter gradients"}
+        vector = torch.cat(flattened).reshape(1, -1)
+        summary = lop_metrics.gradient_summary(vector)
+        return {
+            "status": "computed",
+            "loss": float(loss.detach().item()),
+            "norm_l2": float(torch.linalg.vector_norm(vector).item()),
+            "nonzero_fraction": float((vector.abs() > 1e-12).float().mean().item()),
+            "summary": {
+                "norm_mean": summary.get("norm_mean"),
+                "norm_std": summary.get("norm_std"),
+                "effective_rank": summary.get("effective_rank"),
+            },
+        }
+    finally:
+        model.train(was_training)
+
+
+def checkpoint_diagnostics(
+    model: torch.nn.Module,
+    calibration_batch: tuple[torch.Tensor, torch.Tensor],
+    device: torch.device,
+    *,
+    reference: torch.nn.Module | None = None,
+    max_observations: int = 256,
+) -> dict[str, Any]:
+    """Capture compact representation/state diagnostics at one probe point.
+
+    These values are intentionally secondary evidence.  The LoP outcome is
+    still the fixed-budget fresh-vs-warm gap, and the diagnostics never alter
+    optimizer state or model parameters.
+    """
+    values, _target = (item.to(device) for item in calibration_batch)
+    was_training = bool(model.training)
+    model.eval()
+    try:
+        with torch.no_grad():
+            bundle = model.forward_bundle(values) if hasattr(model, "forward_bundle") else None
+        representations = {} if bundle is None else getattr(bundle, "representations", {})
+        specs = model.representation_specs() if hasattr(model, "representation_specs") else {}
+        layer_rows: dict[str, Any] = {}
+        for name, representation in representations.items():
+            if not isinstance(representation, torch.Tensor):
+                continue
+            spec = specs.get(name, {})
+            axis = int(spec.get("feature_axis", -1))
+            try:
+                spectrum = lop_metrics.spectral_summary(
+                    representation,
+                    feature_axis=axis,
+                    center=True,
+                    max_observations=max(0, int(max_observations)),
+                )
+                activation = lop_metrics.activation_summary(representation, kind=str(spec.get("kind", "unknown")))
+                layer_rows[name] = {
+                    "shape": [int(item) for item in representation.shape],
+                    "effective_rank": spectrum.get("effective_rank"),
+                    "effective_rank_normalized": spectrum.get("effective_rank_normalized"),
+                    "stable_rank": spectrum.get("stable_rank"),
+                    "rank95": spectrum.get("rank95"),
+                    "sigma_max": spectrum.get("sigma_max"),
+                    "near_zero_fraction": activation.get("near_zero_fraction"),
+                    "saturated_fraction": activation.get("saturated_fraction"),
+                    "mean": activation.get("mean"),
+                    "std": activation.get("std"),
+                }
+            except (RuntimeError, ValueError) as error:
+                layer_rows[name] = {"status": "error", "error": f"{type(error).__name__}: {error}"}
+        parameters = lop_metrics.parameter_norm_summary(model, reference)
+        gradient = _gradient_probe(model, calibration_batch, device)
+        return {
+            "status": "computed",
+            "calibration_batch_size": int(values.shape[0]),
+            "max_observations": int(max_observations),
+            "representations": layer_rows,
+            "parameter_norm": {
+                "global_l2": parameters.get("global_l2"),
+                "global_delta_l2": parameters.get("global_delta_l2"),
+                "global_relative_update": parameters.get("global_relative_update"),
+                "parameter_count": parameters.get("parameter_count"),
+            },
+            "gradient": gradient,
+            "interpretation": "descriptive checkpoint diagnostics; not a causal LoP outcome",
+        }
+    finally:
+        model.train(was_training)
+
+
 def _aulc(curve: list[dict[str, Any]], key: str) -> float:
     x = np.asarray([float(row["step"]) for row in curve], dtype=np.float64)
     y = np.asarray([float(row[key]) for row in curve], dtype=np.float64)
@@ -201,8 +308,31 @@ def adapt_probe(
     lr: float,
     classes: int,
     device: torch.device,
+    *,
+    adaptation_strategy: str = "plain",
+    replay_batches: list[tuple[torch.Tensor, torch.Tensor]] | None = None,
+    replay_ratio: float = 0.25,
+    l2_sp_lambda: float = 1e-4,
+    checkpoint_diagnostics_enabled: bool = False,
+    diagnostic_max_observations: int = 256,
 ) -> tuple[torch.nn.Module, dict[str, Any]]:
+    if adaptation_strategy not in ADAPTATION_STRATEGIES:
+        raise ValueError(f"unknown adaptation strategy: {adaptation_strategy}")
+    uses_replay = adaptation_strategy in {"source_replay", "replay_l2_sp"}
+    uses_l2_sp = adaptation_strategy in {"l2_sp", "replay_l2_sp"}
+    if uses_replay and not replay_batches:
+        raise ValueError("replay_batches are required for replay strategies")
+    if not 0.0 <= float(replay_ratio) < 1.0:
+        raise ValueError("replay_ratio must be in [0, 1)")
+    if float(l2_sp_lambda) < 0.0:
+        raise ValueError("l2_sp_lambda must be non-negative")
     model = copy.deepcopy(initial).to(device)
+    reference = copy.deepcopy(initial).to(device) if checkpoint_diagnostics_enabled else None
+    anchor = {
+        name: parameter.detach().clone()
+        for name, parameter in model.named_parameters()
+        if parameter.requires_grad
+    }
     optimizer = torch.optim.Adam(model.parameters(), lr=float(lr))
     rows: list[dict[str, Any]] = []
     budget_set = set(int(item) for item in budgets)
@@ -213,6 +343,10 @@ def adapt_probe(
         rows.append({
             "step": int(step),
             "train_loss": train_loss,
+            "target_train_loss": None,
+            "replay_train_loss": None,
+            "data_loss": None,
+            "l2_sp_penalty": None,
             "loss": evaluation["loss"],
             "accuracy": evaluation["accuracy"],
             "macro_f1": evaluation["macro_f1"],
@@ -220,24 +354,59 @@ def adapt_probe(
             "retention_accuracy": retention["accuracy"],
             "retention_macro_f1": retention["macro_f1"],
         })
+        if checkpoint_diagnostics_enabled:
+            rows[-1]["diagnostics"] = checkpoint_diagnostics(
+                model,
+                eval_batches[0],
+                device,
+                reference=reference,
+                max_observations=diagnostic_max_observations,
+            )
 
     record(0, None)
     iterator_index = 0
+    replay_iterator_index = 0
     for step in range(1, max(budgets) + 1):
         values, target = train_batches[iterator_index]
         iterator_index = (iterator_index + 1) % len(train_batches)
         model.train()
         values = values.to(device)
         target = target.to(device)
-        loss = F.cross_entropy(model(values), target)
+        target_loss = F.cross_entropy(model(values), target)
+        replay_loss: torch.Tensor | None = None
+        if uses_replay:
+            replay_values, replay_target = replay_batches[replay_iterator_index]
+            replay_iterator_index = (replay_iterator_index + 1) % len(replay_batches)
+            replay_values = replay_values.to(device)
+            replay_target = replay_target.to(device)
+            replay_loss = F.cross_entropy(model(replay_values), replay_target)
+            data_loss = (1.0 - float(replay_ratio)) * target_loss + float(replay_ratio) * replay_loss
+        else:
+            data_loss = target_loss
+        l2_sp_penalty: torch.Tensor | None = None
+        if uses_l2_sp:
+            l2_sp_penalty = torch.zeros((), device=device)
+            for name, parameter in model.named_parameters():
+                if parameter.requires_grad and name in anchor:
+                    l2_sp_penalty = l2_sp_penalty + (parameter - anchor[name]).pow(2).sum()
+            loss = data_loss + 0.5 * float(l2_sp_lambda) * l2_sp_penalty
+        else:
+            loss = data_loss
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         if step in budget_set:
             record(step, float(loss.detach().item()))
+            rows[-1]["target_train_loss"] = float(target_loss.detach().item())
+            rows[-1]["replay_train_loss"] = None if replay_loss is None else float(replay_loss.detach().item())
+            rows[-1]["data_loss"] = float(data_loss.detach().item())
+            rows[-1]["l2_sp_penalty"] = None if l2_sp_penalty is None else float(l2_sp_penalty.detach().item())
 
     summary = {
+        "adaptation_strategy": adaptation_strategy,
+        "replay_ratio": float(replay_ratio) if uses_replay else 0.0,
+        "l2_sp_lambda": float(l2_sp_lambda) if uses_l2_sp else 0.0,
         "curve": rows,
         "budgets": [int(item) for item in budgets],
         "final": rows[-1],
@@ -294,6 +463,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "budgets": [int(item) for item in args.budgets],
         "adapt_lr": float(args.adapt_lr),
         "batch_size": int(args.batch_size),
+        "adaptation_strategy": str(args.adaptation_strategy),
+        "replay_ratio": float(args.replay_ratio) if args.adaptation_strategy in {"source_replay", "replay_l2_sp"} else 0.0,
+        "replay_loss_mixture": "(1-replay_ratio)*target_cross_entropy + replay_ratio*source_cross_entropy",
+        "replay_sampling": "fixed deterministic source batches shared by warm and fresh probes",
+        "l2_sp_lambda": float(args.l2_sp_lambda) if args.adaptation_strategy in {"l2_sp", "replay_l2_sp"} else 0.0,
+        "l2_sp_anchor": "probe-initial parameters; carried warm state for warm and random initialization for fresh",
+        "checkpoint_diagnostics": bool(args.checkpoint_diagnostics),
+        "diagnostic_max_observations": int(args.diagnostic_max_observations),
         "fresh_mode": "random-initialization-at-each-target-stage",
         "warm_mode": "carried-after-previous-stage-final-budget",
         "device": str(args.device),
@@ -329,11 +506,44 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 stage_seed = int(seed) + 10000 + stage_index * 101 + architecture_index * 100000
                 train_batches = make_batches(stage["train_x"], stage["train_y"], args.batch_size, stage_seed)
                 eval_batches = make_batches(stage["eval_x"], stage["eval_y"], args.batch_size, stage_seed + 1)
+                replay_batches = None
+                if args.adaptation_strategy in {"source_replay", "replay_l2_sp"}:
+                    replay_batches = make_batches(source_x, source_y, args.batch_size, stage_seed + 2)
                 fresh_seed = int(seed) + 500000 + stage_index * 1009 + architecture_index * 100000
                 seed_all(fresh_seed)
                 fresh = build_model(name)
-                warm_after, warm_probe = adapt_probe(warm, train_batches, eval_batches, retention_batches, args.budgets, args.adapt_lr, 5, torch.device("cpu"))
-                fresh_after, fresh_probe = adapt_probe(fresh, train_batches, eval_batches, retention_batches, args.budgets, args.adapt_lr, 5, torch.device("cpu"))
+                warm_after, warm_probe = adapt_probe(
+                    warm,
+                    train_batches,
+                    eval_batches,
+                    retention_batches,
+                    args.budgets,
+                    args.adapt_lr,
+                    5,
+                    torch.device(args.device),
+                    adaptation_strategy=args.adaptation_strategy,
+                    replay_batches=replay_batches,
+                    replay_ratio=args.replay_ratio,
+                    l2_sp_lambda=args.l2_sp_lambda,
+                    checkpoint_diagnostics_enabled=args.checkpoint_diagnostics,
+                    diagnostic_max_observations=args.diagnostic_max_observations,
+                )
+                fresh_after, fresh_probe = adapt_probe(
+                    fresh,
+                    train_batches,
+                    eval_batches,
+                    retention_batches,
+                    args.budgets,
+                    args.adapt_lr,
+                    5,
+                    torch.device(args.device),
+                    adaptation_strategy=args.adaptation_strategy,
+                    replay_batches=replay_batches,
+                    replay_ratio=args.replay_ratio,
+                    l2_sp_lambda=args.l2_sp_lambda,
+                    checkpoint_diagnostics_enabled=args.checkpoint_diagnostics,
+                    diagnostic_max_observations=args.diagnostic_max_observations,
+                )
                 warm = warm_after
                 gaps = []
                 for warm_row, fresh_row in zip(warm_probe["curve"], fresh_probe["curve"]):
@@ -360,6 +570,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             result = {
                 "architecture": name,
                 "seed": int(seed),
+                "adaptation_strategy": str(args.adaptation_strategy),
+                "replay_ratio": float(args.replay_ratio) if args.adaptation_strategy in {"source_replay", "replay_l2_sp"} else 0.0,
+                "l2_sp_lambda": float(args.l2_sp_lambda) if args.adaptation_strategy in {"l2_sp", "replay_l2_sp"} else 0.0,
                 "parameters": int(sum(parameter.numel() for parameter in build_model(name).parameters())),
                 "source": source_metrics,
                 "stages": stage_rows,
@@ -376,6 +589,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "runs": all_runs,
         "architectures": [str(item) for item in args.architectures],
         "seeds": [int(item) for item in args.seeds],
+        "adaptation_strategy": str(args.adaptation_strategy),
+        "replay_ratio": float(args.replay_ratio) if args.adaptation_strategy in {"source_replay", "replay_l2_sp"} else 0.0,
+        "l2_sp_lambda": float(args.l2_sp_lambda) if args.adaptation_strategy in {"l2_sp", "replay_l2_sp"} else 0.0,
         "interpretation": "continuous architecture LoP pilot; not a formal scientific conclusion",
         "scientific_conclusion_allowed": False,
     }
@@ -399,11 +615,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lr", type=float, default=2e-3)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--device", default="cpu")
+    parser.add_argument("--adaptation-strategy", choices=ADAPTATION_STRATEGIES, default="plain")
+    parser.add_argument("--replay-ratio", type=float, default=0.25, help="source replay weight in the target/source cross-entropy mixture")
+    parser.add_argument("--l2-sp-lambda", type=float, default=1e-4, help="weight on half the squared distance from probe-initial parameters")
+    parser.add_argument("--checkpoint-diagnostics", action="store_true", help="record compact representation, gradient and parameter probes at every budget")
+    parser.add_argument("--diagnostic-max-observations", type=int, default=256)
     args = parser.parse_args()
     if not args.budgets or args.budgets[0] != 0 or sorted(set(args.budgets)) != list(args.budgets):
         parser.error("--budgets must be sorted, unique and start with 0")
     if len(args.budgets) < 2 or max(args.budgets) <= 0:
         parser.error("--budgets must include at least one positive adaptation budget")
+    if args.diagnostic_max_observations < 0:
+        parser.error("--diagnostic-max-observations must be non-negative")
+    if not 0.0 <= args.replay_ratio < 1.0:
+        parser.error("--replay-ratio must be in [0, 1)")
+    if args.l2_sp_lambda < 0.0:
+        parser.error("--l2-sp-lambda must be non-negative")
     return args
 
 

@@ -315,6 +315,14 @@ PYTHONPATH=src /home/undefined/Disk/python-envs/brainuicl/bin/python \
 
 连续 EEG 架构实验可直接使用 [docs/eeg-continuous-lop.md](docs/eeg-continuous-lop.md) 中的一键命令生成标准 trajectory catalog 并运行 LoP gate。适配器脚本为 `scripts/build-eeg-continuous-trajectory-catalog.py`，一键审计入口为 `scripts/audit-eeg-continuous-lop.py`，数据画像入口为 `scripts/analyze-eeg-continuous-lop.py`；这些工具均只读原始实验结果，不上传数据。当前 r2 结果的 gate 明确显示五个架构都未通过严格的全 transition 正 fresh-gap 要求。若要验证 gate 能否识别已知的可塑性受损条件，可使用 [docs/eeg-synthetic-lop-positive-control.md](docs/eeg-synthetic-lop-positive-control.md) 中的合成正控；它不会被解释为真实 EEG 的科学结论。
 
+EEG 漂移可视化入口为 `scripts/visualize-eeg-drift.py`：它生成波形、频谱、epoch RMS 热图、特征 PCA 和 adaptation/evaluation 标签先验图，并将定量摘要写入 `visualization-summary.json`。当前 ISRUC medium target 的 RMS 最大/最小约为 `11.29×`，PCA 第一主成分解释约 `93.6%` 方差，说明本轮数据的主导差异首先是幅度/功率尺度；这可以解释训练困难，但不能单独证明 LoP。
+
+数据修改实验使用 `scripts/prepare-eeg-lop-conditions.py` 生成不覆盖原始数据的 `rms_equalized` 与 `target_snr20_noise` 条件，再用 `scripts/summarize-eeg-condition-experiment.py` 做同 seed、同 transition 的 paired fresh-gap 对照。当前 TCN 三 seed pilot 中，幅度标定和 20 dB 轻噪声都提高了部分预算的平均 fresh-gap，但严格 gate 仍为 mixed/blocked；这说明预处理和域偏移会改变迁移难度，不能直接等同于自然 LoP。
+
+数据扰动的安全剂量、信号质量门槛与 LoP 判定协议见 [docs/eeg-data-perturbation-lop.md](docs/eeg-data-perturbation-lop.md)。当前派生数据、TCN 运行和 paired 报告均位于 `/home/undefined/UbuntuData/`，不覆盖 clean 数据，也未上传原始 EEG。
+
+可用 `scripts/plot-eeg-lop-dose-curve.py` 将 raw、SNR 20/15/10 dB 与增益漂移整理为统一剂量图；`scripts/summarize-eeg-checkpoint-diagnostics.py` 汇总连续 runner 的 embedding/block effective-rank、梯度范数、激活近零比例和参数相对更新。当前长 source training + RMS 标定正式对照仍为 `blocked-inconsistent-direction`，诊断结果只用于机制检查，不替代 fresh-gap gate。
+
 批量导入本机已有八组 EEG 实验结果：
 
 ```sh
@@ -426,3 +434,4 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
 `deploy/systemd/` 提供生产化服务模板。部署时应为每台机器创建独立 `edgeforge` 系统用户，把源码安装到系统 Python 可发现的位置，并在 `/etc/edgeforge/edgeforge.env` 中配置控制面地址、令牌、稳定 Worker ID 和日志目录。
+- Continuous EEG LoP experiments now include matched adaptation strategy controls: plain target adaptation, deterministic source replay, L2-SP anchoring, and replay plus L2-SP. See `docs/eeg-continuous-lop.md` and `scripts/summarize-eeg-adaptation-strategies.py`.
