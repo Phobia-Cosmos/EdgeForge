@@ -27,6 +27,15 @@ PYTHONPATH=src /home/undefined/UbuntuData/python-envs/research/bin/python \
 
 The adapter emits one standard trajectory result per architecture/seed and writes `trajectory-catalog.json`. The primary metric is `task.plasticity.fresh_gap` at the selected budget, with `metric_role=outcome` and explicit source/target stage indices. Retention metrics are tagged `metric_role=retention` and are reported only as an old-task stability inventory; they cannot satisfy the LoP gate.
 
+Compare independently generated architecture summaries only after their protocol fingerprints and seed/subject/budget grids match:
+
+```sh
+PYTHONPATH=src python scripts/summarize-eeg-architectures.py \
+  --architecture tcn=/path/to/tcn/summary.json \
+  --architecture brainuicl=/path/to/brainuicl/summary.json \
+  --baseline tcn --output-dir /path/to/architecture-comparison
+```
+
 The current development run has 15 trajectories, 120 stages, and 600 budget-level observations. Its gate uses three seeds and eight transitions per architecture. No architecture passes the strict requirement that every seed at every transition has a positive fresh-gap with a strictly positive seed-cluster bootstrap lower bound. The gate therefore returns `insufficient-direction` or `blocked-inconsistent-direction`, while always recording `scientific_conclusion_allowed=false`.
 
 The same one-command audit can be repeated at budgets 5, 10, 25, and 50. In the current run, BrainUICL has aggregate fresh-gap means of +0.0875 and +0.0408 at budgets 5 and 10, while TCN has +0.0200 and +0.0208 at budgets 10 and 25. These aggregate positives still contain zero or negative transition/seed cells and do not pass the strict gate. The complete sweep is stored under `audit-budgets/budget-{5,10,25,50}` in the result archive.
