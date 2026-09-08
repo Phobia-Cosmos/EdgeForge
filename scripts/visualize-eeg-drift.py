@@ -28,6 +28,14 @@ FS_HZ = 100.0
 BANDS = {"delta": (0.5, 4.0), "theta": (4.0, 8.0), "alpha": (8.0, 13.0), "sigma": (13.0, 16.0), "beta": (16.0, 30.0)}
 
 
+def _integral(values: np.ndarray, coordinates: np.ndarray) -> float:
+    """Integrate with NumPy 2.x ``trapezoid`` or the 1.x-compatible fallback."""
+    trapezoid = getattr(np, "trapezoid", None)
+    if trapezoid is None:
+        trapezoid = np.trapz
+    return float(trapezoid(values, coordinates))
+
+
 def _files(root: Path, group: str, subject: int) -> list[Path]:
     return sorted((root / group / str(subject) / "data").glob("*.npy"), key=lambda p: int(p.stem) if p.stem.isdigit() else p.stem)
 
@@ -47,7 +55,7 @@ def _profile(root: Path, group: str, subject: int) -> dict[str, Any]:
 
 def _bandpower(frequencies: np.ndarray, power: np.ndarray, low: float, high: float) -> float:
     mask = (frequencies >= low) & (frequencies < high)
-    return float(np.trapezoid(power[mask], frequencies[mask])) if np.any(mask) else 0.0
+    return _integral(power[mask], frequencies[mask]) if np.any(mask) else 0.0
 
 
 def _mean_epoch_psd(values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -201,7 +209,7 @@ def _quantify_drift(profiles: list[dict[str, Any]], subjects: list[int]) -> dict
             for name, (low, high) in BANDS.items()
         }
         mask = (frequencies >= 0.5) & (frequencies <= 40.0)
-        normalized_psds.append(power[mask] / max(float(np.trapezoid(power[mask], frequencies[mask])), 1e-30))
+        normalized_psds.append(power[mask] / max(_integral(power[mask], frequencies[mask]), 1e-30))
     median_psd = np.median(np.asarray(normalized_psds), axis=0)
     median_psd = median_psd / max(float(median_psd.sum()), 1e-30)
     spectral_js_to_median = {
