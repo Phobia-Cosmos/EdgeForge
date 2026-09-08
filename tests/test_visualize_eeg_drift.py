@@ -107,6 +107,27 @@ class EEGDriftVisualizationTests(unittest.TestCase):
             self.assertTrue((output / "eeg-drift-normalized-overlay.png").is_file())
             self.assertTrue((output / "eeg-drift-subject-distance.png").is_file())
 
+    def test_gain_invariant_features_ignore_global_scale(self):
+        module = _load_module()
+        rng = np.random.default_rng(7)
+        values = rng.normal(size=(3, 8, 1200)).astype(np.float32)
+        reference = module._gain_invariant_epoch_features(values)
+        scaled = module._gain_invariant_epoch_features(values * 17.0)
+        np.testing.assert_allclose(reference, scaled, rtol=1e-5, atol=1e-7)
+
+    def test_gain_invariant_pca_plot_is_written(self):
+        module = _load_module()
+        rng = np.random.default_rng(8)
+        profiles = [
+            {"group": "source", "subject": 1, "values": rng.normal(size=(4, 8, 1200)).astype(np.float32), "labels": np.zeros(4, dtype=np.int64)},
+            {"group": "target", "subject": 2, "values": (2 * rng.normal(size=(4, 8, 1200))).astype(np.float32), "labels": np.zeros(4, dtype=np.int64)},
+            {"group": "retention", "subject": 5, "values": rng.normal(size=(4, 8, 1200)).astype(np.float32), "labels": np.zeros(4, dtype=np.int64)},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            result = module._pca_gain_invariant_plot(profiles, Path(directory))
+            self.assertEqual(result["features"], 21)
+            self.assertTrue((Path(directory) / "eeg-drift-pca-gain-invariant.png").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

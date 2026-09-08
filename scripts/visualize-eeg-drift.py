@@ -91,6 +91,42 @@ def _epoch_features(values: np.ndarray) -> np.ndarray:
     return np.asarray(features, dtype=np.float64)
 
 
+def _gain_invariant_epoch_features(values: np.ndarray) -> np.ndarray:
+    """Return morphology/spectral features after removing per-epoch gain.
+
+    The raw feature view is intentionally sensitive to acquisition scale.  In
+    this companion view each epoch is divided by its global RMS before Welch
+    power is measured.  Channel RMS values are represented as ratios to the
+    geometric channel-RMS mean and the five bands are represented as fractions
+    of 0.5--40 Hz power.  Thus a subject can remain separated because of
+    channel balance, spectrum or temporal roughness, but not because every
+    sample was multiplied by one scalar.
+    """
+    features: list[np.ndarray] = []
+    for epoch in values:
+        epoch = np.asarray(epoch, dtype=np.float64)
+        global_rms = max(float(np.sqrt(np.mean(np.square(epoch)))), 1e-30)
+        scaled = epoch / global_rms
+        channel_rms = np.sqrt(np.mean(np.square(scaled), axis=1))
+        channel_log_ratio = np.log10(channel_rms + 1e-30)
+        channel_log_ratio -= float(np.mean(channel_log_ratio))
+        channel_diff_rms = np.sqrt(np.mean(np.square(np.diff(scaled, axis=-1)), axis=1))
+        channel_diff_log_ratio = np.log10(channel_diff_rms + 1e-30)
+        channel_diff_log_ratio -= float(np.mean(channel_diff_log_ratio))
+        channel_powers = []
+        for channel in scaled:
+            frequencies, power = welch(channel, fs=FS_HZ, nperseg=512)
+            channel_powers.append(power)
+        power = np.mean(np.asarray(channel_powers), axis=0)
+        total = max(_bandpower(frequencies, power, 0.5, 40.0), 1e-30)
+        band_fractions = np.asarray(
+            [_bandpower(frequencies, power, low, high) / total for low, high in BANDS.values()],
+            dtype=np.float64,
+        )
+        features.append(np.concatenate([channel_log_ratio, channel_diff_log_ratio, band_fractions]))
+    return np.asarray(features, dtype=np.float64)
+
+
 def _label_distribution(labels: np.ndarray, classes: int = 5) -> np.ndarray:
     return np.bincount(labels, minlength=classes).astype(np.float64)
 
@@ -292,6 +328,39 @@ def _pca_plot(profiles: list[dict[str, Any]], output: Path) -> dict[str, Any]:
     return {"rows": int(matrix.shape[0]), "features": int(matrix.shape[1]), "explained_variance_ratio": explained.tolist()}
 
 
+def _pca_gain_invariant_plot(profiles: list[dict[str, Any]], output: Path) -> dict[str, Any]:
+    """Plot PCA after removing per-epoch global amplitude scale."""
+    rows: list[np.ndarray] = []
+    metadata: list[tuple[str, int]] = []
+    for item in profiles:
+        features = _gain_invariant_epoch_features(item["values"])
+        rows.append(features[:: max(1, len(features) // 40)])
+        metadata.extend([(item["group"], item["subject"])] * len(rows[-1]))
+    matrix = np.concatenate(rows, axis=0)
+    standardized = StandardScaler().fit_transform(matrix)
+    reducer = PCA(n_components=2, random_state=0)
+    transformed = reducer.fit_transform(standardized)
+    fig, ax = plt.subplots(figsize=(11, 8))
+    roles = {"source": "#3b82f6", "target": "#ef4444", "retention": "#10b981"}
+    for role, color in roles.items():
+        subjects = sorted({subject for group, subject in metadata if group == role})
+        for subject in subjects:
+            mask = np.asarray([(group == role and current_subject == subject) for group, current_subject in metadata])
+            ax.scatter(transformed[mask, 0], transformed[mask, 1], s=14, alpha=0.5, color=color, label=f"{role} {subject}")
+    ax.set_title("Gain-invariant PCA: channel balance, temporal roughness and band fractions")
+    ax.set_xlabel("PC1")
+    ax.set_ylabel("PC2")
+    ax.grid(alpha=0.2)
+    ax.legend(ncol=3, fontsize=7, markerscale=1.2)
+    _save(fig, output / "eeg-drift-pca-gain-invariant.png")
+    return {
+        "rows": int(matrix.shape[0]),
+        "features": int(matrix.shape[1]),
+        "explained_variance_ratio": reducer.explained_variance_ratio_.tolist(),
+        "feature_definition": "per-epoch global RMS normalized; centered log channel-RMS ratios, centered log temporal-difference RMS ratios, and 0.5-40 Hz band fractions",
+    }
+
+
 def _label_plot(profiles: list[dict[str, Any]], output: Path, classes: int = 5) -> None:
     target = [item for item in profiles if item["group"] == "target"]
     matrix: list[np.ndarray] = []
@@ -338,13 +407,14 @@ def visualize(
     _spectra_plot(profiles, output)
     _rms_trajectory_plot(profiles, output, target_subjects)
     pca_info = _pca_plot(profiles, output)
+    pca_gain_invariant_info = _pca_gain_invariant_plot(profiles, output)
     _label_plot(profiles, output)
     quantitative = _quantify_drift(profiles, target_subjects)
     distance = _subject_distance_plot(profiles, output, target_subjects)
     quantitative["target_feature_pairwise_euclidean"] = distance["matrix"]
-    summary = {"schema_version": 1, "analysis": "eeg-drift-visualization-v1", "data_root": str(root), "output_dir": str(output), "sampling_rate_hz": FS_HZ, "groups": groups, "pca": pca_info, "quantitative_drift": quantitative, "figures": ["eeg-drift-waveforms.png", "eeg-drift-normalized-overlay.png", "eeg-drift-spectra.png", "eeg-drift-rms-trajectory.png", "eeg-drift-subject-distance.png", "eeg-drift-pca.png", "eeg-drift-labels.png"], "scientific_conclusion_allowed": False}
+    summary = {"schema_version": 2, "analysis": "eeg-drift-visualization-v1", "data_root": str(root), "output_dir": str(output), "sampling_rate_hz": FS_HZ, "groups": groups, "pca": pca_info, "pca_gain_invariant": pca_gain_invariant_info, "quantitative_drift": quantitative, "figures": ["eeg-drift-waveforms.png", "eeg-drift-normalized-overlay.png", "eeg-drift-spectra.png", "eeg-drift-rms-trajectory.png", "eeg-drift-subject-distance.png", "eeg-drift-pca.png", "eeg-drift-pca-gain-invariant.png", "eeg-drift-labels.png"], "scientific_conclusion_allowed": False}
     (output / "visualization-summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    (output / "README.md").write_text("# EEG drift visualizations\n\nThese figures visualize signal-scale, spectral, feature-space, within-stream and label-prior drift in the ISRUC medium development subset. They are descriptive diagnostics, not LoP evidence.\n\n- `eeg-drift-waveforms.png`: raw channel-0 waveforms on a common y-scale (RMS is shown in each title) alongside per-epoch standardized shape.\n- `eeg-drift-normalized-overlay.png`: typical normalized waveform morphology (the epoch closest to each subject's median RMS) overlaid across subjects after removing gain.\n- `eeg-drift-spectra.png`: mean per-epoch, channel-averaged Welch power spectra for target subjects.\n- `eeg-drift-rms-trajectory.png`: epoch-level RMS heatmap; the dashed line separates adaptation and held-out halves.\n- `eeg-drift-subject-distance.png`: pairwise standardized feature distance between target subjects.\n- `eeg-drift-pca.png`: PCA of log-RMS and band-power features.\n- `eeg-drift-labels.png`: adaptation/evaluation label fractions.\n- `visualization-summary.json`: reproducible paths and quantitative RMS/spectral/feature-drift summaries.\n", encoding="utf-8")
+    (output / "README.md").write_text("# EEG drift visualizations\n\nThese figures visualize signal-scale, spectral, feature-space, within-stream and label-prior drift in the ISRUC cohort. They are descriptive diagnostics, not LoP evidence.\n\n- `eeg-drift-waveforms.png`: raw channel-0 waveforms on a common y-scale (RMS is shown in each title) alongside per-epoch standardized shape.\n- `eeg-drift-normalized-overlay.png`: typical normalized waveform morphology (the epoch closest to each subject's median RMS) overlaid across subjects after removing gain.\n- `eeg-drift-spectra.png`: mean per-epoch, channel-averaged Welch power spectra for target subjects.\n- `eeg-drift-rms-trajectory.png`: epoch-level RMS heatmap; the dashed line separates adaptation and held-out halves.\n- `eeg-drift-subject-distance.png`: pairwise standardized feature distance between target subjects.\n- `eeg-drift-pca.png`: PCA of log-RMS and band-power features; separation is scale/power-sensitive.\n- `eeg-drift-pca-gain-invariant.png`: PCA after per-epoch RMS normalization; remaining separation reflects channel balance, temporal roughness and spectral composition.\n- `eeg-drift-labels.png`: adaptation/evaluation label fractions.\n- `visualization-summary.json`: reproducible paths and quantitative RMS/spectral/feature-drift summaries.\n", encoding="utf-8")
     return summary
 
 
