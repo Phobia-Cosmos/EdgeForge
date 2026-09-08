@@ -297,12 +297,23 @@ def _label_plot(profiles: list[dict[str, Any]], output: Path, classes: int = 5) 
     _save(fig, output / "eeg-drift-labels.png")
 
 
-def visualize(data_root: str | Path, output_dir: str | Path, target_subjects: list[int]) -> dict[str, Any]:
+def visualize(
+    data_root: str | Path,
+    output_dir: str | Path,
+    target_subjects: list[int],
+    *,
+    source_subjects: list[int] | None = None,
+    retention_subjects: list[int] | None = None,
+) -> dict[str, Any]:
     root = Path(data_root).resolve()
     output = Path(output_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)
     profiles = []
-    groups = {"source": [1, 3, 4, 6, 7, 9, 10, 21], "target": list(target_subjects), "retention": [5, 18, 19, 20]}
+    groups = {
+        "source": list(source_subjects if source_subjects is not None else [1, 3, 4, 6, 7, 9, 10, 21]),
+        "target": list(target_subjects),
+        "retention": list(retention_subjects if retention_subjects is not None else [5, 18, 19, 20]),
+    }
     for group, subjects in groups.items():
         for subject in subjects:
             profiles.append(_profile(root, group, subject))
@@ -325,10 +336,19 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--target-subject", action="append", type=int, default=[])
+    parser.add_argument("--target-subject", action="append", type=int, default=[], help="legacy repeated target subject option")
+    parser.add_argument("--source-subjects", nargs="+", type=int, default=None)
+    parser.add_argument("--target-subjects", nargs="+", type=int, default=None)
+    parser.add_argument("--retention-subjects", nargs="+", type=int, default=None)
     args = parser.parse_args()
-    targets = args.target_subject or [2, 11, 12, 13, 14, 15, 16, 17]
-    summary = visualize(args.data_root, args.output_dir, targets)
+    targets = args.target_subjects or args.target_subject or [2, 11, 12, 13, 14, 15, 16, 17]
+    summary = visualize(
+        args.data_root,
+        args.output_dir,
+        targets,
+        source_subjects=args.source_subjects,
+        retention_subjects=args.retention_subjects,
+    )
     print(json.dumps({"status": "ok", "figures": summary["figures"], "output_dir": str(args.output_dir.resolve()), "scientific_conclusion_allowed": False}, sort_keys=True))
 
 
