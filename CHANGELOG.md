@@ -2,6 +2,18 @@
 
 本文件记录 EdgeForge 每个公开版本的用户可见变更。不可变的发布验证详情保存在 `releases/vX.Y.Z.md`，运行期结构化日志保存在配置的 `EDGEFORGE_LOG_DIR/vX.Y.Z/`，控制面事件、任务和 Benchmark 则保存在 SQLite。
 
+## 0.19.2 - 2026-09-08 (results archive snapshot)
+
+### Added
+
+- 将 v0.19.1 ISRUC calibration 的分析 JSON/Markdown、manifest、calibration lock、subject plan、架构 summary、逐 seed run JSON 和日志归档到 `results/eeg-lop-full/v0.19.1/`，方便在 EdgeForge 仓库内复现实验和练习分析。
+- 新增 `scripts/plot-eeg-lop-results.py`，从仓库内归档结果生成 source accuracy、target warm/fresh learning curve 和 fresh-gap 图表，不读取原始 EEG 或 checkpoint。
+
+### Evidence boundary
+
+- 本次是结果归档版本，不改变 v0.19.1 实验协议；图表和归档结果继续标记 `scientific_conclusion_allowed=false`。
+- 原始 EEG、外部 checkpoint 和 symlink role-view 数据保留在共享存储，并由仓库内 manifest、plan digest 与说明文件指向。
+
 ## 0.19.1 - 2026-09-07 (development snapshot)
 
 ### Added

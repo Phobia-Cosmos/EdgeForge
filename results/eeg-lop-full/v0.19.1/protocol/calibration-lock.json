@@ -1,0 +1,125 @@
+{
+  "acceptance": {
+    "alpha": 0.05,
+    "bootstrap_repeats": 1000,
+    "cell_validity": "structural-and-trajectory",
+    "fresh_learning_accuracy_gain": 0.05,
+    "fresh_learning_aggregation": "per-seed-median",
+    "minimum_adequate_seed_fraction": 1.0,
+    "minimum_independent_seeds": 3,
+    "minimum_target_stages": 12,
+    "required_architectures": [
+      "brainuicl",
+      "tcn",
+      "transformer"
+    ],
+    "source_accuracy_above_majority": 0.1,
+    "source_majority_accuracy": 0.2964392803598201
+  },
+  "analysis": {
+    "blocking_issue_count": 0,
+    "candidate_evidence_ready": true,
+    "expected_cells": 1080,
+    "path": "/home/undefined/ai-storage/EdgeForge/eeg-lop-full/v0.19.1/analysis/calibration-v2/analysis.json",
+    "sha256": "eb84536b7fbabf6ed01856d52b5c23e4bd0cdd870cbdebaba3d5f63b516d0594",
+    "status": "candidate-evidence-ready",
+    "valid_cells": 1080,
+    "warning_issue_count": 12
+  },
+  "calibration_design": {
+    "adapt_lr": 0.001,
+    "architectures": [
+      "lop_mlp",
+      "eegnet",
+      "tcn",
+      "transformer",
+      "brainuicl"
+    ],
+    "batch_size": 64,
+    "budgets": [
+      0,
+      5,
+      10,
+      25,
+      50,
+      100
+    ],
+    "freeze_batch_norm": true,
+    "input_scale": 100000.0,
+    "orders": [
+      "random-a"
+    ],
+    "seeds": [
+      4321,
+      4322,
+      4323
+    ],
+    "source_epochs": 10,
+    "source_lr": 0.002,
+    "target_limit": 12
+  },
+  "config": {
+    "path": "/home/undefined/Desktop/EdgeForge/config/eeg-lop-full-isruc-v0.19.1.json",
+    "sha256": "18b6f4a7df57bdfa62ab8357bd71c675d116a3d90551d5242646f0fd4617bb62"
+  },
+  "created_at_utc": "2026-09-07T14:42:17Z",
+  "experiment_version": "0.19.1",
+  "formal_design_locked_for_next_phase": {
+    "adapt_lr": 0.001,
+    "architectures": [
+      "tcn",
+      "transformer",
+      "brainuicl"
+    ],
+    "batch_size": 64,
+    "budgets": [
+      0,
+      5,
+      10,
+      25,
+      50,
+      100,
+      200
+    ],
+    "freeze_batch_norm": true,
+    "input_scale": 100000.0,
+    "orders": [
+      "random-a",
+      "random-b"
+    ],
+    "seeds": [
+      4321,
+      4322,
+      4323,
+      4324,
+      4325,
+      4326,
+      4327,
+      4328,
+      4329,
+      4330
+    ],
+    "source_epochs": 30,
+    "source_lr": 0.002,
+    "target_limit": null
+  },
+  "fresh_seed_scheme": "sha256(namespace, architecture, model_seed, target_subject); independent of stage/order",
+  "lock_digest": "2385b24bcd11c17147e59e7df5fda1793e9b724fa1266f252047d3208ef9de4e",
+  "lock_scope": "protocol readiness only; scientific LoP conclusions remain disabled",
+  "manifest": {
+    "expected_command_count": 5,
+    "path": "/home/undefined/ai-storage/EdgeForge/eeg-lop-full/v0.19.1/manifest-calibration.json",
+    "sha256": "fb85b5a78548b3663e2b442563d448e0ad614fbaaddbc161d270185e3be7b0b9",
+    "succeeded_command_count": 5
+  },
+  "phase": "calibration",
+  "plan": {
+    "path": "/home/undefined/Desktop/EdgeForge/logs/archive/v0.19.0/isruc-full-plan/plan.json",
+    "plan_digest": "7503fb2fdc896f45a1ab19f2962d27b7227303a43859091d77fa9beafaa130d2",
+    "sha256": "812b8d426067ea69078b1d923d5ccba6b1a3b108f15050d6471f6ab8a2a7a204"
+  },
+  "schema": "edgeforge.eeg-lop-calibration-lock.v1",
+  "scientific_conclusion_allowed": false,
+  "source_checkpoint_policy": "one content-and-training-config signed checkpoint per architecture×seed, shared across orders",
+  "status": "locked"
+}
