@@ -315,7 +315,7 @@ PYTHONPATH=src /home/undefined/Disk/python-envs/brainuicl/bin/python \
 
 连续 EEG 架构实验可直接使用 [docs/eeg-continuous-lop.md](docs/eeg-continuous-lop.md) 中的一键命令生成标准 trajectory catalog 并运行 LoP gate。适配器脚本为 `scripts/build-eeg-continuous-trajectory-catalog.py`，一键审计入口为 `scripts/audit-eeg-continuous-lop.py`，数据画像入口为 `scripts/analyze-eeg-continuous-lop.py`；这些工具均只读原始实验结果，不上传数据。当前 r2 结果的 gate 明确显示五个架构都未通过严格的全 transition 正 fresh-gap 要求。若要验证 gate 能否识别已知的可塑性受损条件，可使用 [docs/eeg-synthetic-lop-positive-control.md](docs/eeg-synthetic-lop-positive-control.md) 中的合成正控；它不会被解释为真实 EEG 的科学结论。
 
-EEG 漂移可视化入口为 `scripts/visualize-eeg-drift.py`：它生成波形、频谱、epoch RMS 热图、特征 PCA 和 adaptation/evaluation 标签先验图，并将定量摘要写入 `visualization-summary.json`。当前 ISRUC medium target 的 RMS 最大/最小约为 `11.29×`，PCA 第一主成分解释约 `93.6%` 方差，说明本轮数据的主导差异首先是幅度/功率尺度；这可以解释训练困难，但不能单独证明 LoP。
+EEG 漂移可视化入口为 `scripts/visualize-eeg-drift.py`：它生成波形、频谱、epoch RMS 热图、原始尺度 PCA、增益不变 PCA 和 adaptation/evaluation 标签先验图，并将定量摘要写入 `visualization-summary.json`。完整 ISRUC v3（source 58、target 20、retention 20）中，原始尺度 PCA 的 PC1 解释约 `90.8%` 方差；逐 epoch RMS 归一化后的增益不变 PCA 的 PC1/PC2 分别解释约 `22.2%/16.5%`，可用于区分采集增益与频谱/形态差异。详细结果见 [完整 ISRUC 可视化报告](docs/full-isruc-visualization-results-20260909.md) 和 [EEG/图像特征对照](docs/eeg-image-feature-comparison.md)。这些图可以解释训练困难，但不能单独证明 LoP。
 
 数据修改实验使用 `scripts/prepare-eeg-lop-conditions.py` 生成不覆盖原始数据的 `rms_equalized` 与 `target_snr20_noise` 条件，再用 `scripts/summarize-eeg-condition-experiment.py` 做同 seed、同 transition 的 paired fresh-gap 对照。当前 TCN 三 seed pilot 中，幅度标定和 20 dB 轻噪声都提高了部分预算的平均 fresh-gap，但严格 gate 仍为 mixed/blocked；这说明预处理和域偏移会改变迁移难度，不能直接等同于自然 LoP。
 
