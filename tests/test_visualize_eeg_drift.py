@@ -82,6 +82,16 @@ class EEGDriftVisualizationTests(unittest.TestCase):
             module._rms_trajectory_plot(profiles, Path(directory), [2])
             self.assertTrue((Path(directory) / "eeg-drift-rms-trajectory.png").is_file())
 
+    def test_rms_trajectory_plot_accepts_variable_subject_lengths(self):
+        module = _load_module()
+        profiles = [
+            {"group": "target", "subject": 2, "values": np.ones((3, 8, 1200), dtype=np.float32), "labels": np.zeros(3, dtype=np.int64)},
+            {"group": "target", "subject": 11, "values": np.ones((5, 8, 1200), dtype=np.float32), "labels": np.zeros(5, dtype=np.int64)},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            module._rms_trajectory_plot(profiles, Path(directory), [2, 11])
+            self.assertTrue((Path(directory) / "eeg-drift-rms-trajectory.png").is_file())
+
     def test_subject_distance_and_overlay_plots_are_written(self):
         module = _load_module()
         rng = np.random.default_rng(1)

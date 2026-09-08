@@ -172,11 +172,19 @@ def _spectra_plot(profiles: list[dict[str, Any]], output: Path) -> None:
 
 def _rms_trajectory_plot(profiles: list[dict[str, Any]], output: Path, subjects: list[int]) -> None:
     selected = [item for item in profiles if item["group"] == "target" and item["subject"] in subjects]
-    matrix = np.asarray([np.sqrt(np.mean(np.square(item["values"]), axis=(1, 2))) for item in selected], dtype=np.float64)
+    trajectories = [np.sqrt(np.mean(np.square(item["values"]), axis=(1, 2))) for item in selected]
+    # ISRUC subjects do not all contain the same number of 20-epoch files.
+    # Pad only the visualization matrix with NaN so shorter streams keep their
+    # true length and are not silently repeated or truncated.
+    max_length = max((len(values) for values in trajectories), default=0)
+    matrix = np.full((len(trajectories), max_length), np.nan, dtype=np.float64)
+    for row, values in enumerate(trajectories):
+        matrix[row, : len(values)] = values
     log_matrix = np.log10(matrix + 1e-30)
     fig, ax = plt.subplots(figsize=(13, 4.8))
     image = ax.imshow(log_matrix, aspect="auto", interpolation="nearest", cmap="viridis", origin="lower")
-    ax.axvline(matrix.shape[1] / 2 - 0.5, color="white", linewidth=1.2, linestyle="--", alpha=0.9)
+    if matrix.shape[1]:
+        ax.axvline(matrix.shape[1] / 2 - 0.5, color="white", linewidth=1.2, linestyle="--", alpha=0.9)
     ax.set_title("EEG amplitude drift over each target subject stream")
     ax.set_xlabel("epoch index (dashed line: adaptation/evaluation split)")
     ax.set_ylabel("target subject")
