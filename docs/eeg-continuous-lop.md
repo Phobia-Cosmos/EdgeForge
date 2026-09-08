@@ -134,3 +134,7 @@ PYTHONPATH=src /home/undefined/UbuntuData/python-envs/research/bin/python \
 Pair matched summaries with `scripts/summarize-eeg-adaptation-strategies.py` using `--strategy plain=...`, `source_replay=...`, `l2_sp=...`, and `replay_l2_sp=...`. The utility rejects mismatched protocol fingerprints and reports mean fresh-gap, positive/zero/negative cells, paired changes versus plain, and warm retention changes. It always writes `scientific_conclusion_allowed=false`; a strategy is not a LoP result unless the existing strict all-seed/all-transition gate passes.
 
 This experiment uses the diversity-selected ISRUC medium development subset and compact CPU model settings. It is an auditable protocol validation and architecture comparison, not a formal cohort-level LoP claim.
+
+## Input normalization control
+
+The continuous runner supports three label-preserving input modes: `none`, `epoch_rms`, and `channel_zscore`. `epoch_rms` divides each `(8,3000)` epoch by its global RMS and is intended to remove acquisition-gain scale; `channel_zscore` subtracts each channel's temporal mean and divides by its temporal standard deviation, making it a stronger channel-scale/DC control. Both keep labels, channel order and epoch boundaries unchanged. The selected mode is recorded as `metadata.input_normalization` and in every run record. Compare modes only with the same subject order, seeds, budgets and architecture; the gate still requires a consistent positive fresh-gap and does not accept a positive mean alone.

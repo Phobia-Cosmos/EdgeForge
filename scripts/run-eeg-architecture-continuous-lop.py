@@ -37,6 +37,7 @@ DEFAULT_TARGET_SUBJECTS = (2, 11, 12, 13, 14, 15, 16, 17)
 DEFAULT_RETENTION_SUBJECTS = (5, 18, 19, 20)
 DEFAULT_BUDGETS = (0, 5, 10, 25, 50)
 ADAPTATION_STRATEGIES = ("plain", "source_replay", "l2_sp", "replay_l2_sp")
+INPUT_NORMALIZATIONS = ("none", "epoch_rms", "channel_zscore")
 
 
 def seed_all(seed: int) -> None:
@@ -160,6 +161,23 @@ def make_batches(values: torch.Tensor, labels: torch.Tensor, batch_size: int, se
         (values[indexes], labels[indexes])
         for indexes in permutation.split(max(1, int(batch_size)))
     ]
+
+
+def normalize_inputs(values: torch.Tensor, mode: str) -> torch.Tensor:
+    """Apply deterministic label-preserving normalization independently per epoch."""
+    if mode not in INPUT_NORMALIZATIONS:
+        raise ValueError(f"unknown input normalization: {mode}")
+    if mode == "none":
+        return values
+    if values.ndim != 3:
+        raise ValueError(f"expected [epochs, channels, samples], got {tuple(values.shape)}")
+    values = values.float()
+    if mode == "epoch_rms":
+        scale = torch.sqrt(torch.mean(torch.square(values), dim=(1, 2), keepdim=True)).clamp_min(1e-12)
+        return values / scale
+    mean = values.mean(dim=-1, keepdim=True)
+    scale = values.std(dim=-1, keepdim=True, unbiased=False).clamp_min(1e-12)
+    return (values - mean) / scale
 
 
 @torch.no_grad()
@@ -435,9 +453,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
     source_x, source_y, source_files = read_group(root, "source", args.source_subjects)
     retention_x, retention_y, retention_files = read_group(root, "retention", args.retention_subjects)
+    source_x = normalize_inputs(source_x, args.input_normalization)
+    retention_x = normalize_inputs(retention_x, args.input_normalization)
     target_stages: list[dict[str, Any]] = []
     for subject in args.target_subjects:
         train_x, train_y, eval_x, eval_y, files = read_target_stage(root, int(subject))
+        train_x = normalize_inputs(train_x, args.input_normalization)
+        eval_x = normalize_inputs(eval_x, args.input_normalization)
         target_stages.append({
             "subject": int(subject),
             "train_x": train_x,
@@ -464,6 +486,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "adapt_lr": float(args.adapt_lr),
         "batch_size": int(args.batch_size),
         "adaptation_strategy": str(args.adaptation_strategy),
+        "input_normalization": str(args.input_normalization),
         "replay_ratio": float(args.replay_ratio) if args.adaptation_strategy in {"source_replay", "replay_l2_sp"} else 0.0,
         "replay_loss_mixture": "(1-replay_ratio)*target_cross_entropy + replay_ratio*source_cross_entropy",
         "replay_sampling": "fixed deterministic source batches shared by warm and fresh probes",
@@ -571,6 +594,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 "architecture": name,
                 "seed": int(seed),
                 "adaptation_strategy": str(args.adaptation_strategy),
+                "input_normalization": str(args.input_normalization),
                 "replay_ratio": float(args.replay_ratio) if args.adaptation_strategy in {"source_replay", "replay_l2_sp"} else 0.0,
                 "l2_sp_lambda": float(args.l2_sp_lambda) if args.adaptation_strategy in {"l2_sp", "replay_l2_sp"} else 0.0,
                 "parameters": int(sum(parameter.numel() for parameter in build_model(name).parameters())),
@@ -590,6 +614,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "architectures": [str(item) for item in args.architectures],
         "seeds": [int(item) for item in args.seeds],
         "adaptation_strategy": str(args.adaptation_strategy),
+        "input_normalization": str(args.input_normalization),
         "replay_ratio": float(args.replay_ratio) if args.adaptation_strategy in {"source_replay", "replay_l2_sp"} else 0.0,
         "l2_sp_lambda": float(args.l2_sp_lambda) if args.adaptation_strategy in {"l2_sp", "replay_l2_sp"} else 0.0,
         "interpretation": "continuous architecture LoP pilot; not a formal scientific conclusion",
@@ -616,6 +641,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--adaptation-strategy", choices=ADAPTATION_STRATEGIES, default="plain")
+    parser.add_argument("--input-normalization", choices=INPUT_NORMALIZATIONS, default="none", help="per-epoch input normalization; labels and epoch boundaries are unchanged")
     parser.add_argument("--replay-ratio", type=float, default=0.25, help="source replay weight in the target/source cross-entropy mixture")
     parser.add_argument("--l2-sp-lambda", type=float, default=1e-4, help="weight on half the squared distance from probe-initial parameters")
     parser.add_argument("--checkpoint-diagnostics", action="store_true", help="record compact representation, gradient and parameter probes at every budget")
