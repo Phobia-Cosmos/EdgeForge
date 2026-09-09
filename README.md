@@ -317,6 +317,8 @@ PYTHONPATH=src /home/undefined/Disk/python-envs/brainuicl/bin/python \
 
 EEG 漂移可视化入口为 `scripts/visualize-eeg-drift.py`：它生成波形、频谱、epoch RMS 热图、原始尺度 PCA、增益不变 PCA 和 adaptation/evaluation 标签先验图，并将定量摘要写入 `visualization-summary.json`。完整 ISRUC v3（source 58、target 20、retention 20）中，原始尺度 PCA 的 PC1 解释约 `90.8%` 方差；逐 epoch RMS 归一化后的增益不变 PCA 的 PC1/PC2 分别解释约 `22.2%/16.5%`，可用于区分采集增益与频谱/形态差异。详细结果见 [完整 ISRUC 可视化报告](docs/full-isruc-visualization-results-20260909.md) 和 [EEG/图像特征对照](docs/eeg-image-feature-comparison.md)。这些图可以解释训练困难，但不能单独证明 LoP。
 
+图像 smoke 与真实 ISRUC EEG 的 LoP 结果不能直接横向比较：图像实验是单 seed、两 transition 的 synthetic domain-shift 诊断，Transformer 的 `+0.0625` 不是正式 LoP 结论；完整 ISRUC 使用 3 seed、20 个体 transition 和严格全方向 gate。协议差异、真实 EEG 的幅度/频谱/标签先验混杂以及 source 学习不足，都会使 EEG fresh-gap 变号。详见 [为什么图像 smoke 看起来有 LoP，而真实 EEG 没有](docs/why-image-shows-lop-eeg-does-not-20260909.md)。
+
 数据修改实验使用 `scripts/prepare-eeg-lop-conditions.py` 生成不覆盖原始数据的 `rms_equalized` 与 `target_snr20_noise` 条件，再用 `scripts/summarize-eeg-condition-experiment.py` 做同 seed、同 transition 的 paired fresh-gap 对照。当前 TCN 三 seed pilot 中，幅度标定和 20 dB 轻噪声都提高了部分预算的平均 fresh-gap，但严格 gate 仍为 mixed/blocked；这说明预处理和域偏移会改变迁移难度，不能直接等同于自然 LoP。
 
 数据扰动的安全剂量、信号质量门槛与 LoP 判定协议见 [docs/eeg-data-perturbation-lop.md](docs/eeg-data-perturbation-lop.md)。当前派生数据、TCN 运行和 paired 报告均位于 `/home/undefined/UbuntuData/`，不覆盖 clean 数据，也未上传原始 EEG。
