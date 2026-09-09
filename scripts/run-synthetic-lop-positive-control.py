@@ -197,7 +197,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "budgets": [int(item) for item in args.budgets],
         "adapt_lr": float(args.adapt_lr),
         "batch_size": int(args.batch_size),
-        "positive_control": "warm_encoder_gradient_scale_zero_after_source_pretraining",
+        "positive_control": "warm_encoder_gradient_scale_after_source_pretraining",
+        "warm_encoder_gradient_scale": float(args.warm_encoder_gradient_scale),
         "fresh_mode": "random-initialization-at-each-target-stage",
         "warm_mode": "carried-after-previous-stage-final-budget",
         "scientific_conclusion_allowed": False,
@@ -218,7 +219,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 loss.backward()
                 source_optimizer.step()
             if mode == "positive_control":
-                warm.set_encoder_gradient_scale(0.0)
+                warm.set_encoder_gradient_scale(float(args.warm_encoder_gradient_scale))
             source_metrics = _metrics(warm, _batches(source_x, source_y, args.batch_size, seed + 1))
             retention_batches = _batches(retention_x, retention_y, args.batch_size, seed + 7000)
             stage_rows: list[dict[str, Any]] = []
@@ -290,9 +291,17 @@ def main() -> None:
     parser.add_argument("--source-lr", type=float, default=1e-2)
     parser.add_argument("--adapt-lr", type=float, default=5e-3)
     parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument(
+        "--warm-encoder-gradient-scale",
+        type=float,
+        default=0.0,
+        help="backward scale for the warm encoder in the positive-control arm; 0 freezes it and 1 removes the lesion",
+    )
     args = parser.parse_args()
     if not args.budgets or args.budgets[0] != 0 or sorted(set(args.budgets)) != list(args.budgets) or max(args.budgets) <= 0:
         parser.error("--budgets must be sorted, unique, start at 0 and include a positive value")
+    if not 0.0 <= args.warm_encoder_gradient_scale <= 1.0:
+        parser.error("--warm-encoder-gradient-scale must be in [0, 1]")
     summary = run(args)
     print(json.dumps({"status": "ok", "runs": len(summary["runs"]), "architectures": summary["architectures"], "seeds": summary["seeds"], "summary": str(args.output_root.resolve() / "summary.json"), "scientific_conclusion_allowed": False}, sort_keys=True))
 
