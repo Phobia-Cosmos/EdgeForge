@@ -36,6 +36,12 @@ its expected waveform correlation is below the preferred 0.98 utility gate.
     Add a deterministic 0.1 Hz sinusoidal baseline component at 5% or 10% of
     each epoch/channel RMS. The component is zero-mean over the 30-second
     epoch and models low-frequency acquisition drift.
+
+``target_channel_polarity``
+    Invert one target channel over every epoch and file while preserving
+    labels and epoch boundaries. This approximates a reversed differential
+    lead or reference polarity; the selected channel is recorded in the
+    manifest.
 """
 
 from __future__ import annotations
@@ -74,6 +80,7 @@ BASELINE_DRIFT_FREQUENCY_HZ = 0.1
 SUPPORTED_CONDITIONS = {
     "rms_equalized",
     "target_gain_drift10",
+    "target_channel_polarity",
     *NOISE_CONDITIONS,
     *CROSSTALK_CONDITIONS,
     *BASELINE_DRIFT_CONDITIONS,
@@ -182,6 +189,7 @@ def _copy_or_transform(
     scale: float,
     seed: int,
     noise_snr_db: float,
+    channel_index: int,
 ) -> dict[str, Any]:
     values = np.load(path, allow_pickle=False).astype(np.float32, copy=False)
     original = values.astype(np.float64, copy=False)
@@ -193,6 +201,11 @@ def _copy_or_transform(
         transformed = values + noise
     elif condition == "target_gain_drift10" and group == "target":
         transformed = _gain_drift(values, _seed_for(path, seed))
+    elif condition == "target_channel_polarity" and group == "target":
+        if not 0 <= int(channel_index) < values.shape[1]:
+            raise ValueError(f"channel index {channel_index} is outside {values.shape[1]} channels")
+        transformed = values.copy()
+        transformed[:, int(channel_index), :] *= -1.0
     elif condition in CROSSTALK_CONDITIONS and group == "target":
         transformed, _matrix = _channel_crosstalk(values, CROSSTALK_CONDITIONS[condition])
     elif condition in BASELINE_DRIFT_CONDITIONS and group == "target":
@@ -206,7 +219,7 @@ def _copy_or_transform(
     transformed_rms = float(np.sqrt(np.mean(np.square(transformed))))
     correlation = float(np.corrcoef(original.reshape(-1), transformed.reshape(-1))[0, 1]) if np.std(original) and np.std(transformed) else 1.0
     perturbation_rms = float(np.sqrt(np.mean(np.square(difference))))
-    return {
+    record = {
         "group": group,
         "subject": int(subject),
         "file": path.name,
@@ -216,9 +229,35 @@ def _copy_or_transform(
         "perturbation_rms": perturbation_rms,
         "correlation": correlation,
     }
+    if condition == "target_channel_polarity" and group == "target":
+        original_channel = original[:, int(channel_index), :].reshape(-1)
+        transformed_channel = transformed[:, int(channel_index), :].astype(np.float64, copy=False).reshape(-1)
+        if np.std(original_channel) and np.std(transformed_channel):
+            channel_correlation = float(np.corrcoef(original_channel, transformed_channel)[0, 1])
+        elif np.array_equal(transformed_channel, -original_channel):
+            channel_correlation = -1.0
+        else:
+            channel_correlation = 1.0
+        channel_rms_original = float(np.sqrt(np.mean(np.square(original_channel))))
+        channel_rms_transformed = float(np.sqrt(np.mean(np.square(transformed_channel))))
+        unchanged = np.delete(difference, int(channel_index), axis=1)
+        record.update({
+            "selected_channel_index": int(channel_index),
+            "selected_channel_correlation": channel_correlation,
+            "selected_channel_rms_ratio": channel_rms_transformed / max(channel_rms_original, 1e-30),
+            "selected_channel_magnitude_max_abs_error": float(np.max(np.abs(np.abs(transformed_channel) - np.abs(original_channel)))),
+            "other_channels_max_abs_error": float(np.max(np.abs(unchanged))) if unchanged.size else 0.0,
+        })
+    return record
 
 
-def prepare(input_root: str | Path, output_root: str | Path, condition: str, seed: int = 20260905) -> dict[str, Any]:
+def prepare(
+    input_root: str | Path,
+    output_root: str | Path,
+    condition: str,
+    seed: int = 20260905,
+    channel_index: int = 0,
+) -> dict[str, Any]:
     source = Path(input_root).resolve()
     output = Path(output_root).resolve()
     if condition not in SUPPORTED_CONDITIONS:
@@ -243,7 +282,17 @@ def prepare(input_root: str | Path, output_root: str | Path, condition: str, see
                 scale = 1.0
             for path in _files(source, group, subject):
                 output_data = output / group / str(subject) / "data" / path.name
-                record = _copy_or_transform(path, output_data, group, subject, condition, scale, seed, float(noise_snr_db or 0.0))
+                record = _copy_or_transform(
+                    path,
+                    output_data,
+                    group,
+                    subject,
+                    condition,
+                    scale,
+                    seed,
+                    float(noise_snr_db or 0.0),
+                    int(channel_index),
+                )
                 label_path = source / group / str(subject) / "label" / path.name
                 output_label = output / group / str(subject) / "label" / path.name
                 output_label.parent.mkdir(parents=True, exist_ok=True)
@@ -280,6 +329,13 @@ def prepare(input_root: str | Path, output_root: str | Path, condition: str, see
             "period_seconds": GAIN_DRIFT_PERIOD_SECONDS,
             "target_only": True,
         }
+    elif condition == "target_channel_polarity":
+        perturbation = {
+            "type": "channel_polarity_inversion",
+            "channel_index": int(channel_index),
+            "target_only": True,
+            "scope": "all epochs and files",
+        }
     elif condition == "rms_equalized":
         perturbation = {
             "type": "subject_rms_calibration",
@@ -295,6 +351,7 @@ def prepare(input_root: str | Path, output_root: str | Path, condition: str, see
         "input_root": str(source),
         "output_root": str(output),
         "seed": int(seed),
+        "channel_index": int(channel_index),
         "groups": groups,
         "source_subject_rms": {str(k): v for k, v in source_rms.items()},
         "reference_source_median_rms": reference_rms,
@@ -333,8 +390,9 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--condition", choices=tuple(sorted(SUPPORTED_CONDITIONS)), required=True)
     parser.add_argument("--seed", type=int, default=20260905)
+    parser.add_argument("--channel-index", type=int, default=0, help="target channel to invert for target_channel_polarity")
     args = parser.parse_args()
-    print(json.dumps(prepare(args.input_root, args.output_root, args.condition, args.seed), sort_keys=True))
+    print(json.dumps(prepare(args.input_root, args.output_root, args.condition, args.seed, args.channel_index), sort_keys=True))
 
 
 if __name__ == "__main__":

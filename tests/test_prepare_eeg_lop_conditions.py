@@ -116,6 +116,28 @@ class PrepareEEGLoPConditionsTests(unittest.TestCase):
             self.assertAlmostEqual(peak, module.BASELINE_DRIFT_FREQUENCY_HZ, delta=0.05)
             np.testing.assert_array_equal(np.load(output / "target" / "3" / "label" / "0.npy", allow_pickle=False), [0, 1])
 
+    def test_target_channel_polarity_inverts_only_selected_channel(self):
+        module = _load_module()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "input"
+            output = Path(directory) / "output"
+            self._dataset(root)
+            varying = np.ones((2, 8, 3000), dtype=np.float32)
+            np.save(root / "target" / "3" / "data" / "0.npy", varying, allow_pickle=False)
+            module.prepare(root, output, "target_channel_polarity", channel_index=2)
+            derived = np.load(output / "target" / "3" / "data" / "0.npy", allow_pickle=False)
+            np.testing.assert_array_equal(derived[:, 2], -1.0)
+            np.testing.assert_array_equal(derived[:, 0], 1.0)
+            manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["perturbation"]["type"], "channel_polarity_inversion")
+            self.assertEqual(manifest["perturbation"]["channel_index"], 2)
+            target_record = next(item for item in manifest["records"] if item["group"] == "target")
+            self.assertAlmostEqual(target_record["selected_channel_correlation"], -1.0)
+            self.assertAlmostEqual(target_record["selected_channel_rms_ratio"], 1.0)
+            self.assertEqual(target_record["selected_channel_magnitude_max_abs_error"], 0.0)
+            self.assertEqual(target_record["other_channels_max_abs_error"], 0.0)
+            np.testing.assert_array_equal(np.load(output / "target" / "3" / "label" / "0.npy", allow_pickle=False), [0, 1])
+
 
 if __name__ == "__main__":
     unittest.main()
