@@ -117,8 +117,19 @@ def read_group(root: Path, group: str, subjects: Iterable[int]) -> tuple[torch.T
     return torch.cat(values, dim=0), torch.cat(labels, dim=0), files
 
 
-def read_target_stage(root: Path, subject: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, list[dict[str, Any]]]:
+def read_target_stage(
+    root: Path,
+    subject: int,
+    *,
+    channel_polarity: int | None = None,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, list[dict[str, Any]]]:
     values, labels, files = read_subject(root, "target", int(subject))
+    if channel_polarity is not None:
+        channel = int(channel_polarity)
+        if not 0 <= channel < int(values.shape[1]):
+            raise ValueError(f"channel polarity index {channel} is outside {int(values.shape[1])} channels")
+        values = values.clone()
+        values[:, channel, :] *= -1.0
     # The data card defines the chronological split for every 20-epoch file.
     train_values = values.reshape(-1, 20, 8, 3000)[:, :10].reshape(-1, 8, 3000)
     train_labels = labels.reshape(-1, 20)[:, :10].reshape(-1)
@@ -457,7 +468,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     retention_x = normalize_inputs(retention_x, args.input_normalization)
     target_stages: list[dict[str, Any]] = []
     for subject in args.target_subjects:
-        train_x, train_y, eval_x, eval_y, files = read_target_stage(root, int(subject))
+        train_x, train_y, eval_x, eval_y, files = read_target_stage(
+            root,
+            int(subject),
+            channel_polarity=args.target_channel_polarity,
+        )
         train_x = normalize_inputs(train_x, args.input_normalization)
         eval_x = normalize_inputs(eval_x, args.input_normalization)
         target_stages.append({
@@ -487,6 +502,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "batch_size": int(args.batch_size),
         "adaptation_strategy": str(args.adaptation_strategy),
         "input_normalization": str(args.input_normalization),
+        "target_channel_polarity": args.target_channel_polarity,
         "replay_ratio": float(args.replay_ratio) if args.adaptation_strategy in {"source_replay", "replay_l2_sp"} else 0.0,
         "replay_loss_mixture": "(1-replay_ratio)*target_cross_entropy + replay_ratio*source_cross_entropy",
         "replay_sampling": "fixed deterministic source batches shared by warm and fresh probes",
@@ -642,6 +658,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--adaptation-strategy", choices=ADAPTATION_STRATEGIES, default="plain")
     parser.add_argument("--input-normalization", choices=INPUT_NORMALIZATIONS, default="none", help="per-epoch input normalization; labels and epoch boundaries are unchanged")
+    parser.add_argument("--target-channel-polarity", type=int, default=None, help="invert this target channel on the fly; labels and source/retention data remain unchanged")
     parser.add_argument("--replay-ratio", type=float, default=0.25, help="source replay weight in the target/source cross-entropy mixture")
     parser.add_argument("--l2-sp-lambda", type=float, default=1e-4, help="weight on half the squared distance from probe-initial parameters")
     parser.add_argument("--checkpoint-diagnostics", action="store_true", help="record compact representation, gradient and parameter probes at every budget")
