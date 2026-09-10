@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "model": {
+    "name": "BrainUICL-ISRUC-seed4321",
+    "format": "pytorch-checkpoint",
+    "checkpoint": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain"
+  },
+  "dataset": {
+    "name": "ISRUC-Group-I",
+    "manifest_digest": "5344651092da22c1fa3dc068064e6c3c8f5ef9e87178fe8f77f2fb89d67d5346",
+    "split": "subject-1-sequence-0",
+    "root": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32",
+    "transform_command": ["/home/undefined/Disk/python-envs/brainuicl/bin/python", "/home/undefined/Desktop/EdgeForge/scripts/brainuicl-model-pipeline.py", "transform", "--brainuicl-root", "/home/undefined/Desktop/bci/code/tta_security/BrainUICL", "--checkpoint-root", "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain", "--data-root", "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32", "--artifact-root", ".edgeforge/brainuicl-torch-compile-v11"]
+  },
+  "transforms": [{"name": "brainuicl-preprocessed-isruc", "version": "manifest-53446510", "config": {"channels": 8, "sequence_length": 20, "epoch_length": 3000}}],
+  "frontend": {
+    "name": "brainuicl-torch-export",
+    "command": ["/home/undefined/Disk/python-envs/brainuicl/bin/python", "/home/undefined/Desktop/EdgeForge/scripts/brainuicl-model-pipeline.py", "export", "--brainuicl-root", "/home/undefined/Desktop/bci/code/tta_security/BrainUICL", "--checkpoint-root", "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain", "--data-root", "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32", "--artifact-root", ".edgeforge/brainuicl-torch-compile-v11"],
+    "timeout_seconds": 1800
+  },
+  "compiler": {
+    "backend": "torch-compile",
+    "identity": "torch-2.9.1-inductor-cuda13",
+    "command": ["/home/undefined/Disk/python-envs/brainuicl/bin/python", "/home/undefined/Desktop/EdgeForge/scripts/brainuicl-model-pipeline.py", "compile", "--brainuicl-root", "/home/undefined/Desktop/bci/code/tta_security/BrainUICL", "--checkpoint-root", "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain", "--data-root", "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32", "--artifact-root", ".edgeforge/brainuicl-torch-compile-v11"],
+    "timeout_seconds": 1800
+  },
+  "runtime": {
+    "name": "torch-compiled-inductor",
+    "command": ["/home/undefined/Disk/python-envs/brainuicl/bin/python", "/home/undefined/Desktop/EdgeForge/scripts/brainuicl-model-pipeline.py", "run", "--brainuicl-root", "/home/undefined/Desktop/bci/code/tta_security/BrainUICL", "--checkpoint-root", "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain", "--data-root", "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32", "--artifact-root", ".edgeforge/brainuicl-torch-compile-v11"],
+    "timeout_seconds": 1800
+  },
+  "correctness": {
+    "command": ["/home/undefined/Disk/python-envs/brainuicl/bin/python", "/home/undefined/Desktop/EdgeForge/scripts/brainuicl-model-pipeline.py", "correctness", "--brainuicl-root", "/home/undefined/Desktop/bci/code/tta_security/BrainUICL", "--checkpoint-root", "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain", "--data-root", "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32", "--artifact-root", ".edgeforge/brainuicl-torch-compile-v11"],
+    "timeout_seconds": 300
+  },
+  "benchmark": {
+    "command": ["/home/undefined/Disk/python-envs/brainuicl/bin/python", "/home/undefined/Desktop/EdgeForge/scripts/brainuicl-model-pipeline.py", "benchmark", "--brainuicl-root", "/home/undefined/Desktop/bci/code/tta_security/BrainUICL", "--checkpoint-root", "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain", "--data-root", "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32", "--artifact-root", ".edgeforge/brainuicl-torch-compile-v11", "--repeats", "5"],
+    "repeats": 5,
+    "timeout_seconds": 1800
+  },
+  "target": {"architecture": "x86_64", "device": "cuda", "accelerator": "nvidia-gpu"},
+  "metadata": {"workload": "raeeg", "protocol": "eeg-cl-v1", "seed": 4321, "status": "real-model-compile-validation", "scientific_conclusion_allowed": false, "correctness_policy": "strict-output-allclose"}
+}

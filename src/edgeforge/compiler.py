@@ -94,6 +94,16 @@ def run_kernel_pipeline(payload: dict[str, Any]) -> dict[str, Any]:
         from edgeforge.triton_backend import run_triton_matmul_pipeline
 
         return run_triton_matmul_pipeline(spec, kernel, repeats, int(payload.get("warmup") or 5))
+    if backend == "iree-ukernel":
+        from edgeforge.iree_backend import run_iree_conv_nchwc_pipeline
+
+        return run_iree_conv_nchwc_pipeline(
+            spec,
+            kernel,
+            repeats,
+            work_root=payload.get("_worker_work_root"),
+            allowed_commands=payload.get("_allowed_commands"),
+        )
     raise ValueError(f"unsupported compiler backend: {backend}")
 
 

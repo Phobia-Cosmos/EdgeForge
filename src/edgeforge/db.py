@@ -224,6 +224,53 @@ class Store:
                 CREATE INDEX IF NOT EXISTS experiment_metrics_lookup_idx
                 ON experiment_metrics(experiment_id, name, step, created_at DESC);
 
+                CREATE TABLE IF NOT EXISTS model_runs (
+                    task_id TEXT PRIMARY KEY,
+                    version TEXT NOT NULL,
+                    runtime_version TEXT,
+                    worker_id TEXT NOT NULL,
+                    task_status TEXT NOT NULL DEFAULT 'succeeded',
+                    model_name TEXT NOT NULL,
+                    dataset_name TEXT NOT NULL,
+                    dataset_manifest_digest TEXT,
+                    transform_digest TEXT NOT NULL,
+                    frontend TEXT NOT NULL,
+                    compiler_backend TEXT NOT NULL,
+                    compiler_identity TEXT NOT NULL,
+                    target_architecture TEXT,
+                    correctness INTEGER,
+                    compile_ms REAL,
+                    first_call_ms REAL,
+                    steady_latency_ms REAL,
+                    peak_memory_mb REAL,
+                    output_digest TEXT,
+                    artifact_digest TEXT,
+                    manifest TEXT NOT NULL,
+                    summary TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS model_runs_lookup_idx
+                ON model_runs(model_name, dataset_name, created_at DESC);
+
+                CREATE TABLE IF NOT EXISTS lop_analyses (
+                    analysis_id TEXT PRIMARY KEY,
+                    version TEXT NOT NULL,
+                    analysis_name TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    workload TEXT NOT NULL,
+                    protocol TEXT NOT NULL,
+                    comparison_group TEXT NOT NULL,
+                    config TEXT NOT NULL,
+                    experiment_ids TEXT NOT NULL,
+                    result TEXT NOT NULL,
+                    created_at REAL NOT NULL,
+                    created_by_version TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS lop_analyses_lookup_idx
+                ON lop_analyses(workload, protocol, comparison_group, created_at DESC);
+
                 CREATE TABLE IF NOT EXISTS models (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -293,6 +340,9 @@ class Store:
                 connection.execute("ALTER TABLE tasks ADD COLUMN version TEXT NOT NULL DEFAULT '0.1.0'")
             if "runtime_version" not in columns:
                 connection.execute("ALTER TABLE tasks ADD COLUMN runtime_version TEXT")
+            model_run_columns = {row["name"] for row in connection.execute("PRAGMA table_info(model_runs)").fetchall()}
+            if "task_status" not in model_run_columns:
+                connection.execute("ALTER TABLE model_runs ADD COLUMN task_status TEXT NOT NULL DEFAULT 'succeeded'")
             benchmark_columns = {row["name"] for row in connection.execute("PRAGMA table_info(benchmarks)").fetchall()}
             if "kernel_id" not in benchmark_columns:
                 connection.execute("ALTER TABLE benchmarks ADD COLUMN kernel_id TEXT")
@@ -412,7 +462,7 @@ class Store:
         now = time.time()
         task_id = uuid.uuid4().hex
         kind = data.get("kind") or "command"
-        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline", "kernel_autotune", "compiler_run", "experiment_run"}:
+        if kind not in {"command", "benchmark", "operator_benchmark", "kernel_pipeline", "kernel_autotune", "compiler_run", "experiment_run", "model_pipeline"}:
             raise ValueError(f"unsupported task kind: {kind}")
         payload = data.get("payload") or {}
         requirements = dict(data.get("requirements") or {})
@@ -435,6 +485,11 @@ class Store:
             from edgeforge.operator import OperatorSpec
 
             OperatorSpec.from_payload(payload.get("operator") or {})
+            requested_backend = str((payload.get("operator") or {}).get("backend") or "python-reference")
+            if kind == "operator_benchmark" and requested_backend != "python-reference":
+                raise ValueError(
+                    "operator_benchmark only supports python-reference; use kernel_pipeline for a registered backend"
+                )
             kernel_id = payload.get("kernel_id") or requirements.get("kernel_id")
             if kind == "kernel_pipeline" and not kernel_id:
                 raise ValueError("kernel_pipeline requires kernel_id")
@@ -444,6 +499,10 @@ class Store:
                 kernel = self.get_kernel(str(kernel_id))
                 if not kernel_supports_operator(kernel, payload.get("operator") or {}):
                     raise ValueError(f"kernel {kernel_id} does not support this operator or dtype")
+                if kind == "operator_benchmark" and kernel.get("backend") != "python-reference":
+                    raise ValueError(
+                        "operator_benchmark only supports python-reference; use kernel_pipeline for a registered backend"
+                    )
                 if kind == "kernel_autotune":
                     from edgeforge.autotune import normalize_triton_matmul_candidates
 
@@ -458,6 +517,16 @@ class Store:
 
             spec = ExperimentSpec.from_payload(payload.get("spec"))
             payload["spec"] = spec.to_dict()
+        elif kind == "model_pipeline":
+            from edgeforge.model_pipeline import normalize_model_manifest
+
+            manifest = normalize_model_manifest(payload)
+            payload = manifest
+            target_arch = (manifest.get("target") or {}).get("architecture")
+            if target_arch:
+                requirements.setdefault("architectures", [target_arch])
+            backend = str((manifest.get("compiler") or {}).get("backend") or "python-reference")
+            requirements.setdefault("worker_backends", [backend])
         else:
             argv = payload.get("argv")
             if not isinstance(argv, list) or not argv or not all(isinstance(item, str) and item for item in argv):
@@ -690,6 +759,32 @@ class Store:
                     "metric_count": len(task["result"].get("metrics") or experiment_bundle.get("metrics") or []),
                 },
             )
+        if task["kind"] == "model_pipeline" and task["result"]:
+            for stage in task["result"].get("pipeline") or []:
+                stage_name = str(stage.get("stage") or "unknown")
+                self.append_event(
+                    f"model_pipeline.{stage_name}",
+                    "worker",
+                    "task",
+                    task_id,
+                    {
+                        "worker_id": worker_id,
+                        "status": task["status"],
+                        "stage": stage_name,
+                        "exit_code": stage.get("exit_code"),
+                        "elapsed_ms": stage.get("elapsed_ms"),
+                        "parsed": stage.get("parsed"),
+                        "validation_error": stage.get("validation_error"),
+                    },
+                )
+            self._record_model_run(task, worker_id)
+            self.append_event(
+                "model_pipeline.completed",
+                "worker",
+                "task",
+                task_id,
+                {"worker_id": worker_id, "model": (task["result"].get("manifest") or {}).get("model", {}).get("name"), "artifact_digest": (task["result"].get("artifact") or {}).get("digest")},
+            )
         self.append_event(
             "task.completed",
             "worker",
@@ -698,6 +793,125 @@ class Store:
             {"worker_id": worker_id, "status": status, "error": error, "runtime_version": data.get("runtime_version")},
         )
         return task
+
+    def _record_model_run(self, task: dict[str, Any], worker_id: str) -> None:
+        from edgeforge.model_pipeline import normalize_model_manifest
+
+        result = task.get("result") or {}
+        manifest = normalize_model_manifest(result.get("manifest") or task.get("payload") or {})
+        benchmark = result.get("benchmark") or {}
+        parsed = benchmark if isinstance(benchmark, dict) else {}
+        correctness = result.get("correctness")
+        if correctness is not None:
+            correctness = 1 if bool(correctness) else 0
+        summary = parsed.get("summary") if isinstance(parsed.get("summary"), dict) else parsed
+        output_digest = None
+        output = parsed.get("output_digest") or parsed.get("digest")
+        if isinstance(output, str):
+            output_digest = output
+        now = time.time()
+        with self._lock, self._connect() as connection:
+            connection.execute(
+                """
+                INSERT OR REPLACE INTO model_runs(
+                    task_id, version, runtime_version, worker_id, task_status, model_name, dataset_name,
+                    dataset_manifest_digest, transform_digest, frontend, compiler_backend,
+                    compiler_identity, target_architecture, correctness, compile_ms,
+                    first_call_ms, steady_latency_ms, peak_memory_mb, output_digest,
+                    artifact_digest, manifest, summary, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    task["id"], task["version"], task.get("runtime_version"), worker_id, task.get("status", "succeeded"),
+                    manifest["model"]["name"], manifest["dataset"]["name"], manifest["dataset"].get("manifest_digest"),
+                    manifest["transform_digest"], str(manifest["frontend"].get("name", "external")),
+                    str(manifest["compiler"].get("backend", "unknown")), str(manifest["compiler"].get("identity", "unknown")),
+                    (manifest.get("target") or {}).get("architecture"), correctness,
+                    parsed.get("compile_ms", result.get("compile_ms")),
+                    parsed.get("first_call_ms"), parsed.get("steady_latency_ms"), parsed.get("peak_memory_mb"), output_digest,
+                    (result.get("artifact") or {}).get("digest"), json.dumps(manifest, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(summary or {}, ensure_ascii=False, separators=(",", ":")), now,
+                ),
+            )
+
+    def list_model_runs(self, model_name: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        if model_name:
+            query, params = "SELECT * FROM model_runs WHERE model_name = ? ORDER BY created_at DESC LIMIT ?", (model_name, limit)
+        else:
+            query, params = "SELECT * FROM model_runs ORDER BY created_at DESC LIMIT ?", (limit,)
+        with self._connect() as connection:
+            rows = connection.execute(query, params).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["manifest"] = json.loads(item["manifest"])
+            item["summary"] = json.loads(item["summary"])
+            if item.get("correctness") is not None:
+                item["correctness"] = bool(item["correctness"])
+            result.append(item)
+        return result
+
+    def model_regressions(
+        self,
+        model_name: str | None = None,
+        dataset_name: str | None = None,
+        backend: str | None = None,
+        architecture: str | None = None,
+        threshold: float = 0.2,
+    ) -> list[dict[str, Any]]:
+        """Compare adjacent model runs without mixing backend or target paths."""
+        threshold = min(10.0, max(0.0, float(threshold)))
+        runs = self.list_model_runs(model_name, 1000)
+        groups: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+        for run in runs:
+            if dataset_name and run["dataset_name"] != dataset_name:
+                continue
+            if backend and run["compiler_backend"] != backend:
+                continue
+            if architecture and run.get("target_architecture") != architecture:
+                continue
+            manifest = run.get("manifest") or {}
+            target = manifest.get("target") or {}
+            key = (
+                run["model_name"],
+                run["dataset_name"],
+                run["compiler_backend"],
+                run.get("compiler_identity"),
+                run.get("target_architecture"),
+                target.get("device"),
+                target.get("accelerator"),
+                run.get("transform_digest"),
+            )
+            groups.setdefault(key, []).append(run)
+        regressions: list[dict[str, Any]] = []
+        for key, values in groups.items():
+            values.sort(key=lambda value: (value["created_at"], value["task_id"]))
+            if len(values) < 2:
+                continue
+            latest = values[-1]
+            baseline = next(
+                (value for value in reversed(values[:-1]) if value.get("task_status") == "succeeded" and value.get("correctness") is not False),
+                None,
+            )
+            if baseline is None:
+                continue
+            common = {
+                "model": key[0], "dataset": key[1], "backend": key[2], "compiler_identity": key[3],
+                "architecture": key[4], "device": key[5], "accelerator": key[6],
+                "transform_digest": key[7], "baseline": baseline, "latest": latest,
+            }
+            if latest.get("task_status") != "succeeded" or latest.get("correctness") is not True:
+                regressions.append({**common, "kind": "correctness", "reason": "latest model run did not pass correctness"})
+                continue
+            for metric, label in (("steady_latency_ms", "steady_latency"), ("compile_ms", "compile_time")):
+                previous_value = baseline.get(metric)
+                latest_value = latest.get(metric)
+                if isinstance(previous_value, (int, float)) and isinstance(latest_value, (int, float)) and previous_value > 0:
+                    ratio = float(latest_value) / float(previous_value)
+                    if ratio > 1.0 + threshold:
+                        regressions.append({**common, "kind": label, "slowdown_ratio": round(ratio, 4)})
+        return regressions
 
     def _record_experiment_run(self, task: dict[str, Any], worker_id: str) -> None:
         from edgeforge.experiment import ExperimentSpec
@@ -836,6 +1050,120 @@ class Store:
         for row in rows:
             item = dict(row)
             item["context"] = json.loads(item["context"])
+            result.append(item)
+        return result
+
+    def _list_experiment_metrics_for_task(self, task_id: str) -> list[dict[str, Any]]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM experiment_metrics WHERE task_id = ? ORDER BY created_at DESC, id DESC",
+                (task_id,),
+            ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["context"] = json.loads(item["context"])
+            result.append(item)
+        return result
+
+    def create_lop_analysis(self, payload: dict[str, Any]) -> dict[str, Any]:
+        from edgeforge.lop_analysis import analyze_lop
+
+        if not isinstance(payload, dict):
+            raise ValueError("LoP analysis payload must be an object")
+        experiment_ids = payload.get("experiment_ids")
+        if not isinstance(experiment_ids, list) or not experiment_ids or len(experiment_ids) > 100:
+            raise ValueError("experiment_ids must be a non-empty array with at most 100 entries")
+        if len(set(experiment_ids)) != len(experiment_ids) or not all(isinstance(item, str) and item for item in experiment_ids):
+            raise ValueError("experiment_ids must contain unique non-empty strings")
+        experiment_ids = sorted(experiment_ids)
+        experiments = []
+        metrics_by_experiment: dict[str, list[dict[str, Any]]] = {}
+        for experiment_id in experiment_ids:
+            experiment = self._get_experiment_run(experiment_id)
+            experiments.append(experiment)
+            metrics_by_experiment[experiment_id] = self._list_experiment_metrics_for_task(experiment["task_id"])
+        config = {
+            "predictor": str(payload.get("predictor") or "task.spectra.transformer_1.effective_rank"),
+            "outcome": str(payload.get("outcome") or "plasticity.acc_gain"),
+            "lag": int(payload.get("lag", 1)),
+            "context_policy": str(payload.get("context_policy") or "aggregate-step"),
+            "bootstrap_repeats": int(payload.get("bootstrap_repeats", 2000)),
+            "bootstrap_seed": int(payload.get("bootstrap_seed", 20260821)),
+            "minimum_pairs": int(payload.get("minimum_pairs", 3)),
+            "minimum_seeds": int(payload.get("minimum_seeds", 3)),
+        }
+        result = analyze_lop(experiments, metrics_by_experiment, **config)
+        config = {
+            "predictor": result["predictor"],
+            "outcome": result["outcome"],
+            "lag": result["lag"],
+            "context_policy": result["context_policy"],
+            "bootstrap_repeats": result["bootstrap"]["repeats"],
+            "bootstrap_seed": result["bootstrap"]["seed"],
+            "minimum_pairs": result["minimum_pairs"],
+            "minimum_seeds": result["minimum_seeds"],
+        }
+        identities = result["experiments"]
+        scope = identities[0] if result["scope_consistent"] else {
+            "workload": "", "protocol": "", "comparison_group": ""
+        }
+        analysis_id = result["analysis_digest"][:32]
+        now = time.time()
+        with self._lock, self._connect() as connection:
+            cursor = connection.execute(
+                """
+                INSERT OR IGNORE INTO lop_analyses(
+                    analysis_id, version, analysis_name, status, workload, protocol,
+                    comparison_group, config, experiment_ids, result, created_at, created_by_version
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    analysis_id, self.version, result["analysis"], result["status"],
+                    str(scope.get("workload") or ""), str(scope.get("protocol") or ""),
+                    str(scope.get("comparison_group") or ""), json.dumps(config, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(experiment_ids, ensure_ascii=False, separators=(",", ":")),
+                    json.dumps(result, ensure_ascii=False, separators=(",", ":")), now, self.version,
+                ),
+            )
+            inserted = cursor.rowcount == 1
+        stored = self.get_lop_analysis(analysis_id)
+        if stored["result"]["analysis_digest"] != result["analysis_digest"]:
+            raise RuntimeError("LoP analysis ID collision")
+        if inserted:
+            self.append_event("lop.analysis.created", "control", "lop_analysis", analysis_id, {
+                "status": stored["status"], "experiment_ids": experiment_ids, "pair_count": result["pair_count"],
+                "seed_count": result["seed_count"], "analysis_digest": result["analysis_digest"],
+            })
+        return stored
+
+    def get_lop_analysis(self, analysis_id: str) -> dict[str, Any]:
+        with self._connect() as connection:
+            row = connection.execute("SELECT * FROM lop_analyses WHERE analysis_id = ?", (analysis_id,)).fetchone()
+        if row is None:
+            raise KeyError(analysis_id)
+        item = dict(row)
+        for field in ("config", "experiment_ids", "result"):
+            item[field] = json.loads(item[field])
+        return item
+
+    def list_lop_analyses(self, workload: str | None = None, status: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        limit = min(1000, max(1, int(limit)))
+        clauses, params = [], []
+        if workload:
+            clauses.append("workload = ?")
+            params.append(workload)
+        if status:
+            clauses.append("status = ?")
+            params.append(status)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._connect() as connection:
+            rows = connection.execute(f"SELECT * FROM lop_analyses{where} ORDER BY created_at DESC LIMIT ?", (*params, limit)).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            for field in ("config", "experiment_ids", "result"):
+                item[field] = json.loads(item[field])
             result.append(item)
         return result
 

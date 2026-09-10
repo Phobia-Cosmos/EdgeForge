@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import time
 from pathlib import Path
 
 from edgeforge import __version__
@@ -13,6 +14,7 @@ def worker(worker_id, architecture, load=0.0):
         "capabilities": {
             "architecture": architecture,
             "accelerators": [],
+            "backends": ["python-reference", "torch-eager", "torch-compile"],
             "cpu_count": 4,
             "memory_total_mb": 16000,
         },
@@ -78,6 +80,208 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.store.create_task({"kind": "shell", "payload": {"argv": ["true"]}})
 
+    def test_lop_analysis_uses_only_latest_experiment_run_metrics(self):
+        experiment_id = "lop-rerun"
+        spec = {
+            "schema_version": 1,
+            "experiment_id": experiment_id,
+            "workload": "raeeg-lop",
+            "dataset": {"name": "ISRUC"},
+            "model": {"name": "BrainUICL"},
+            "protocol": "lop-v1",
+            "method": "probe",
+            "seed": 1,
+            "runner": {
+                "mode": "import",
+                "result_path": "metrics.json",
+                "adapter": "edgeforge-bundle-v1",
+            },
+            "metadata": {"comparison_group": "lop-rerun"},
+        }
+        for offset in (0.0, 100.0):
+            task = self.store.create_task({
+                "kind": "experiment_run",
+                "payload": {"spec": spec},
+                "requirements": {"worker_ids": ["x86"]},
+            })
+            self.store.lease_task("x86")
+            metrics = []
+            for step in range(3):
+                metrics.extend([
+                    {"namespace": "raeeg.research", "name": "task.spectra.transformer_1.effective_rank", "value": offset + step, "step": step, "unit": "scalar", "context": {}},
+                    {"namespace": "raeeg.research", "name": "plasticity.acc_gain", "value": offset + step * 0.1, "step": step, "unit": "ratio", "context": {}},
+                ])
+            bundle = {
+                "schema_version": 1,
+                "experiment_id": experiment_id,
+                "workload": "raeeg-lop",
+                "spec": spec,
+                "metrics": metrics,
+                "summary": {},
+                "source_result": {"digest": ("a" if offset == 0.0 else "b") * 64},
+            }
+            self.store.complete_task(task["id"], "x86", {
+                "status": "succeeded",
+                "runtime_version": __version__,
+                "result": {"experiment_bundle": bundle},
+            })
+        analysis = self.store.create_lop_analysis({
+            "experiment_ids": [experiment_id],
+            "minimum_pairs": 2,
+            "bootstrap_repeats": 100,
+        })
+        self.assertEqual(analysis["result"]["pair_count"], 2)
+        self.assertEqual(analysis["result"]["pairs"][0]["predictor"], 100.0)
+        self.assertEqual(analysis["result"]["experiments"][0]["task_id"], task["id"])
+
+    def test_model_pipeline_persists_model_run(self):
+        task = self.store.create_task(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "tiny"},
+                    "dataset": {"name": "synthetic", "manifest_digest": "sha256:data"},
+                    "transforms": [{"name": "window", "version": "v1", "config": {"length": 8}}],
+                    "frontend": {"name": "python"},
+                    "compiler": {"backend": "python-reference", "identity": "test"},
+                    "target": {"architecture": "aarch64"},
+                },
+                "requirements": {"worker_ids": ["arm"]},
+            }
+        )
+        leased = self.store.lease_task("arm")
+        self.assertEqual(leased["id"], task["id"])
+        result = {
+            "exit_code": 0,
+            "manifest": leased["payload"],
+            "correctness": True,
+            "compile_ms": 2.5,
+            "benchmark": {"steady_latency_ms": 3.1},
+            "artifact": {"digest": "a" * 64},
+        }
+        self.store.complete_task(task["id"], "arm", {"status": "succeeded", "runtime_version": __version__, "result": result})
+        runs = self.store.list_model_runs("tiny")
+        self.assertEqual(len(runs), 1)
+        self.assertEqual(runs[0]["transform_digest"], leased["payload"]["transform_digest"])
+        self.assertEqual(runs[0]["compiler_backend"], "python-reference")
+
+    def test_model_pipeline_persists_stage_events(self):
+        task = self.store.create_task(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "event-model"},
+                    "dataset": {"name": "synthetic"},
+                    "compiler": {"backend": "python-reference", "identity": "test"},
+                    "target": {"architecture": "aarch64"},
+                },
+                "requirements": {"worker_ids": ["arm"]},
+            }
+        )
+        leased = self.store.lease_task("arm")
+        result = {
+            "exit_code": 0,
+            "manifest": leased["payload"],
+            "correctness": True,
+            "pipeline": [
+                {"stage": "export", "exit_code": 0, "elapsed_ms": 1.2, "parsed": {"format": "test"}},
+                {"stage": "transform", "exit_code": 0, "elapsed_ms": 2.3},
+            ],
+        }
+        self.store.complete_task(task["id"], "arm", {"status": "succeeded", "runtime_version": __version__, "result": result})
+        events = self.store.list_events(version=__version__)
+        stage_events = {item["event_type"]: item for item in events if item["event_type"].startswith("model_pipeline.")}
+        self.assertEqual(stage_events["model_pipeline.export"]["payload"]["elapsed_ms"], 1.2)
+        self.assertEqual(stage_events["model_pipeline.transform"]["payload"]["exit_code"], 0)
+
+    def test_model_run_prefers_adapter_compile_time(self):
+        task = self.store.create_task(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "compile-time-model"},
+                    "dataset": {"name": "synthetic"},
+                    "compiler": {"backend": "python-reference", "identity": "test"},
+                    "target": {"architecture": "aarch64"},
+                },
+                "requirements": {"worker_ids": ["arm"]},
+            }
+        )
+        leased = self.store.lease_task("arm")
+        self.store.complete_task(
+            task["id"], "arm", {"status": "succeeded", "runtime_version": __version__, "result": {
+                "manifest": leased["payload"], "correctness": True, "compile_ms": 99.0,
+                "benchmark": {"compile_ms": 3.5, "steady_latency_ms": 1.0},
+            }}
+        )
+        self.assertEqual(self.store.list_model_runs("compile-time-model")[0]["compile_ms"], 3.5)
+
+    def test_model_regressions_compare_only_matching_backend_and_target(self):
+        def complete(model, backend, target, latency, compile_ms, status="succeeded", correctness=True):
+            worker_id = "x86" if target.get("architecture") == "x86_64" else "arm"
+            task = self.store.create_task(
+                {
+                    "kind": "model_pipeline",
+                    "payload": {
+                        "model": {"name": model},
+                        "dataset": {"name": "synthetic", "manifest_digest": "sha256:data"},
+                        "compiler": {"backend": backend, "identity": "test"},
+                        "target": target,
+                    },
+                    "requirements": {"worker_ids": [worker_id]},
+                }
+            )
+            leased = self.store.lease_task(worker_id)
+            result = {
+                "exit_code": 0 if status == "succeeded" else 1,
+                "manifest": leased["payload"],
+                "correctness": correctness,
+                "compile_ms": compile_ms,
+                "benchmark": {"steady_latency_ms": latency},
+            }
+            self.store.complete_task(task["id"], worker_id, {"status": status, "runtime_version": __version__, "result": result})
+            time.sleep(0.002)
+
+        complete("regression-model", "torch-eager", {"architecture": "aarch64"}, 1.0, 2.0)
+        complete("regression-model", "torch-eager", {"architecture": "aarch64"}, 2.0, 5.0)
+        complete("regression-model", "torch-compile", {"architecture": "aarch64"}, 20.0, 50.0)
+        complete("regression-model", "torch-eager", {"architecture": "x86_64"}, 20.0, 50.0)
+        regressions = self.store.model_regressions("regression-model", threshold=0.2)
+        self.assertEqual({item["kind"] for item in regressions}, {"steady_latency", "compile_time"})
+        self.assertTrue(all(item["backend"] == "torch-eager" and item["architecture"] == "aarch64" for item in regressions))
+
+    def test_failed_model_run_is_recorded_but_not_used_as_baseline(self):
+        task = self.store.create_task(
+            {
+                "kind": "model_pipeline",
+                "payload": {
+                    "model": {"name": "failed-model"},
+                    "dataset": {"name": "synthetic"},
+                    "compiler": {"backend": "python-reference", "identity": "test"},
+                    "target": {"architecture": "aarch64"},
+                },
+                "requirements": {"worker_ids": ["arm"]},
+            }
+        )
+        self.store.lease_task("arm")
+        self.store.complete_task(task["id"], "arm", {"status": "failed", "result": {"manifest": task["payload"], "correctness": False}})
+        runs = self.store.list_model_runs("failed-model")
+        self.assertEqual(runs[0]["task_status"], "failed")
+        self.assertEqual(self.store.model_regressions("failed-model"), [])
+
+    def test_model_pipeline_rejects_iree_without_explicit_device(self):
+        with self.assertRaisesRegex(ValueError, "requires explicit target"):
+            self.store.create_task(
+                {
+                    "kind": "model_pipeline",
+                    "payload": {
+                        "model": {"name": "tiny"},
+                        "dataset": {"name": "synthetic"},
+                        "compiler": {"backend": "iree"},
+                    },
+                }
+            )
+
     def test_release_update_preserves_original_timestamp(self):
         first = self.store.record_release("test-version", "first", {"step": 1}, status="active")
         second = self.store.record_release("test-version", "updated", {"step": 2}, status="retired")
@@ -111,6 +315,33 @@ class StoreTests(unittest.TestCase):
         self.assertTrue(benchmarks[0]["correctness"])
         events = self.store.list_events(version=__version__)
         self.assertTrue(any(event["event_type"] == "task.completed" for event in events))
+
+    def test_non_reference_backend_requires_kernel_pipeline(self):
+        kernel = self.store.register_kernel(
+            {
+                "id": "kernel-iree-conv-store-v1",
+                "operator": "conv_nchwc",
+                "backend": "iree-ukernel",
+                "version": "issue-24760-adapter-scaffold",
+                "architectures": ["aarch64"],
+                "dtypes": ["fp32"],
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "use kernel_pipeline"):
+            self.store.create_task(
+                {
+                    "kind": "operator_benchmark",
+                    "payload": {
+                        "operator": {
+                            "name": "conv_nchwc",
+                            "shape": [1, 1, 3, 5, 1, 3, 3, 16, 16],
+                            "dtype": "fp32",
+                        },
+                        "kernel_id": kernel["id"],
+                    },
+                    "requirements": {"worker_ids": ["arm"], "kernel_id": kernel["id"]},
+                }
+            )
 
     def test_kernel_registry_filters_architecture_and_detects_regression(self):
         kernel = self.store.register_kernel(

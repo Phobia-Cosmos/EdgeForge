@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "model": {"name": "torch-local-mlp-compiled", "format": "pytorch", "checkpoint": "generated-by-export"},
+  "dataset": {"name": "synthetic-eeg-torch", "manifest_digest": "generated:edgeforge-torch-synthetic-eeg-v1", "split": "validation", "root": ".edgeforge/torch", "transform_command": ["python3", "-m", "edgeforge.torch_model_pipeline", "transform"]},
+  "transforms": [
+    {"name": "normalize", "version": "torch-eeg-normalize-v1", "config": {"mode": "per-window"}},
+    {"name": "window", "version": "torch-eeg-window-v1", "config": {"length": 16, "stride": 16}}
+  ],
+  "frontend": {"name": "pytorch", "command": ["python3", "-m", "edgeforge.torch_model_pipeline", "export"], "timeout_seconds": 3600},
+  "compiler": {"backend": "torch-compile", "identity": "torch-local-compile-v1", "command": ["python3", "-m", "edgeforge.torch_model_pipeline", "compile"], "timeout_seconds": 3600},
+  "runtime": {"name": "torch-compile", "command": ["python3", "-m", "edgeforge.torch_model_pipeline", "run"], "timeout_seconds": 3600},
+  "correctness": {"command": ["python3", "-m", "edgeforge.torch_model_pipeline", "correctness"], "timeout_seconds": 3600},
+  "benchmark": {"command": ["python3", "-m", "edgeforge.torch_model_pipeline", "benchmark"], "repeats": 10, "timeout_seconds": 3600},
+  "target": {"architecture": "x86_64", "device": "cpu"},
+  "metadata": {"workload": "raeeg", "protocol": "lop-v1", "status": "local-torch-contract", "compile_backend": "eager"}
+}

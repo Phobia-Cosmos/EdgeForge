@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 
-SUPPORTED_OPERATORS = {"matmul", "softmax", "rmsnorm", "silu"}
+SUPPORTED_OPERATORS = {"matmul", "softmax", "rmsnorm", "silu", "conv_nchwc"}
 SUPPORTED_DTYPES = {"fp32", "fp16", "bf16"}
 
 
@@ -35,7 +35,7 @@ class OperatorSpec:
         shape = tuple(raw_shape)
         if any(item <= 0 or item > 1024 for item in shape):
             raise ValueError("operator dimensions must be between 1 and 1024")
-        expected_rank = 3 if name == "matmul" else 1
+        expected_rank = {"matmul": 3, "conv_nchwc": 9}.get(name, 1)
         if len(shape) != expected_rank:
             raise ValueError(f"{name} expects shape rank {expected_rank}")
         if name == "matmul" and shape[0] * shape[1] * shape[2] > 16_777_216:
@@ -47,6 +47,21 @@ class OperatorSpec:
         attrs = payload.get("attrs") or {}
         if not isinstance(attrs, dict):
             raise ValueError("operator.attrs must be an object")
+        if name == "conv_nchwc":
+            attrs = dict(attrs)
+            for key in ("stride_h", "stride_w", "dilation_h", "dilation_w"):
+                value = attrs.get(key, 1)
+                if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 64:
+                    raise ValueError(f"conv_nchwc {key} must be an integer between 1 and 64")
+                attrs[key] = value
+            accumulate = attrs.get("accumulate", False)
+            if not isinstance(accumulate, bool):
+                raise ValueError("conv_nchwc accumulate must be a boolean")
+            attrs["accumulate"] = accumulate
+            n, oc_outer, oh, ow, ic_outer, fh, fw, k0, c0 = shape
+            operations = n * oc_outer * oh * ow * ic_outer * fh * fw * k0 * c0
+            if operations > 8_000_000:
+                raise ValueError("conv_nchwc workload is too large for the reference backend")
         return cls(name=name, shape=shape, dtype=dtype, backend=backend, attrs=attrs)
 
     def to_dict(self) -> dict[str, Any]:
@@ -104,8 +119,52 @@ def _silu(spec: OperatorSpec) -> tuple[list[float], Callable[[], bool]]:
     return output, lambda: math.isclose(output[values.index(0.0)], 0.0, abs_tol=1e-8) if 0.0 in values else all(math.isfinite(value) for value in output)
 
 
+def _conv_nchwc(spec: OperatorSpec) -> tuple[list[float], Callable[[], bool]]:
+    n, oc_outer, oh, ow, ic_outer, fh, fw, k0, c0 = spec.shape
+    stride_h = spec.attrs["stride_h"]
+    stride_w = spec.attrs["stride_w"]
+    dilation_h = spec.attrs["dilation_h"]
+    dilation_w = spec.attrs["dilation_w"]
+    input_h = (oh - 1) * stride_h + (fh - 1) * dilation_h + 1
+    input_w = (ow - 1) * stride_w + (fw - 1) * dilation_w + 1
+    input_size = n * ic_outer * input_h * input_w * c0
+    filter_size = oc_outer * ic_outer * fh * fw * c0 * k0
+    input_values = _values(input_size)
+    filter_values = _values(filter_size)
+    output = [0.0] * (n * oc_outer * oh * ow * k0)
+
+    def input_index(batch: int, ic_outer_index: int, height: int, width: int, channel: int) -> int:
+        return (((batch * ic_outer + ic_outer_index) * input_h + height) * input_w + width) * c0 + channel
+
+    def filter_index(oc_outer_index: int, ic_outer_index: int, filter_h: int, filter_w: int, channel: int, ko: int) -> int:
+        return (((((oc_outer_index * ic_outer + ic_outer_index) * fh + filter_h) * fw + filter_w) * c0 + channel) * k0) + ko
+
+    def output_index(batch: int, oc_outer_index: int, height: int, width: int, ko: int) -> int:
+        return (((batch * oc_outer + oc_outer_index) * oh + height) * ow + width) * k0 + ko
+
+    for batch in range(n):
+        for oc_outer_index in range(oc_outer):
+            for out_h in range(oh):
+                for out_w in range(ow):
+                    for ko in range(k0):
+                        value = 0.0
+                        for ic_outer_index in range(ic_outer):
+                            for filter_h in range(fh):
+                                input_h_index = out_h * stride_h + filter_h * dilation_h
+                                for filter_w in range(fw):
+                                    input_w_index = out_w * stride_w + filter_w * dilation_w
+                                    for channel in range(c0):
+                                        value += input_values[input_index(batch, ic_outer_index, input_h_index, input_w_index, channel)] * filter_values[filter_index(oc_outer_index, ic_outer_index, filter_h, filter_w, channel, ko)]
+                        output[output_index(batch, oc_outer_index, out_h, out_w, ko)] = value
+
+    def check() -> bool:
+        return all(math.isfinite(value) for value in output)
+
+    return output, check
+
+
 def _run_once(spec: OperatorSpec) -> tuple[list[float], Callable[[], bool]]:
-    return {"matmul": _matmul, "softmax": _softmax, "rmsnorm": _rmsnorm, "silu": _silu}[spec.name](spec)
+    return {"matmul": _matmul, "softmax": _softmax, "rmsnorm": _rmsnorm, "silu": _silu, "conv_nchwc": _conv_nchwc}[spec.name](spec)
 
 
 def _checksum(values: list[float]) -> str:

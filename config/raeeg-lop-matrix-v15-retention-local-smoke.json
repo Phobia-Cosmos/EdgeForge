@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "matrix_id": "isruc-lop-v015-retention-local-smoke",
+  "version": "0.15.0",
+  "brainuicl_root": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL",
+  "python": "/home/undefined/Disk/python-envs/brainuicl/bin/python",
+  "output_root": "/home/undefined/Disk/ai-storage/EdgeForge/raeeg-lop-matrix/v0.15.0-retention-local-smoke",
+  "audit": {
+    "context_policy": "exact",
+    "minimum_pairs": 3,
+    "minimum_seeds": 3
+  },
+  "defaults": {
+    "seed": 4321,
+    "device": "cuda:0",
+    "max_files": 2,
+    "batch_size": 1,
+    "max_batches": 1,
+    "importance_batches": 1,
+    "importance_top_k": 10,
+    "probe_steps": "0,2",
+    "train_fraction": 0.5,
+    "lr": 1e-5,
+    "weight_decay": 0.0,
+    "split": "subject-2-retention-local-smoke"
+  },
+  "datasets": [
+    {
+      "name": "ISRUC",
+      "data_root": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32",
+      "subjects": [2],
+      "stages": [0],
+      "conditions": [{"name": "clean"}],
+      "methods": [
+        {
+          "name": "finetune",
+          "checkpoint_roots": {
+            "0": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain"
+          },
+          "baseline_checkpoint_root": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain",
+          "fresh_checkpoint_root": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain",
+          "retention": {
+            "data_root": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32",
+            "subjects": [1],
+            "max_files": 1,
+            "batch_size": 1
+          }
+        }
+      ]
+    }
+  ]
+}
