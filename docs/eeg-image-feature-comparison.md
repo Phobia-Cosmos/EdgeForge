@@ -4,7 +4,7 @@
 
 ## 当前 EEG 可视化产物
 
-完整 ISRUC 图位于 `/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/full-isruc-visualizations-v2/`。主要文件如下：
+完整 ISRUC 图位于 `/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/full-isruc-visualizations-v3/`。主要文件如下：
 
 - `eeg-drift-waveforms.png`：原始通道波形和逐 epoch 标准化波形；前者显示增益/幅度差异，后者显示形状差异。
 - `eeg-drift-normalized-overlay.png`：各个体代表性波形去除全局幅度后的叠加。
@@ -39,4 +39,3 @@
 当前图像 smoke 只验证了 CNN/Transformer 的诊断接口，例如 CNN 存在 near-zero activation，Transformer 的 classifier-input CKA 会随阶段下降；它不是与 ISRUC 等规模和协议匹配的科学对照。当前完整 ISRUC 的图显示真实个体异质性，但所有架构和适应策略仍未通过严格 LoP gate。可视化说明“数据为什么难迁移”，不等于证明“LoP 已发生”。
 
 后续实验优先比较 raw、RMS-equalized、channel-wise standardized 三种输入，并在相同 subject、seed、budget 网格上记录 fresh-gap、retention、频谱和表示变化。这样可以把采集增益漂移、频谱/形态漂移和标签先验漂移分开，而不是用单一 PCA 图或平均准确率作结论。
-
