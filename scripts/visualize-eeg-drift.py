@@ -25,6 +25,10 @@ from sklearn.preprocessing import StandardScaler
 
 
 FS_HZ = 100.0
+EPOCH_SAMPLES = 3000
+EPOCH_SECONDS = EPOCH_SAMPLES / FS_HZ
+EPOCHS_PER_FILE = 20
+ADAPTATION_EPOCHS_PER_FILE = 10
 BANDS = {"delta": (0.5, 4.0), "theta": (4.0, 8.0), "alpha": (8.0, 13.0), "sigma": (13.0, 16.0), "beta": (16.0, 30.0)}
 
 
@@ -50,7 +54,8 @@ def _load_subject(root: Path, group: str, subject: int) -> tuple[np.ndarray, np.
 
 def _profile(root: Path, group: str, subject: int) -> dict[str, Any]:
     values, labels = _load_subject(root, group, subject)
-    return {"group": group, "subject": int(subject), "values": values, "labels": labels}
+    file_lengths = [int(np.load(path, mmap_mode="r", allow_pickle=False).shape[0]) for path in _files(root, group, subject)]
+    return {"group": group, "subject": int(subject), "values": values, "labels": labels, "file_lengths": file_lengths}
 
 
 def _bandpower(frequencies: np.ndarray, power: np.ndarray, low: float, high: float) -> float:
@@ -140,34 +145,72 @@ def _save(fig: plt.Figure, path: Path) -> None:
 def _waveform_plot(profiles: list[dict[str, Any]], output: Path, subjects: list[int]) -> None:
     selected = [item for item in profiles if item["group"] == "target" and item["subject"] in subjects]
     fig, axes = plt.subplots(len(selected), 2, figsize=(14, 2.7 * len(selected)), squeeze=False)
-    time = np.arange(1000) / FS_HZ
-    raw_limit = max(float(np.max(np.abs(item["values"][0, 0, :1000]))) for item in selected)
+    # An epoch is 3000 samples at 100 Hz: show the complete 30-second window.
+    time = np.arange(selected[0]["values"].shape[-1]) / FS_HZ
     for row, item in enumerate(selected):
         values = item["values"]
-        raw = values[0, 0, :1000]
+        epoch_rms = np.sqrt(np.mean(np.square(values), axis=(1, 2)))
+        representative = int(np.argmin(np.abs(epoch_rms - np.median(epoch_rms))))
+        raw = values[representative, 0]
         normalized = (raw - raw.mean()) / max(raw.std(), 1e-30)
         axes[row, 0].plot(time, raw, linewidth=0.7, color="#244c7a")
-        axes[row, 0].set_ylim(-raw_limit, raw_limit)
+        local_limit = max(float(np.max(np.abs(raw))) * 1.05, 1e-30)
+        axes[row, 0].set_ylim(-local_limit, local_limit)
         subject_rms = float(np.sqrt(np.mean(np.square(values))))
-        axes[row, 0].set_title(f"target subject {item['subject']} · raw channel 0 · RMS {subject_rms:.2e}")
+        axes[row, 0].set_title(f"target subject {item['subject']} · 30 s representative epoch · raw channel 0 · RMS {subject_rms:.2e}")
         axes[row, 0].set_xlabel("time (s)")
-        axes[row, 0].set_ylabel("amplitude (common scale)")
+        axes[row, 0].set_ylabel("amplitude (subject scale)")
         axes[row, 1].plot(time, normalized, linewidth=0.7, color="#b54b4b")
         axes[row, 1].set_title(f"target subject {item['subject']} · per-epoch standardized")
         axes[row, 1].set_xlabel("time (s)")
         axes[row, 1].set_ylabel("z-score")
         axes[row, 1].set_ylim(-3.5, 3.5)
-    fig.suptitle("EEG waveform scale drift across target subjects (raw panels share y-scale)", y=1.01, fontsize=14)
+    fig.suptitle("EEG waveform scale drift across target subjects (complete 30-second epoch)", y=1.01, fontsize=14)
     _save(fig, output / "eeg-drift-waveforms.png")
+
+
+def _subject_sequence_heatmap_plot(profiles: list[dict[str, Any]], output: Path, subjects: list[int]) -> None:
+    """Show every epoch and channel for each target subject without overplotting."""
+    selected = [item for item in profiles if item["group"] == "target" and item["subject"] in subjects]
+    for item in selected:
+        values = np.asarray(item["values"], dtype=np.float64)
+        # Robust per-subject scaling makes low-amplitude subjects readable while
+        # retaining within-subject sequence changes. The raw scale remains in
+        # the summary and representative waveform figure.
+        scale = max(float(np.percentile(np.abs(values), 99.0)), 1e-30)
+        normalized = np.clip(values / scale, -1.0, 1.0)
+        fig, axes = plt.subplots(4, 2, figsize=(14, 11), sharex=True, sharey=True)
+        time = np.arange(values.shape[-1]) / FS_HZ
+        image = None
+        for channel, ax in enumerate(axes.flat):
+            image = ax.imshow(normalized[:, channel, :], aspect="auto", origin="lower", cmap="RdBu_r",
+                              vmin=-1.0, vmax=1.0, extent=[time[0], time[-1], -0.5, values.shape[0] - 0.5])
+            ax.set_title(f"channel {channel}")
+            ax.set_xlabel("time within epoch (s)")
+            ax.set_ylabel("epoch index")
+            offset = 0
+            for file_index, length in enumerate(item.get("file_lengths", [])):
+                if file_index and offset < values.shape[0]:
+                    ax.axhline(offset - 0.5, color="black", linewidth=0.7, alpha=0.7)
+                if length >= 2:
+                    ax.axhline(offset + min(ADAPTATION_EPOCHS_PER_FILE, length) - 0.5, color="white", linewidth=0.6, linestyle=":", alpha=0.8)
+                offset += length
+        if image is not None:
+            fig.subplots_adjust(left=0.07, right=0.88, bottom=0.06, top=0.91, hspace=0.36, wspace=0.16)
+            colorbar_axis = fig.add_axes([0.91, 0.16, 0.015, 0.68])
+            fig.colorbar(image, cax=colorbar_axis, label="amplitude / subject 99th percentile")
+        fig.suptitle(f"Target subject {item['subject']}: all epochs and 8 channels ({EPOCH_SECONDS:.0f} s/epoch)\nblack=file boundary; white dotted=adaptation/evaluation boundary", fontsize=13)
+        fig.savefig(output / f"eeg-subject-{item['subject']}-all-epochs.png", dpi=180, bbox_inches="tight")
+        plt.close(fig)
 
 
 def _normalized_overlay_plot(profiles: list[dict[str, Any]], output: Path, subjects: list[int]) -> None:
     selected = [item for item in profiles if item["group"] == "target" and item["subject"] in subjects]
     fig, ax = plt.subplots(figsize=(12, 5.5))
-    time = np.arange(1000) / FS_HZ
+    time = np.arange(selected[0]["values"].shape[-1]) / FS_HZ
     colors = plt.cm.tab10(np.linspace(0.0, 1.0, len(selected)))
     for color, item in zip(colors, selected):
-        epochs = item["values"][:, 0, :1000].astype(np.float64, copy=False)
+        epochs = item["values"][:, 0].astype(np.float64, copy=False)
         # Pick the epoch whose RMS is closest to the subject median. Averaging
         # epochs would cancel phase-varying EEG activity and create an
         # artificial flat line; this deterministic representative retains a
@@ -178,7 +221,7 @@ def _normalized_overlay_plot(profiles: list[dict[str, Any]], output: Path, subje
         window = 5
         smoothed = np.convolve(normalized, np.ones(window) / window, mode="same")
         ax.plot(time, smoothed, linewidth=1.2, alpha=0.85, color=color, label=f"subject {item['subject']}")
-    ax.set_title("Typical normalized waveform morphology across target subjects")
+    ax.set_title("Typical normalized 30-second waveform morphology across target subjects")
     ax.set_xlabel("time (s)")
     ax.set_ylabel("channel-0 z-score (median-RMS epoch, smoothed)")
     ax.set_ylim(-3.5, 3.5)
@@ -219,10 +262,24 @@ def _rms_trajectory_plot(profiles: list[dict[str, Any]], output: Path, subjects:
     log_matrix = np.log10(matrix + 1e-30)
     fig, ax = plt.subplots(figsize=(13, 4.8))
     image = ax.imshow(log_matrix, aspect="auto", interpolation="nearest", cmap="viridis", origin="lower")
-    if matrix.shape[1]:
-        ax.axvline(matrix.shape[1] / 2 - 0.5, color="white", linewidth=1.2, linestyle="--", alpha=0.9)
+    # Every file has its own adaptation/evaluation split; a single global
+    # midpoint is incorrect when subjects contain different file counts.
+    adaptation_boundaries: set[int] = set()
+    file_boundaries: set[int] = set()
+    for item in selected:
+        offset = 0
+        for length in item.get("file_lengths", []):
+            adaptation_boundaries.add(offset + min(ADAPTATION_EPOCHS_PER_FILE, length))
+            file_boundaries.add(offset + length)
+            offset += length
+    for boundary in sorted(adaptation_boundaries):
+        if boundary < matrix.shape[1]:
+            ax.axvline(boundary - 0.5, color="white", linewidth=0.8, linestyle="--", alpha=0.8)
+    for boundary in sorted(file_boundaries):
+        if boundary < matrix.shape[1]:
+            ax.axvline(boundary - 0.5, color="black", linewidth=0.6, alpha=0.5)
     ax.set_title("EEG amplitude drift over each target subject stream")
-    ax.set_xlabel("epoch index (dashed line: adaptation/evaluation split)")
+    ax.set_xlabel("epoch index (white dashed: adaptation/evaluation; black: file boundary)")
     ax.set_ylabel("target subject")
     ax.set_yticks(range(len(selected)), [str(item["subject"]) for item in selected])
     fig.colorbar(image, ax=ax, label="log10(epoch RMS)")
@@ -318,7 +375,7 @@ def _pca_plot(profiles: list[dict[str, Any]], output: Path) -> dict[str, Any]:
         for subject in sorted({subject for group, subject in metadata if group == role}):
             mask = np.asarray([(group == role and current_subject == subject) for group, current_subject in metadata])
             ax.scatter(transformed[mask, 0], transformed[mask, 1], s=14, alpha=0.55, color=color, label=f"{role} {subject}")
-    ax.set_title("PCA of epoch-level log-RMS and band-power features")
+    ax.set_title("Raw-scale PCA: 8 log channel-RMS + 5 log band-power features")
     ax.set_xlabel("PC1")
     ax.set_ylabel("PC2")
     ax.grid(alpha=0.2)
@@ -366,19 +423,25 @@ def _label_plot(profiles: list[dict[str, Any]], output: Path, classes: int = 5) 
     matrix: list[np.ndarray] = []
     labels: list[str] = []
     for item in target:
-        y = item["labels"]
-        matrix.append(_label_distribution(y[: len(y) // 2], classes) / max(1, len(y) // 2))
-        matrix.append(_label_distribution(y[len(y) // 2 :], classes) / max(1, len(y) // 2))
-        labels.extend([f"{item['subject']} adapt", f"{item['subject']} eval"])
+        offset = 0
+        lengths = item.get("file_lengths", []) or [len(item["labels"])]
+        for file_index, length in enumerate(lengths):
+            y = item["labels"][offset : offset + length]
+            split = min(ADAPTATION_EPOCHS_PER_FILE, len(y))
+            for name, part in (("adapt", y[:split]), ("eval", y[split:])):
+                if len(part):
+                    matrix.append(_label_distribution(part, classes) / len(part))
+                    labels.append(f"{item['subject']} file {file_index} {name}")
+            offset += length
     values = np.asarray(matrix)
     fig, ax = plt.subplots(figsize=(13, 6))
     image = ax.imshow(values, aspect="auto", cmap="magma", vmin=0.0, vmax=0.6)
-    ax.set_title("Target label prior drift: adaptation half vs held-out half")
+    ax.set_title("Sleep-stage class fraction by file (adaptation = first 10, evaluation = last 10 epochs)")
     ax.set_xlabel("sleep-stage class")
-    ax.set_ylabel("target subject / split")
+    ax.set_ylabel("target subject / file / split")
     ax.set_xticks(range(classes), [str(i) for i in range(classes)])
     ax.set_yticks(range(len(labels)), labels)
-    fig.colorbar(image, ax=ax, label="class fraction")
+    fig.colorbar(image, ax=ax, label="fraction of epochs in class")
     _save(fig, output / "eeg-drift-labels.png")
 
 
@@ -403,6 +466,7 @@ def visualize(
         for subject in subjects:
             profiles.append(_profile(root, group, subject))
     _waveform_plot(profiles, output, target_subjects)
+    _subject_sequence_heatmap_plot(profiles, output, target_subjects)
     _normalized_overlay_plot(profiles, output, target_subjects)
     _spectra_plot(profiles, output)
     _rms_trajectory_plot(profiles, output, target_subjects)
@@ -412,9 +476,10 @@ def visualize(
     quantitative = _quantify_drift(profiles, target_subjects)
     distance = _subject_distance_plot(profiles, output, target_subjects)
     quantitative["target_feature_pairwise_euclidean"] = distance["matrix"]
-    summary = {"schema_version": 2, "analysis": "eeg-drift-visualization-v1", "data_root": str(root), "output_dir": str(output), "sampling_rate_hz": FS_HZ, "groups": groups, "pca": pca_info, "pca_gain_invariant": pca_gain_invariant_info, "quantitative_drift": quantitative, "figures": ["eeg-drift-waveforms.png", "eeg-drift-normalized-overlay.png", "eeg-drift-spectra.png", "eeg-drift-rms-trajectory.png", "eeg-drift-subject-distance.png", "eeg-drift-pca.png", "eeg-drift-pca-gain-invariant.png", "eeg-drift-labels.png"], "scientific_conclusion_allowed": False}
+    figures = ["eeg-drift-waveforms.png", *[f"eeg-subject-{subject}-all-epochs.png" for subject in target_subjects], "eeg-drift-normalized-overlay.png", "eeg-drift-spectra.png", "eeg-drift-rms-trajectory.png", "eeg-drift-subject-distance.png", "eeg-drift-pca.png", "eeg-drift-pca-gain-invariant.png", "eeg-drift-labels.png"]
+    summary = {"schema_version": 3, "analysis": "eeg-drift-visualization-v2", "data_root": str(root), "output_dir": str(output), "sampling_rate_hz": FS_HZ, "epoch_samples": EPOCH_SAMPLES, "epoch_duration_seconds": EPOCH_SECONDS, "preprocessing": "read existing float32 arrays; no filtering or resampling in visualization script", "waveform_window_seconds": EPOCH_SECONDS, "epoch_layout": "each ISRUC file is represented in its original order; adaptation is first 10 epochs/file and evaluation is the remaining epochs (normally last 10)", "label_fraction_definition": "count of epochs in each sleep-stage class divided by the number of epochs in that file split", "target_split_definition": "target adaptation and held-out evaluation are kept separate per file; evaluation is never used for updates", "groups": groups, "pca": pca_info, "pca_gain_invariant": pca_gain_invariant_info, "quantitative_drift": quantitative, "figures": figures, "scientific_conclusion_allowed": False}
     (output / "visualization-summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    (output / "README.md").write_text("# EEG drift visualizations\n\nThese figures visualize signal-scale, spectral, feature-space, within-stream and label-prior drift in the ISRUC cohort. They are descriptive diagnostics, not LoP evidence.\n\n- `eeg-drift-waveforms.png`: raw channel-0 waveforms on a common y-scale (RMS is shown in each title) alongside per-epoch standardized shape.\n- `eeg-drift-normalized-overlay.png`: typical normalized waveform morphology (the epoch closest to each subject's median RMS) overlaid across subjects after removing gain.\n- `eeg-drift-spectra.png`: mean per-epoch, channel-averaged Welch power spectra for target subjects.\n- `eeg-drift-rms-trajectory.png`: epoch-level RMS heatmap; the dashed line separates adaptation and held-out halves.\n- `eeg-drift-subject-distance.png`: pairwise standardized feature distance between target subjects.\n- `eeg-drift-pca.png`: PCA of log-RMS and band-power features; separation is scale/power-sensitive.\n- `eeg-drift-pca-gain-invariant.png`: PCA after per-epoch RMS normalization; remaining separation reflects channel balance, temporal roughness and spectral composition.\n- `eeg-drift-labels.png`: adaptation/evaluation label fractions.\n- `visualization-summary.json`: reproducible paths and quantitative RMS/spectral/feature-drift summaries.\n", encoding="utf-8")
+    (output / "README.md").write_text("# EEG drift visualizations\n\nThese figures visualize signal-scale, spectral, feature-space, within-stream and label-prior drift in the ISRUC cohort. They are descriptive diagnostics, not LoP evidence. Arrays are read as-is at 100 Hz; this script does not apply a band-pass filter or resampling. Each epoch is 3000 samples (30 seconds).\n\n- `eeg-drift-waveforms.png`: complete 30-second representative epoch on a per-subject raw y-scale plus standardized shape.\n- `eeg-subject-{subject}-all-epochs.png`: all epochs and all 8 channels for one subject; color is robust subject-normalized amplitude, black lines mark files and white dotted lines mark adaptation/evaluation.\n- `eeg-drift-normalized-overlay.png`: complete normalized 30-second representative epoch overlaid across subjects after removing gain.\n- `eeg-drift-spectra.png`: mean per-epoch, channel-averaged Welch power spectra for target subjects.\n- `eeg-drift-rms-trajectory.png`: epoch-level RMS heatmap with every file boundary and per-file adaptation/evaluation split.\n- `eeg-drift-subject-distance.png`: pairwise standardized feature distance between target subjects.\n- `eeg-drift-pca.png`: raw-scale PCA of 8 log channel-RMS and 5 log band-power features; separation is scale/power-sensitive.\n- `eeg-drift-pca-gain-invariant.png`: PCA after per-epoch RMS normalization; remaining separation reflects channel balance, temporal roughness and spectral composition.\n- `eeg-drift-labels.png`: class fractions (class count divided by epochs in that file split), separately for adaptation and held-out evaluation.\n- `visualization-summary.json`: reproducible metadata and quantitative RMS/spectral/feature-drift summaries.\n", encoding="utf-8")
     return summary
 
 

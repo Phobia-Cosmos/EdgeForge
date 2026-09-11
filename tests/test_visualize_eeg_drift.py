@@ -107,6 +107,20 @@ class EEGDriftVisualizationTests(unittest.TestCase):
             self.assertTrue((output / "eeg-drift-normalized-overlay.png").is_file())
             self.assertTrue((output / "eeg-drift-subject-distance.png").is_file())
 
+    def test_subject_sequence_heatmap_writes_complete_epoch_view(self):
+        module = _load_module()
+        rng = np.random.default_rng(9)
+        profile = {
+            "group": "target",
+            "subject": 2,
+            "values": rng.normal(size=(6, 8, 3000)).astype(np.float32),
+            "labels": np.zeros(6, dtype=np.int64),
+            "file_lengths": [4, 2],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            module._subject_sequence_heatmap_plot([profile], Path(directory), [2])
+            self.assertTrue((Path(directory) / "eeg-subject-2-all-epochs.png").is_file())
+
     def test_gain_invariant_features_ignore_global_scale(self):
         module = _load_module()
         rng = np.random.default_rng(7)
