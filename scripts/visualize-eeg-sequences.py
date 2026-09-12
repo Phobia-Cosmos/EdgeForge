@@ -42,6 +42,7 @@ def _sequence_metrics(values: np.ndarray, labels: np.ndarray) -> dict[str, Any]:
     transition_count = int(np.sum(labels[1:] != labels[:-1]))
     median_index = int(np.argmin(np.abs(epoch_rms - np.median(epoch_rms))))
     first_transition = int(np.flatnonzero(labels[1:] != labels[:-1])[0] + 1) if transition_count else None
+    adjacent_rms_jump = int(np.argmax(np.abs(np.diff(epoch_rms))) + 1) if len(epoch_rms) > 1 else 0
     return {
         "sequence_rms": float(np.sqrt(np.mean(np.square(values.astype(np.float64))))),
         "epoch_rms": epoch_rms.tolist(),
@@ -51,8 +52,33 @@ def _sequence_metrics(values: np.ndarray, labels: np.ndarray) -> dict[str, Any]:
         "median_rms_epoch": median_index,
         "highest_rms_epoch": int(np.argmax(epoch_rms)),
         "first_label_transition_epoch": first_transition,
+        "largest_adjacent_rms_jump_epoch": adjacent_rms_jump,
         "labels": labels.tolist(),
     }
+
+
+def _characteristic_epochs(metrics: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return distinct, interpretable epochs selected from one sequence."""
+    candidates = [
+        ("lowest RMS", metrics["lowest_rms_epoch"]),
+        ("median RMS", metrics["median_rms_epoch"]),
+        ("highest RMS", metrics["highest_rms_epoch"]),
+        ("first label transition", metrics["first_label_transition_epoch"]),
+        ("largest adjacent RMS jump", metrics["largest_adjacent_rms_jump_epoch"]),
+    ]
+    selected: list[dict[str, Any]] = []
+    by_epoch: dict[int, dict[str, Any]] = {}
+    for reason, epoch in candidates:
+        if epoch is None:
+            continue
+        epoch_index = int(epoch)
+        if epoch_index not in by_epoch:
+            record = {"epoch": epoch_index, "reasons": [reason]}
+            by_epoch[epoch_index] = record
+            selected.append(record)
+        else:
+            by_epoch[epoch_index]["reasons"].append(reason)
+    return selected
 
 
 def _choose_sequences(entries: list[dict[str, Any]], count: int) -> list[dict[str, Any]]:
@@ -156,6 +182,68 @@ def _all_channel_heatmap(values: np.ndarray, labels: np.ndarray, output: Path, s
     plt.close(fig)
 
 
+def _characteristic_epoch_panel(
+    values: np.ndarray,
+    labels: np.ndarray,
+    metrics: dict[str, Any],
+    output: Path,
+    subject: int,
+    sequence: str,
+) -> None:
+    """Plot selected complete 30-second epochs with all channels as offset traces."""
+    selected = _characteristic_epochs(metrics)
+    if not selected:
+        return
+    n_columns = 2
+    n_rows = int(np.ceil(len(selected) / n_columns))
+    fig, axes = plt.subplots(n_rows, n_columns, figsize=(18, 4.8 * n_rows), squeeze=False, sharex=True)
+    sequence_scale = max(float(np.percentile(np.abs(values.astype(np.float64)), 99.5)), 1e-30)
+    time = np.arange(values.shape[-1]) / FS_HZ
+    epoch_rms = np.asarray(metrics["epoch_rms"], dtype=np.float64)
+    median_rms = max(float(np.median(epoch_rms)), 1e-30)
+    for panel_index, record in enumerate(selected):
+        ax = axes.flat[panel_index]
+        epoch = int(record["epoch"])
+        traces = values[epoch].astype(np.float64, copy=False)
+        for channel in range(traces.shape[0]):
+            centered = traces[channel] - float(np.median(traces[channel]))
+            displayed = np.clip(centered / sequence_scale, -1.25, 1.25) * 0.42 + channel
+            ax.plot(time, displayed, linewidth=0.65, label=f"C{channel}")
+        reasons = ", ".join(record["reasons"])
+        ax.set_title(
+            f"E{epoch:02d} · class {int(labels[epoch])} · {reasons}\n"
+            f"epoch RMS / sequence median = {epoch_rms[epoch] / median_rms:.2f}"
+        )
+        ax.set_xlim(0.0, values.shape[-1] / FS_HZ)
+        ax.set_ylim(-0.65, values.shape[1] - 0.35)
+        ax.set_yticks(range(values.shape[1]), [f"C{channel}" for channel in range(values.shape[1])])
+        ax.set_xlabel("time within epoch (s)")
+        ax.set_ylabel("channel (offset trace)")
+        ax.grid(axis="x", alpha=0.18)
+        ax.text(
+            0.995,
+            0.02,
+            "same sequence-wide amplitude scale",
+            transform=ax.transAxes,
+            ha="right",
+            va="bottom",
+            fontsize=8,
+            color="#555555",
+        )
+    for ax in axes.flat[len(selected) :]:
+        ax.axis("off")
+    handles, labels_for_legend = axes.flat[0].get_legend_handles_labels()
+    fig.legend(handles, labels_for_legend, ncol=8, loc="lower center", bbox_to_anchor=(0.5, 0.005), fontsize=9)
+    fig.suptitle(
+        f"Clean ISRUC medium · target subject {subject} · sequence {sequence}: characteristic complete epochs\n"
+        "Each panel is one full 30-second epoch; channels are vertically offset, not concatenated",
+        fontsize=14,
+    )
+    fig.subplots_adjust(left=0.07, right=0.98, bottom=0.09, top=0.90, hspace=0.34, wspace=0.16)
+    fig.savefig(output, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+
+
 def visualize_sequences(data_root: str | Path, output_dir: str | Path, subjects: list[int], sequences_per_subject: int = 2, channel: int = 0) -> dict[str, Any]:
     root = Path(data_root).resolve()
     output = Path(output_dir).resolve()
@@ -175,7 +263,9 @@ def visualize_sequences(data_root: str | Path, output_dir: str | Path, subjects:
         "",
         "每个 sequence 文件包含 20 个按时间排序的 30 秒 epoch；E00--E09 是 adaptation，E10--E19 是 held-out evaluation。这里读取原有 float32 数组，不在绘图脚本中重新滤波或重采样。睡眠标签仅写作 class 0--4，避免在没有核对上游映射时擅自赋予阶段名称。",
         "",
-        "每个入选 sequence 有两张图：`waveform-stack` 使用同一个 sequence-wide 尺度叠放 channel 0 的 20 条完整波形，因此可以比较 epoch 间真实相对振幅；`all-channels` 用 8 个热图查看每个通道的 20×30 秒变化。颜色深浅不能跨不同图片直接比较，因为每张图片使用自己的 robust scale。",
+        "每个入选 sequence 有三张图：`waveform-stack` 使用同一个 sequence-wide 尺度叠放 channel 0 的 20 条完整波形，因此可以比较 epoch 间真实相对振幅；`all-channels` 用 8 个热图查看每个通道的 20×30 秒变化；`characteristic-epochs` 单独放大具有代表性的完整 epoch。颜色深浅不能跨不同图片直接比较，因为每张图片使用自己的 robust scale。",
+        "",
+        "每个 sequence 还会生成 `characteristic-epochs` 图，自动放大低 RMS、中位 RMS、高 RMS、首次标签变化和最大相邻 RMS 跳变所在的完整 30 秒 epoch；如果多个规则选到同一个 epoch，图中会合并显示这些原因。通道在图中只做垂直错位，所有通道共用该 sequence 的 robust amplitude scale，因此可同时观察波形形状和相对振幅。",
         "",
         "选择规则优先保留睡眠标签转换最多的 sequence 和 epoch RMS 变化最大的 sequence。图中的 low/median/high RMS 只表示该 sequence 内的相对振幅，不自动等于坏数据或某种睡眠阶段。",
         "",
@@ -187,10 +277,20 @@ def visualize_sequences(data_root: str | Path, output_dir: str | Path, subjects:
         stem = f"subject-{subject}-sequence-{sequence}"
         waveform_name = f"{stem}-waveform-stack.png"
         channel_name = f"{stem}-all-channels.png"
+        characteristic_name = f"{stem}-characteristic-epochs.png"
         _waveform_stack(item["values"], item["labels"], item["metrics"], output / waveform_name, subject, sequence, channel)
         _all_channel_heatmap(item["values"], item["labels"], output / channel_name, subject, sequence)
+        _characteristic_epoch_panel(item["values"], item["labels"], item["metrics"], output / characteristic_name, subject, sequence)
         metrics = dict(item["metrics"])
-        record = {"subject": subject, "sequence": sequence, "selection_reason": item["selection_reason"], "metrics": metrics, "figures": [waveform_name, channel_name]}
+        characteristic_epochs = _characteristic_epochs(metrics)
+        record = {
+            "subject": subject,
+            "sequence": sequence,
+            "selection_reason": item["selection_reason"],
+            "metrics": metrics,
+            "characteristic_epochs": characteristic_epochs,
+            "figures": [waveform_name, channel_name, characteristic_name],
+        }
         serializable.append(record)
         explanation.extend([
             f"## Subject {subject}, sequence {sequence}",
@@ -199,6 +299,7 @@ def visualize_sequences(data_root: str | Path, output_dir: str | Path, subjects:
             "",
             f"- `{waveform_name}`：从上到下按 E00--E19 阅读。每条曲线都是 channel {channel} 的完整 30 秒原始输入；曲线颜色是 class code。右侧 RMS 轨迹用于定位振幅突变，空心标记表示第一次标签改变。先比较相邻 epoch 的形状，再检查高 RMS 是否只出现在单个 epoch，最后比较 adaptation 与 evaluation 两半。",
             f"- `{channel_name}`：每个子图对应一个通道，每一行对应一个 epoch。横向纹理表示 30 秒内部的波形变化，纵向连续纹理表示多个 epoch 的共同结构，孤立的深色行更可能是高振幅瞬态或伪迹。不同通道同时变化更像整体状态/增益变化，仅少数通道变化更像局部导联差异。",
+            f"- `{characteristic_name}`：每个面板是一个完整 30 秒 epoch，不是把多个 epoch 拼接起来；标题直接给出 E##、class、选择原因和 RMS 相对序列中位数。先看同一面板中 8 个通道是否同步出现突发/振荡，再比较不同面板的振幅与形状。它用于定位‘值得进一步分析的 epoch’，不能单独证明某个睡眠阶段或 LoP。",
             "",
         ])
     (output / "EXPLANATION.md").write_text("\n".join(explanation).rstrip() + "\n", encoding="utf-8")

@@ -30,6 +30,12 @@ class EEGSequenceVisualizationTests(unittest.TestCase):
         self.assertEqual(metrics["highest_rms_epoch"], 17)
         self.assertEqual(metrics["first_label_transition_epoch"], 10)
         self.assertEqual(metrics["label_transition_count"], 1)
+        self.assertEqual(metrics["largest_adjacent_rms_jump_epoch"], 17)
+        selected = module._characteristic_epochs(metrics)
+        selected_indices = [item["epoch"] for item in selected]
+        self.assertIn(3, selected_indices)
+        self.assertIn(17, selected_indices)
+        self.assertIn(10, selected_indices)
 
     def test_selection_keeps_complementary_sequences(self):
         module = _load_module()
@@ -51,8 +57,10 @@ class EEGSequenceVisualizationTests(unittest.TestCase):
             output = Path(directory)
             module._waveform_stack(values, labels, metrics, output / "stack.png", 2, "45", 0)
             module._all_channel_heatmap(values, labels, output / "channels.png", 2, "45")
+            module._characteristic_epoch_panel(values, labels, metrics, output / "characteristic.png", 2, "45")
             self.assertTrue((output / "stack.png").is_file())
             self.assertTrue((output / "channels.png").is_file())
+            self.assertTrue((output / "characteristic.png").is_file())
 
 
 if __name__ == "__main__":
