@@ -138,6 +138,63 @@ class PrepareEEGLoPConditionsTests(unittest.TestCase):
             self.assertEqual(target_record["other_channels_max_abs_error"], 0.0)
             np.testing.assert_array_equal(np.load(output / "target" / "3" / "label" / "0.npy", allow_pickle=False), [0, 1])
 
+    def test_target_montage_swap_is_orthogonal_and_records_matrix(self):
+        module = _load_module()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "input"
+            output = Path(directory) / "output"
+            self._dataset(root)
+            varying = np.arange(2 * 8 * 3000, dtype=np.float32).reshape(2, 8, 3000)
+            np.save(root / "target" / "3" / "data" / "0.npy", varying, allow_pickle=False)
+            module.prepare(root, output, "target_montage_swap")
+            original = np.load(root / "target" / "3" / "data" / "0.npy", allow_pickle=False)
+            derived = np.load(output / "target" / "3" / "data" / "0.npy", allow_pickle=False)
+            np.testing.assert_allclose(np.sum(original.astype(np.float64) ** 2, axis=1), np.sum(derived.astype(np.float64) ** 2, axis=1), rtol=1e-6)
+            manifest = json.loads((output / "manifest.json").read_text())
+            self.assertEqual(manifest["perturbation"]["type"], "signed_channel_permutation")
+            self.assertEqual(len(manifest["perturbation"]["matrix"]), 8)
+
+    def test_target_common_average_reference_is_zero_mean_per_sample(self):
+        module = _load_module()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "input"
+            output = Path(directory) / "output"
+            self._dataset(root)
+            varying = np.arange(2 * 8 * 3000, dtype=np.float32).reshape(2, 8, 3000)
+            np.save(root / "target" / "3" / "data" / "0.npy", varying, allow_pickle=False)
+            module.prepare(root, output, "target_common_average_reference")
+            derived = np.load(output / "target" / "3" / "data" / "0.npy", allow_pickle=False)
+            np.testing.assert_allclose(derived.mean(axis=1), 0.0, atol=1e-5)
+            manifest = json.loads((output / "manifest.json").read_text())
+            self.assertEqual(manifest["perturbation"]["type"], "common_average_reference")
+
+    def test_target_channel_rotation_preserves_total_channel_energy(self):
+        module = _load_module()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "input"
+            output = Path(directory) / "output"
+            self._dataset(root)
+            varying = np.arange(2 * 8 * 3000, dtype=np.float32).reshape(2, 8, 3000)
+            np.save(root / "target" / "3" / "data" / "0.npy", varying, allow_pickle=False)
+            module.prepare(root, output, "target_channel_rotation")
+            original = np.load(root / "target" / "3" / "data" / "0.npy", allow_pickle=False)
+            derived = np.load(output / "target" / "3" / "data" / "0.npy", allow_pickle=False)
+            np.testing.assert_allclose(np.sum(original.astype(np.float64) ** 2, axis=1), np.sum(derived.astype(np.float64) ** 2, axis=1), rtol=1e-5)
+            manifest = json.loads((output / "manifest.json").read_text())
+            self.assertEqual(manifest["perturbation"]["type"], "orthogonal_channel_rotation")
+
+    def test_target_time_reverse_preserves_epoch_shape_and_rms(self):
+        module = _load_module()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "input"
+            output = Path(directory) / "output"
+            self._dataset(root)
+            module.prepare(root, output, "target_time_reverse")
+            original = np.load(root / "target" / "3" / "data" / "0.npy", allow_pickle=False)
+            derived = np.load(output / "target" / "3" / "data" / "0.npy", allow_pickle=False)
+            self.assertEqual(derived.shape, original.shape)
+            np.testing.assert_allclose(np.sqrt(np.mean(original ** 2, axis=(1, 2))), np.sqrt(np.mean(derived ** 2, axis=(1, 2))), rtol=1e-6)
+
 
 if __name__ == "__main__":
     unittest.main()

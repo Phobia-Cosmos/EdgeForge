@@ -42,6 +42,27 @@ its expected waveform correlation is below the preferred 0.98 utility gate.
     labels and epoch boundaries. This approximates a reversed differential
     lead or reference polarity; the selected channel is recorded in the
     manifest.
+
+``target_montage_swap``
+    Apply a fixed signed channel permutation to target epochs. This is an
+    orthogonal montage change (no total-energy or frequency rescaling) that
+    stresses channel-specific learned features while preserving the epoch
+    labels and the eight-channel tensor contract.
+
+``target_common_average_reference``
+    Subtract the mean of the eight recorded channels at each sample for target
+    epochs. This models a target-only common-average reference (CAR), a
+    standard EEG re-referencing operation that changes signed cross-channel
+    structure while preserving labels and epoch coordinates.
+
+``target_channel_rotation``
+    Apply a fixed orthogonal rotation across the eight target channels. This
+    preserves each epoch's total channel energy and temporal frequency bins,
+    while changing the channel geometry seen by channel-specific filters.
+
+``target_time_reverse``
+    Reverse samples within each target epoch. RMS and the magnitude spectrum
+    are preserved, but directional temporal-filter responses are changed.
 """
 
 from __future__ import annotations
@@ -77,6 +98,8 @@ BASELINE_DRIFT_CONDITIONS = {
     "target_baseline_drift10": 0.10,
 }
 BASELINE_DRIFT_FREQUENCY_HZ = 0.1
+MONTAGE_SWAP_PERMUTATION = (1, 0, 3, 2, 5, 4, 7, 6)
+MONTAGE_SWAP_SIGNS = (1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0)
 SUPPORTED_CONDITIONS = {
     "rms_equalized",
     "target_gain_drift10",
@@ -84,6 +107,10 @@ SUPPORTED_CONDITIONS = {
     *NOISE_CONDITIONS,
     *CROSSTALK_CONDITIONS,
     *BASELINE_DRIFT_CONDITIONS,
+    "target_montage_swap",
+    "target_common_average_reference",
+    "target_channel_rotation",
+    "target_time_reverse",
 }
 
 
@@ -162,6 +189,64 @@ def _channel_crosstalk(values: np.ndarray, fraction: float) -> tuple[np.ndarray,
     return transformed.astype(np.float32, copy=False), matrix
 
 
+def _montage_swap_matrix(channels: int) -> np.ndarray:
+    """Return the fixed signed permutation used for the montage condition."""
+    if int(channels) != len(MONTAGE_SWAP_PERMUTATION):
+        raise ValueError(f"montage swap expects {len(MONTAGE_SWAP_PERMUTATION)} channels, got {channels}")
+    matrix = np.zeros((channels, channels), dtype=np.float32)
+    for output_channel, input_channel in enumerate(MONTAGE_SWAP_PERMUTATION):
+        matrix[output_channel, input_channel] = np.float32(MONTAGE_SWAP_SIGNS[output_channel])
+    return matrix
+
+
+def _montage_swap(values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    if values.ndim != 3:
+        raise ValueError(f"expected [epochs, channels, samples], got {values.shape}")
+    matrix = _montage_swap_matrix(values.shape[1])
+    transformed = np.einsum("ij,ejt->eit", matrix, values, optimize=True)
+    return transformed.astype(np.float32, copy=False), matrix
+
+
+def _common_average_reference(values: np.ndarray) -> np.ndarray:
+    if values.ndim != 3:
+        raise ValueError(f"expected [epochs, channels, samples], got {values.shape}")
+    return (values - values.mean(axis=1, keepdims=True)).astype(np.float32, copy=False)
+
+
+def _channel_rotation_matrix(channels: int) -> np.ndarray:
+    """Return a deterministic orthogonal Hadamard-like channel rotation."""
+    if int(channels) != 8:
+        raise ValueError(f"channel rotation expects 8 channels, got {channels}")
+    matrix = np.asarray(
+        [
+            [1, 1, 1, 1, 1, 1, 1, 1],
+            [1, -1, 1, -1, 1, -1, 1, -1],
+            [1, 1, -1, -1, 1, 1, -1, -1],
+            [1, -1, -1, 1, 1, -1, -1, 1],
+            [1, 1, 1, 1, -1, -1, -1, -1],
+            [1, -1, 1, -1, -1, 1, -1, 1],
+            [1, 1, -1, -1, -1, -1, 1, 1],
+            [1, -1, -1, 1, -1, 1, 1, -1],
+        ],
+        dtype=np.float32,
+    )
+    return matrix / np.float32(np.sqrt(8.0))
+
+
+def _channel_rotation(values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    if values.ndim != 3:
+        raise ValueError(f"expected [epochs, channels, samples], got {values.shape}")
+    matrix = _channel_rotation_matrix(values.shape[1])
+    transformed = np.einsum("ij,ejt->eit", matrix, values, optimize=True)
+    return transformed.astype(np.float32, copy=False), matrix
+
+
+def _time_reverse(values: np.ndarray) -> np.ndarray:
+    if values.ndim != 3:
+        raise ValueError(f"expected [epochs, channels, samples], got {values.shape}")
+    return values[..., ::-1].copy().astype(np.float32, copy=False)
+
+
 def _baseline_drift(values: np.ndarray, seed: int, fraction: float) -> np.ndarray:
     """Add a zero-mean 0.1 Hz baseline component scaled per epoch/channel."""
     if values.ndim != 3:
@@ -206,6 +291,14 @@ def _copy_or_transform(
             raise ValueError(f"channel index {channel_index} is outside {values.shape[1]} channels")
         transformed = values.copy()
         transformed[:, int(channel_index), :] *= -1.0
+    elif condition == "target_montage_swap" and group == "target":
+        transformed, _matrix = _montage_swap(values)
+    elif condition == "target_common_average_reference" and group == "target":
+        transformed = _common_average_reference(values)
+    elif condition == "target_channel_rotation" and group == "target":
+        transformed, _matrix = _channel_rotation(values)
+    elif condition == "target_time_reverse" and group == "target":
+        transformed = _time_reverse(values)
     elif condition in CROSSTALK_CONDITIONS and group == "target":
         transformed, _matrix = _channel_crosstalk(values, CROSSTALK_CONDITIONS[condition])
     elif condition in BASELINE_DRIFT_CONDITIONS and group == "target":
@@ -333,6 +426,35 @@ def prepare(
         perturbation = {
             "type": "channel_polarity_inversion",
             "channel_index": int(channel_index),
+            "target_only": True,
+            "scope": "all epochs and files",
+        }
+    elif condition == "target_montage_swap":
+        perturbation = {
+            "type": "signed_channel_permutation",
+            "permutation_output_to_input": list(MONTAGE_SWAP_PERMUTATION),
+            "signs_by_output_channel": list(MONTAGE_SWAP_SIGNS),
+            "matrix": _montage_swap_matrix(8).tolist(),
+            "target_only": True,
+            "scope": "all epochs and files",
+        }
+    elif condition == "target_common_average_reference":
+        perturbation = {
+            "type": "common_average_reference",
+            "reference": "mean across all eight channels at each sample",
+            "target_only": True,
+            "scope": "all epochs and files",
+        }
+    elif condition == "target_channel_rotation":
+        perturbation = {
+            "type": "orthogonal_channel_rotation",
+            "matrix": _channel_rotation_matrix(8).tolist(),
+            "target_only": True,
+            "scope": "all epochs and files",
+        }
+    elif condition == "target_time_reverse":
+        perturbation = {
+            "type": "within_epoch_time_reversal",
             "target_only": True,
             "scope": "all epochs and files",
         }
