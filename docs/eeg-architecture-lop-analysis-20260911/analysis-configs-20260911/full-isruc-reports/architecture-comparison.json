@@ -1,0 +1,350 @@
+{
+  "schema_version": 1,
+  "analysis": "eeg-architecture-lop-comparison-v1",
+  "baseline": "tcn",
+  "budgets": [
+    5,
+    10,
+    25,
+    50
+  ],
+  "architectures": {
+    "tcn": "/public/home/u43077/lzh/ai/edgeforge-results/eeg-architecture-lop/full-isruc-tcn-v1/summary.json",
+    "brainuicl": "/public/home/u43077/lzh/ai/edgeforge-results/eeg-architecture-lop/full-isruc-brainuicl-v1/summary.json"
+  },
+  "design_fingerprint": {
+    "dataset": "ISRUC",
+    "source_subjects": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60
+    ],
+    "target_subject_order": [
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80
+    ],
+    "retention_subjects": [
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99,
+      100
+    ],
+    "target_split": "first 10 epochs per file for adaptation; last 10 for held-out evaluation",
+    "input_shape": [
+      8,
+      3000
+    ],
+    "classes": 5,
+    "source_epochs": 3,
+    "source_lr": 0.002,
+    "budgets": [
+      0,
+      5,
+      10,
+      25,
+      50
+    ],
+    "adapt_lr": 0.001,
+    "batch_size": 32,
+    "fresh_mode": "random-initialization-at-each-target-stage",
+    "warm_mode": "carried-after-previous-stage-final-budget",
+    "adaptation_strategy": "plain",
+    "replay_ratio": 0.0,
+    "l2_sp_lambda": 0.0
+  },
+  "stats": {
+    "tcn": {
+      "5": {
+        "fresh_gap_mean": 0.07197590827321013,
+        "positive": 35,
+        "zero": 8,
+        "negative": 17,
+        "count": 60,
+        "minimum": -0.25897437147796154,
+        "maximum": 0.5219512321054935,
+        "warm_accuracy_mean": 0.18272654575606187,
+        "fresh_accuracy_mean": 0.254702454029272,
+        "warm_retention_accuracy_mean": 0.18349849035342533,
+        "fresh_retention_accuracy_mean": 0.2440600238740444
+      },
+      "10": {
+        "fresh_gap_mean": 0.08770444833983977,
+        "positive": 34,
+        "zero": 10,
+        "negative": 16,
+        "count": 60,
+        "minimum": -0.1309523805975914,
+        "maximum": 0.5219512321054935,
+        "warm_accuracy_mean": 0.19937791340053082,
+        "fresh_accuracy_mean": 0.2870823617403706,
+        "warm_retention_accuracy_mean": 0.19637787900865078,
+        "fresh_retention_accuracy_mean": 0.2682785967985789
+      },
+      "25": {
+        "fresh_gap_mean": 0.115882832929492,
+        "positive": 42,
+        "zero": 4,
+        "negative": 14,
+        "count": 60,
+        "minimum": -0.18571428954601288,
+        "maximum": 0.5219512321054935,
+        "warm_accuracy_mean": 0.19137077033519745,
+        "fresh_accuracy_mean": 0.3072536032646894,
+        "warm_retention_accuracy_mean": 0.18373254177471002,
+        "fresh_retention_accuracy_mean": 0.2980039647469918
+      },
+      "50": {
+        "fresh_gap_mean": 0.06551080998033285,
+        "positive": 33,
+        "zero": 6,
+        "negative": 21,
+        "count": 60,
+        "minimum": -0.21904760599136353,
+        "maximum": 0.5219512321054935,
+        "warm_accuracy_mean": 0.20974327108512322,
+        "fresh_accuracy_mean": 0.27525408106545607,
+        "warm_retention_accuracy_mean": 0.19966402476032574,
+        "fresh_retention_accuracy_mean": 0.25223291913668316
+      }
+    },
+    "brainuicl": {
+      "5": {
+        "fresh_gap_mean": -0.20612140720089275,
+        "positive": 7,
+        "zero": 0,
+        "negative": 53,
+        "count": 60,
+        "minimum": -0.5102564096450806,
+        "maximum": 0.28205128014087677,
+        "warm_accuracy_mean": 0.5426419568558534,
+        "fresh_accuracy_mean": 0.33652054965496064,
+        "warm_retention_accuracy_mean": 0.5474386562903722,
+        "fresh_retention_accuracy_mean": 0.30620517320930957
+      },
+      "10": {
+        "fresh_gap_mean": -0.1948559505244096,
+        "positive": 9,
+        "zero": 0,
+        "negative": 51,
+        "count": 60,
+        "minimum": -0.5547619014978409,
+        "maximum": 0.1292683184146881,
+        "warm_accuracy_mean": 0.5380069822072983,
+        "fresh_accuracy_mean": 0.3431510316828887,
+        "warm_retention_accuracy_mean": 0.5241449569662412,
+        "fresh_retention_accuracy_mean": 0.3123159697900216
+      },
+      "25": {
+        "fresh_gap_mean": -0.33117617343862854,
+        "positive": 3,
+        "zero": 0,
+        "negative": 57,
+        "count": 60,
+        "minimum": -0.7279070019721985,
+        "maximum": 0.15609756112098694,
+        "warm_accuracy_mean": 0.6667570695281029,
+        "fresh_accuracy_mean": 0.33558089608947433,
+        "warm_retention_accuracy_mean": 0.6202227254708608,
+        "fresh_retention_accuracy_mean": 0.3144413001835346
+      },
+      "50": {
+        "fresh_gap_mean": -0.4087571885436773,
+        "positive": 1,
+        "zero": 0,
+        "negative": 59,
+        "count": 60,
+        "minimum": -0.6232557892799377,
+        "maximum": 0.022916674613952637,
+        "warm_accuracy_mean": 0.716431525349617,
+        "fresh_accuracy_mean": 0.3076743368059397,
+        "warm_retention_accuracy_mean": 0.6572640622655551,
+        "fresh_retention_accuracy_mean": 0.2896668570737044
+      }
+    }
+  },
+  "paired_deltas_vs_baseline": {
+    "brainuicl": {
+      "5": {
+        "fresh_gap_mean_delta": -0.2780973154741029,
+        "fresh_gap_improved_cells": 3,
+        "fresh_gap_worsened_cells": 56,
+        "warm_retention_accuracy_mean_delta": 0.3639401659369469,
+        "count": 60
+      },
+      "10": {
+        "fresh_gap_mean_delta": -0.2825603988642494,
+        "fresh_gap_improved_cells": 4,
+        "fresh_gap_worsened_cells": 56,
+        "warm_retention_accuracy_mean_delta": 0.3277670779575904,
+        "count": 60
+      },
+      "25": {
+        "fresh_gap_mean_delta": -0.4470590063681205,
+        "fresh_gap_improved_cells": 1,
+        "fresh_gap_worsened_cells": 59,
+        "warm_retention_accuracy_mean_delta": 0.4364901836961508,
+        "count": 60
+      },
+      "50": {
+        "fresh_gap_mean_delta": -0.4742679985240102,
+        "fresh_gap_improved_cells": 1,
+        "fresh_gap_worsened_cells": 59,
+        "warm_retention_accuracy_mean_delta": 0.4576000375052293,
+        "count": 60
+      }
+    }
+  },
+  "gates": {
+    "tcn": {
+      "5": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 6,
+        "stage_count": 20,
+        "path": "/public/home/u43077/lzh/ai/edgeforge-results/eeg-architecture-lop/full-isruc-tcn-v1/audit-budgets/budget-5/gate/tcn.json"
+      },
+      "10": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 6,
+        "stage_count": 20,
+        "path": "/public/home/u43077/lzh/ai/edgeforge-results/eeg-architecture-lop/full-isruc-tcn-v1/audit-budgets/budget-10/gate/tcn.json"
+      },
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 10,
+        "stage_count": 20,
+        "path": "/public/home/u43077/lzh/ai/edgeforge-results/eeg-architecture-lop/full-isruc-tcn-v1/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 4,
+        "stage_count": 20,
+        "path": "/public/home/u43077/lzh/ai/edgeforge-results/eeg-architecture-lop/full-isruc-tcn-v1/audit-budgets/budget-50/gate/tcn.json"
+      }
+    },
+    "brainuicl": {
+      "5": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 0,
+        "stage_count": 20,
+        "path": "/public/home/u43077/lzh/ai/edgeforge-results/eeg-architecture-lop/full-isruc-brainuicl-v1/audit-budgets/budget-5/gate/brainuicl.json"
+      },
+      "10": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 1,
+        "stage_count": 20,
+        "path": "/public/home/u43077/lzh/ai/edgeforge-results/eeg-architecture-lop/full-isruc-brainuicl-v1/audit-budgets/budget-10/gate/brainuicl.json"
+      },
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 0,
+        "stage_count": 20,
+        "path": "/public/home/u43077/lzh/ai/edgeforge-results/eeg-architecture-lop/full-isruc-brainuicl-v1/audit-budgets/budget-25/gate/brainuicl.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 0,
+        "stage_count": 20,
+        "path": "/public/home/u43077/lzh/ai/edgeforge-results/eeg-architecture-lop/full-isruc-brainuicl-v1/audit-budgets/budget-50/gate/brainuicl.json"
+      }
+    }
+  },
+  "scientific_conclusion_allowed": false,
+  "interpretation": "fresh-gap is the LoP outcome; retention remains separate and mixed-direction cells block a LoP claim"
+}

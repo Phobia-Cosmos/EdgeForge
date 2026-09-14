@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "analysis": "eeg-drift-visualization-v1",
+  "data_root": "/home/undefined/UbuntuData/datasets/edgeforge-isruc-medium-rms-equalized-v1",
+  "output_dir": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-rms-equalized-tcn-v1/visualizations-v1",
+  "sampling_rate_hz": 100.0,
+  "groups": {
+    "source": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      9,
+      10,
+      21
+    ],
+    "target": [
+      2,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "retention": [
+      5,
+      18,
+      19,
+      20
+    ]
+  },
+  "pca": {
+    "rows": 1000,
+    "features": 13,
+    "explained_variance_ratio": [
+      0.6749688130103252,
+      0.10423733920944037
+    ]
+  },
+  "quantitative_drift": {
+    "target_rms_by_subject": {
+      "2": 2.3696297830611e-06,
+      "11": 2.3696297830611e-06,
+      "12": 2.3696304651821265e-06,
+      "13": 2.3696297830611e-06,
+      "14": 2.369630237808451e-06,
+      "15": 2.369630237808451e-06,
+      "16": 2.3696304651821265e-06,
+      "17": 2.3696304651821265e-06
+    },
+    "target_rms_max_min_ratio": 1.0000002878597456,
+    "target_rms_log10_span": 1.25015881202728e-07,
+    "target_band_fraction_by_subject": {
+      "2": {
+        "delta": 0.7025138825518428,
+        "theta": 0.09797068952743726,
+        "alpha": 0.07935513759132319,
+        "sigma": 0.03886671046574258,
+        "beta": 0.05896329867801789
+      },
+      "11": {
+        "delta": 0.5121286062618188,
+        "theta": 0.36183034026101574,
+        "alpha": 0.06414286156187465,
+        "sigma": 0.012427301501055768,
+        "beta": 0.02839795089957564
+      },
+      "12": {
+        "delta": 0.8045435784027078,
+        "theta": 0.08569886745004274,
+        "alpha": 0.046367700305034544,
+        "sigma": 0.013964948405059156,
+        "beta": 0.0341348098045184
+      },
+      "13": {
+        "delta": 0.7395386348400456,
+        "theta": 0.08809146659977726,
+        "alpha": 0.0655968921033058,
+        "sigma": 0.025600742106011265,
+        "beta": 0.058413525762923434
+      },
+      "14": {
+        "delta": 0.6586332881406791,
+        "theta": 0.11866839710990028,
+        "alpha": 0.1196904972053807,
+        "sigma": 0.027579545374318535,
+        "beta": 0.05079134215158905
+      },
+      "15": {
+        "delta": 0.6891493764111558,
+        "theta": 0.11455691192984145,
+        "alpha": 0.06647902908963095,
+        "sigma": 0.023094000575070505,
+        "beta": 0.07151610866317662
+      },
+      "16": {
+        "delta": 0.6304800354171156,
+        "theta": 0.21368461010502554,
+        "alpha": 0.07375123287285822,
+        "sigma": 0.015325444316611791,
+        "beta": 0.04352502037876447
+      },
+      "17": {
+        "delta": 0.6411631898168522,
+        "theta": 0.19462398805970627,
+        "alpha": 0.06319688091657735,
+        "sigma": 0.014946599447915902,
+        "beta": 0.054388407981665506
+      }
+    },
+    "target_spectral_js_to_median": {
+      "2": 0.0055910388022332004,
+      "11": 0.047188952690785296,
+      "12": 0.008617614460391412,
+      "13": 0.003918886519762576,
+      "14": 0.004996089686945278,
+      "15": 0.0059370033321099955,
+      "16": 0.012372851448618001,
+      "17": 0.007900782092020638
+    },
+    "spectral_distance_definition": "Jensen-Shannon divergence of normalized 0.5-40 Hz mean channel PSD to the target-subject median PSD"
+  },
+  "figures": [
+    "eeg-drift-waveforms.png",
+    "eeg-drift-spectra.png",
+    "eeg-drift-rms-trajectory.png",
+    "eeg-drift-pca.png",
+    "eeg-drift-labels.png"
+  ],
+  "scientific_conclusion_allowed": false
+}

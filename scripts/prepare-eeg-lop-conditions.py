@@ -63,6 +63,11 @@ its expected waveform correlation is below the preferred 0.98 utility gate.
 ``target_time_reverse``
     Reverse samples within each target epoch. RMS and the magnitude spectrum
     are preserved, but directional temporal-filter responses are changed.
+
+``target_subject_montage_cycle``
+    Apply a different fixed signed channel permutation to each target subject.
+    The mapping is constant across that subject's files, preserving sequence
+    continuity while creating a controlled cross-subject montage conflict.
 """
 
 from __future__ import annotations
@@ -100,6 +105,16 @@ BASELINE_DRIFT_CONDITIONS = {
 BASELINE_DRIFT_FREQUENCY_HZ = 0.1
 MONTAGE_SWAP_PERMUTATION = (1, 0, 3, 2, 5, 4, 7, 6)
 MONTAGE_SWAP_SIGNS = (1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0)
+SUBJECT_MONTAGE_CYCLE = (
+    ((0, 1, 2, 3, 4, 5, 6, 7), (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)),
+    ((1, 0, 3, 2, 5, 4, 7, 6), (1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0)),
+    ((2, 3, 0, 1, 6, 7, 4, 5), (1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0)),
+    ((3, 2, 1, 0, 7, 6, 5, 4), (1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0)),
+    ((4, 5, 6, 7, 0, 1, 2, 3), (1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0)),
+    ((5, 4, 7, 6, 1, 0, 3, 2), (1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0)),
+    ((6, 7, 4, 5, 2, 3, 0, 1), (1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, 1.0)),
+    ((7, 6, 5, 4, 3, 2, 1, 0), (1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0)),
+)
 SUPPORTED_CONDITIONS = {
     "rms_equalized",
     "target_gain_drift10",
@@ -111,6 +126,7 @@ SUPPORTED_CONDITIONS = {
     "target_common_average_reference",
     "target_channel_rotation",
     "target_time_reverse",
+    "target_subject_montage_cycle",
 }
 
 
@@ -247,6 +263,24 @@ def _time_reverse(values: np.ndarray) -> np.ndarray:
     return values[..., ::-1].copy().astype(np.float32, copy=False)
 
 
+def _subject_montage_matrix(subject: int, channels: int) -> np.ndarray:
+    if int(channels) != 8:
+        raise ValueError(f"subject montage cycle expects 8 channels, got {channels}")
+    permutation, signs = SUBJECT_MONTAGE_CYCLE[(int(subject) - 1) % len(SUBJECT_MONTAGE_CYCLE)]
+    matrix = np.zeros((channels, channels), dtype=np.float32)
+    for output_channel, input_channel in enumerate(permutation):
+        matrix[output_channel, input_channel] = np.float32(signs[output_channel])
+    return matrix
+
+
+def _subject_montage_cycle(values: np.ndarray, subject: int) -> tuple[np.ndarray, np.ndarray]:
+    if values.ndim != 3:
+        raise ValueError(f"expected [epochs, channels, samples], got {values.shape}")
+    matrix = _subject_montage_matrix(subject, values.shape[1])
+    transformed = np.einsum("ij,ejt->eit", matrix, values, optimize=True)
+    return transformed.astype(np.float32, copy=False), matrix
+
+
 def _baseline_drift(values: np.ndarray, seed: int, fraction: float) -> np.ndarray:
     """Add a zero-mean 0.1 Hz baseline component scaled per epoch/channel."""
     if values.ndim != 3:
@@ -299,6 +333,8 @@ def _copy_or_transform(
         transformed, _matrix = _channel_rotation(values)
     elif condition == "target_time_reverse" and group == "target":
         transformed = _time_reverse(values)
+    elif condition == "target_subject_montage_cycle" and group == "target":
+        transformed, _matrix = _subject_montage_cycle(values, subject)
     elif condition in CROSSTALK_CONDITIONS and group == "target":
         transformed, _matrix = _channel_crosstalk(values, CROSSTALK_CONDITIONS[condition])
     elif condition in BASELINE_DRIFT_CONDITIONS and group == "target":
@@ -457,6 +493,14 @@ def prepare(
             "type": "within_epoch_time_reversal",
             "target_only": True,
             "scope": "all epochs and files",
+        }
+    elif condition == "target_subject_montage_cycle":
+        perturbation = {
+            "type": "subject_specific_signed_channel_permutation",
+            "mapping_rule": "cycle indexed by (subject-1) modulo 8; fixed across each subject's files",
+            "target_only": True,
+            "scope": "all epochs and files",
+            "subject_matrices": {str(subject): _subject_montage_matrix(subject, 8).tolist() for subject in groups["target"]},
         }
     elif condition == "rms_equalized":
         perturbation = {

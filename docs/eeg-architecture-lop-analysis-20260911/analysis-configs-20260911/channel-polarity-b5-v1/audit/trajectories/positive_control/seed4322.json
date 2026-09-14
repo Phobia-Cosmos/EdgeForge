@@ -1,0 +1,850 @@
+{
+  "schema_version": 1,
+  "instrumentation": "edgeforge-eeg-continuous-trajectory-v1",
+  "status": "succeeded",
+  "experiment_id": "eeg-continuous-positive_control-seed4322",
+  "spec": {
+    "experiment_id": "eeg-continuous-positive_control-seed4322",
+    "workload": "raeeg-lop",
+    "protocol": "eeg-continuous-lop-v1",
+    "method": "positive_control",
+    "seed": 4322,
+    "dataset": {
+      "name": "edgeforge-synthetic-eeg-channel-polarity-v1"
+    },
+    "model": {
+      "name": "positive_control",
+      "parameter_count": 154
+    },
+    "model_structure": {
+      "name": "positive_control",
+      "parameter_count": 154
+    },
+    "subject": "continuous-target-stream",
+    "split": "first10-adapt-last10-heldout",
+    "task_order": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "probe_budget": 5,
+    "optimizer": {
+      "name": "Adam",
+      "scope": "target-train-only",
+      "state_persisted": false
+    },
+    "learning_rate": 0.005,
+    "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+    "runner": {
+      "mode": "import",
+      "adapter": "eeg-continuous-lop-v1"
+    },
+    "metadata": {
+      "comparison_group": "ISRUC-medium-continuous-final5",
+      "dataset": {
+        "name": "edgeforge-synthetic-eeg-channel-polarity-v1"
+      },
+      "subject": "continuous-target-stream",
+      "split": "first10-adapt-last10-heldout",
+      "task_order": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "probe_budget": 5,
+      "optimizer": {
+        "name": "Adam",
+        "scope": "target-train-only",
+        "state_persisted": false
+      },
+      "learning_rate": 0.005,
+      "model_structure": {
+        "name": "positive_control",
+        "parameter_count": 154
+      },
+      "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+      "scientific_conclusion_allowed": false
+    }
+  },
+  "metrics": [
+    {
+      "name": "task.plasticity.fresh_gap",
+      "value": 0.4609375,
+      "step": 1,
+      "context": {
+        "source_stage": 0,
+        "target_stage": 1,
+        "target_subject": 4,
+        "stage_index": 0,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "outcome"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_accuracy",
+      "value": 0.98046875,
+      "step": 1,
+      "context": {
+        "source_stage": 0,
+        "target_stage": 1,
+        "target_subject": 4,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_loss",
+      "value": 0.0398012432269752,
+      "step": 1,
+      "context": {
+        "source_stage": 0,
+        "target_stage": 1,
+        "target_subject": 4,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_macro_f1",
+      "value": 0.9804660674225891,
+      "step": 1,
+      "context": {
+        "source_stage": 0,
+        "target_stage": 1,
+        "target_subject": 4,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_accuracy",
+      "value": 0.54296875,
+      "step": 1,
+      "context": {
+        "source_stage": 0,
+        "target_stage": 1,
+        "target_subject": 4,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_loss",
+      "value": 0.6969926357269287,
+      "step": 1,
+      "context": {
+        "source_stage": 0,
+        "target_stage": 1,
+        "target_subject": 4,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_macro_f1",
+      "value": 0.5154574132492113,
+      "step": 1,
+      "context": {
+        "source_stage": 0,
+        "target_stage": 1,
+        "target_subject": 4,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.plasticity.fresh_gap",
+      "value": 0.4609375,
+      "step": 2,
+      "context": {
+        "source_stage": 1,
+        "target_stage": 2,
+        "target_subject": 5,
+        "stage_index": 1,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "outcome"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_accuracy",
+      "value": 0.97265625,
+      "step": 2,
+      "context": {
+        "source_stage": 1,
+        "target_stage": 2,
+        "target_subject": 5,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_loss",
+      "value": 0.05474077584221959,
+      "step": 2,
+      "context": {
+        "source_stage": 1,
+        "target_stage": 2,
+        "target_subject": 5,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_macro_f1",
+      "value": 0.97265583276112,
+      "step": 2,
+      "context": {
+        "source_stage": 1,
+        "target_stage": 2,
+        "target_subject": 5,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_accuracy",
+      "value": 0.390625,
+      "step": 2,
+      "context": {
+        "source_stage": 1,
+        "target_stage": 2,
+        "target_subject": 5,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_loss",
+      "value": 0.7444827556610107,
+      "step": 2,
+      "context": {
+        "source_stage": 1,
+        "target_stage": 2,
+        "target_subject": 5,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_macro_f1",
+      "value": 0.37376905224863577,
+      "step": 2,
+      "context": {
+        "source_stage": 1,
+        "target_stage": 2,
+        "target_subject": 5,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.plasticity.fresh_gap",
+      "value": 0.6015625,
+      "step": 3,
+      "context": {
+        "source_stage": 2,
+        "target_stage": 3,
+        "target_subject": 6,
+        "stage_index": 2,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "outcome"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_accuracy",
+      "value": 0.96484375,
+      "step": 3,
+      "context": {
+        "source_stage": 2,
+        "target_stage": 3,
+        "target_subject": 6,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_loss",
+      "value": 0.07942770887166262,
+      "step": 3,
+      "context": {
+        "source_stage": 2,
+        "target_stage": 3,
+        "target_subject": 6,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_macro_f1",
+      "value": 0.9648303338370656,
+      "step": 3,
+      "context": {
+        "source_stage": 2,
+        "target_stage": 3,
+        "target_subject": 6,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_accuracy",
+      "value": 0.37109375,
+      "step": 3,
+      "context": {
+        "source_stage": 2,
+        "target_stage": 3,
+        "target_subject": 6,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_loss",
+      "value": 0.7632261961698532,
+      "step": 3,
+      "context": {
+        "source_stage": 2,
+        "target_stage": 3,
+        "target_subject": 6,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_macro_f1",
+      "value": 0.36830812144619673,
+      "step": 3,
+      "context": {
+        "source_stage": 2,
+        "target_stage": 3,
+        "target_subject": 6,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.plasticity.fresh_gap",
+      "value": 0.421875,
+      "step": 4,
+      "context": {
+        "source_stage": 3,
+        "target_stage": 4,
+        "target_subject": 7,
+        "stage_index": 3,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "outcome"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_accuracy",
+      "value": 0.96484375,
+      "step": 4,
+      "context": {
+        "source_stage": 3,
+        "target_stage": 4,
+        "target_subject": 7,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_loss",
+      "value": 0.10131692420691252,
+      "step": 4,
+      "context": {
+        "source_stage": 3,
+        "target_stage": 4,
+        "target_subject": 7,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_macro_f1",
+      "value": 0.9648174446836777,
+      "step": 4,
+      "context": {
+        "source_stage": 3,
+        "target_stage": 4,
+        "target_subject": 7,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_accuracy",
+      "value": 0.50390625,
+      "step": 4,
+      "context": {
+        "source_stage": 3,
+        "target_stage": 4,
+        "target_subject": 7,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_loss",
+      "value": 0.7040475010871887,
+      "step": 4,
+      "context": {
+        "source_stage": 3,
+        "target_stage": 4,
+        "target_subject": 7,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_macro_f1",
+      "value": 0.3838573350768473,
+      "step": 4,
+      "context": {
+        "source_stage": 3,
+        "target_stage": 4,
+        "target_subject": 7,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.plasticity.fresh_gap",
+      "value": 0.53125,
+      "step": 5,
+      "context": {
+        "source_stage": 4,
+        "target_stage": 5,
+        "target_subject": 8,
+        "stage_index": 4,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "outcome"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_accuracy",
+      "value": 0.95703125,
+      "step": 5,
+      "context": {
+        "source_stage": 4,
+        "target_stage": 5,
+        "target_subject": 8,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_loss",
+      "value": 0.1045245872810483,
+      "step": 5,
+      "context": {
+        "source_stage": 4,
+        "target_stage": 5,
+        "target_subject": 8,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_macro_f1",
+      "value": 0.9570148524675246,
+      "step": 5,
+      "context": {
+        "source_stage": 4,
+        "target_stage": 5,
+        "target_subject": 8,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_accuracy",
+      "value": 0.37890625,
+      "step": 5,
+      "context": {
+        "source_stage": 4,
+        "target_stage": 5,
+        "target_subject": 8,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_loss",
+      "value": 0.7448466420173645,
+      "step": 5,
+      "context": {
+        "source_stage": 4,
+        "target_stage": 5,
+        "target_subject": 8,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_macro_f1",
+      "value": 0.3777573950928686,
+      "step": 5,
+      "context": {
+        "source_stage": 4,
+        "target_stage": 5,
+        "target_subject": 8,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.plasticity.fresh_gap",
+      "value": 0.5859375,
+      "step": 6,
+      "context": {
+        "source_stage": 5,
+        "target_stage": 6,
+        "target_subject": 9,
+        "stage_index": 5,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "outcome"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_accuracy",
+      "value": 0.94921875,
+      "step": 6,
+      "context": {
+        "source_stage": 5,
+        "target_stage": 6,
+        "target_subject": 9,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_loss",
+      "value": 0.12311703711748123,
+      "step": 6,
+      "context": {
+        "source_stage": 5,
+        "target_stage": 6,
+        "target_subject": 9,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_macro_f1",
+      "value": 0.9492179751277943,
+      "step": 6,
+      "context": {
+        "source_stage": 5,
+        "target_stage": 6,
+        "target_subject": 9,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_accuracy",
+      "value": 0.31640625,
+      "step": 6,
+      "context": {
+        "source_stage": 5,
+        "target_stage": 6,
+        "target_subject": 9,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_loss",
+      "value": 0.792509138584137,
+      "step": 6,
+      "context": {
+        "source_stage": 5,
+        "target_stage": 6,
+        "target_subject": 9,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_macro_f1",
+      "value": 0.28332613460031036,
+      "step": 6,
+      "context": {
+        "source_stage": 5,
+        "target_stage": 6,
+        "target_subject": 9,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.plasticity.fresh_gap",
+      "value": 0.3515625,
+      "step": 7,
+      "context": {
+        "source_stage": 6,
+        "target_stage": 7,
+        "target_subject": 10,
+        "stage_index": 6,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "outcome"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_accuracy",
+      "value": 0.94921875,
+      "step": 7,
+      "context": {
+        "source_stage": 6,
+        "target_stage": 7,
+        "target_subject": 10,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_loss",
+      "value": 0.15533386543393135,
+      "step": 7,
+      "context": {
+        "source_stage": 6,
+        "target_stage": 7,
+        "target_subject": 10,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_macro_f1",
+      "value": 0.9491993710979836,
+      "step": 7,
+      "context": {
+        "source_stage": 6,
+        "target_stage": 7,
+        "target_subject": 10,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_accuracy",
+      "value": 0.62890625,
+      "step": 7,
+      "context": {
+        "source_stage": 6,
+        "target_stage": 7,
+        "target_subject": 10,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_loss",
+      "value": 0.6644743382930756,
+      "step": 7,
+      "context": {
+        "source_stage": 6,
+        "target_stage": 7,
+        "target_subject": 10,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_macro_f1",
+      "value": 0.6288552810291941,
+      "step": 7,
+      "context": {
+        "source_stage": 6,
+        "target_stage": 7,
+        "target_subject": 10,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.plasticity.fresh_gap",
+      "value": 0.609375,
+      "step": 8,
+      "context": {
+        "source_stage": 7,
+        "target_stage": 8,
+        "target_subject": 11,
+        "stage_index": 7,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "outcome"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_accuracy",
+      "value": 0.953125,
+      "step": 8,
+      "context": {
+        "source_stage": 7,
+        "target_stage": 8,
+        "target_subject": 11,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_loss",
+      "value": 0.17780547589063644,
+      "step": 8,
+      "context": {
+        "source_stage": 7,
+        "target_stage": 8,
+        "target_subject": 11,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.warm_macro_f1",
+      "value": 0.9531221388024171,
+      "step": 8,
+      "context": {
+        "source_stage": 7,
+        "target_stage": 8,
+        "target_subject": 11,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_accuracy",
+      "value": 0.30859375,
+      "step": 8,
+      "context": {
+        "source_stage": 7,
+        "target_stage": 8,
+        "target_subject": 11,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_loss",
+      "value": 0.7835995703935623,
+      "step": 8,
+      "context": {
+        "source_stage": 7,
+        "target_stage": 8,
+        "target_subject": 11,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    },
+    {
+      "name": "task.probe.retention.fresh_macro_f1",
+      "value": 0.2865487868243296,
+      "step": 8,
+      "context": {
+        "source_stage": 7,
+        "target_stage": 8,
+        "target_subject": 11,
+        "probe_budget": 5,
+        "adapter_protocol": "continuous-final-budget-v1",
+        "metric_role": "retention"
+      }
+    }
+  ],
+  "summary": {
+    "architecture": "positive_control",
+    "seed": 4322,
+    "target_subjects": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "probe_budget": 5,
+    "final_fresh_gap": [
+      0.4609375,
+      0.4609375,
+      0.6015625,
+      0.421875,
+      0.53125,
+      0.5859375,
+      0.3515625,
+      0.609375
+    ],
+    "scientific_conclusion_allowed": false
+  },
+  "source_run": {
+    "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/channel-polarity-b5-v1/positive_control/seed4322/run.json",
+    "sha256": "899e14f53c0c7b74f0a118f6b644004eb3df04da42f132681eb08630ca1a973b",
+    "summary_path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/channel-polarity-b5-v1/summary.json",
+    "summary_sha256": "c28dde9013ee6ebf3a8bfaddd6dacdd89a4c41423664215d21247d4a140ec2a8"
+  },
+  "scientific_conclusion_allowed": false
+}

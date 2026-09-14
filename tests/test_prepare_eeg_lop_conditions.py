@@ -195,6 +195,22 @@ class PrepareEEGLoPConditionsTests(unittest.TestCase):
             self.assertEqual(derived.shape, original.shape)
             np.testing.assert_allclose(np.sqrt(np.mean(original ** 2, axis=(1, 2))), np.sqrt(np.mean(derived ** 2, axis=(1, 2))), rtol=1e-6)
 
+    def test_subject_montage_cycle_is_fixed_per_subject_and_energy_preserving(self):
+        module = _load_module()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "input"
+            output = Path(directory) / "output"
+            self._dataset(root)
+            varying = np.arange(2 * 8 * 3000, dtype=np.float32).reshape(2, 8, 3000)
+            np.save(root / "target" / "3" / "data" / "0.npy", varying, allow_pickle=False)
+            module.prepare(root, output, "target_subject_montage_cycle")
+            original = np.load(root / "target" / "3" / "data" / "0.npy", allow_pickle=False)
+            derived = np.load(output / "target" / "3" / "data" / "0.npy", allow_pickle=False)
+            np.testing.assert_allclose(np.sum(original.astype(np.float64) ** 2, axis=1), np.sum(derived.astype(np.float64) ** 2, axis=1), rtol=1e-5)
+            manifest = json.loads((output / "manifest.json").read_text())
+            self.assertEqual(manifest["perturbation"]["type"], "subject_specific_signed_channel_permutation")
+            self.assertEqual(manifest["perturbation"]["subject_matrices"]["3"], module._subject_montage_matrix(3, 8).tolist())
+
 
 if __name__ == "__main__":
     unittest.main()

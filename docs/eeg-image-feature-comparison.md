@@ -4,7 +4,7 @@
 
 ## 当前 EEG 可视化产物
 
-完整 ISRUC 图位于 `/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/full-isruc-visualizations-v3/`。主要文件如下：
+完整 ISRUC 图位于仓库内的 [`docs/eeg-architecture-lop/full-isruc-visualizations-v3/`](eeg-architecture-lop/full-isruc-visualizations-v3/)。主要文件如下：
 
 - `eeg-drift-waveforms.png`：原始通道波形和逐 epoch 标准化波形；前者显示增益/幅度差异，后者显示形状差异。
 - `eeg-drift-normalized-overlay.png`：各个体代表性波形去除全局幅度后的叠加。

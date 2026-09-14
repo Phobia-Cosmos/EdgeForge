@@ -1,0 +1,1319 @@
+{
+  "analysis": "lop-requirement-gate-v1",
+  "bootstrap": {
+    "method": "seed-cluster-mean-percentile",
+    "repeats": 2000,
+    "seed": 20260830
+  },
+  "design_by_experiment": {
+    "eeg-continuous-positive_control-seed4321": {
+      "dataset": "edgeforge-synthetic-eeg-channel-polarity-v1",
+      "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+      "learning_rate": 0.005,
+      "model_structure": {
+        "name": "positive_control",
+        "parameter_count": 154
+      },
+      "optimizer": {
+        "name": "Adam",
+        "scope": "target-train-only",
+        "state_persisted": false
+      },
+      "probe_budget": 5,
+      "split": "first10-adapt-last10-heldout",
+      "subject": "continuous-target-stream",
+      "task_order": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "eeg-continuous-positive_control-seed4322": {
+      "dataset": "edgeforge-synthetic-eeg-channel-polarity-v1",
+      "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+      "learning_rate": 0.005,
+      "model_structure": {
+        "name": "positive_control",
+        "parameter_count": 154
+      },
+      "optimizer": {
+        "name": "Adam",
+        "scope": "target-train-only",
+        "state_persisted": false
+      },
+      "probe_budget": 5,
+      "split": "first10-adapt-last10-heldout",
+      "subject": "continuous-target-stream",
+      "task_order": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    "eeg-continuous-positive_control-seed4323": {
+      "dataset": "edgeforge-synthetic-eeg-channel-polarity-v1",
+      "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+      "learning_rate": 0.005,
+      "model_structure": {
+        "name": "positive_control",
+        "parameter_count": 154
+      },
+      "optimizer": {
+        "name": "Adam",
+        "scope": "target-train-only",
+        "state_persisted": false
+      },
+      "probe_budget": 5,
+      "split": "first10-adapt-last10-heldout",
+      "subject": "continuous-target-stream",
+      "task_order": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    }
+  },
+  "design_consistent": true,
+  "direction": "fresh-better (fresh_gap > 0)",
+  "direction_supported": true,
+  "duplicate_seeds": false,
+  "experiment_count": 3,
+  "experiments": [
+    {
+      "dataset": {
+        "name": "edgeforge-synthetic-eeg-channel-polarity-v1"
+      },
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "method": "positive_control",
+      "seed": 4321,
+      "split": "first10-adapt-last10-heldout",
+      "subject": "continuous-target-stream"
+    },
+    {
+      "dataset": {
+        "name": "edgeforge-synthetic-eeg-channel-polarity-v1"
+      },
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "method": "positive_control",
+      "seed": 4322,
+      "split": "first10-adapt-last10-heldout",
+      "subject": "continuous-target-stream"
+    },
+    {
+      "dataset": {
+        "name": "edgeforge-synthetic-eeg-channel-polarity-v1"
+      },
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "method": "positive_control",
+      "seed": 4323,
+      "split": "first10-adapt-last10-heldout",
+      "subject": "continuous-target-stream"
+    }
+  ],
+  "gate_digest": "5dd4d769d267ab585a933b171352c5f51b079bacd060bc2e6bb975ab11f8a650",
+  "inferred_outcome_roles": [],
+  "interpretation": "candidate is a requirement-gate result only; retention/forgetting and predictor metrics are separate evidence and cannot establish LoP causality",
+  "minimum_seeds": 3,
+  "minimum_stages": 2,
+  "missing_design_by_experiment": {},
+  "missing_seed_experiments": [],
+  "missing_stage_experiments": [],
+  "outcome": "task.plasticity.fresh_gap",
+  "outcome_role": "outcome",
+  "positive_stage_count": 8,
+  "reasons": [],
+  "required_stages": [],
+  "required_transition_labels": [
+    "0->1",
+    "1->2",
+    "2->3",
+    "3->4",
+    "4->5",
+    "5->6",
+    "6->7",
+    "7->8"
+  ],
+  "required_transitions": [
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      6,
+      7
+    ],
+    [
+      7,
+      8
+    ]
+  ],
+  "retention_inventory": [
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_loss",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_loss",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_loss",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_loss",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_loss",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_loss",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_loss",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_loss",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_loss",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_loss",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_loss",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_loss",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_loss",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_loss",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_loss",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_loss",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_loss",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 1
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_loss",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 2
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_loss",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 3
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_loss",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 4
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_loss",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 5
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_loss",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 6
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_loss",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 7
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_accuracy",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_loss",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.warm_macro_f1",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_accuracy",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_loss",
+      "step": 8
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "name": "task.probe.retention.fresh_macro_f1",
+      "step": 8
+    }
+  ],
+  "retention_separate": true,
+  "role_violations": [],
+  "schema_version": 1,
+  "scientific_conclusion_allowed": false,
+  "seed_count": 3,
+  "seeds": [
+    4321,
+    4322,
+    4323
+  ],
+  "stage_count": 8,
+  "stage_grid": [
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      6,
+      7
+    ],
+    [
+      7,
+      8
+    ]
+  ],
+  "stage_grid_by_experiment": {
+    "eeg-continuous-positive_control-seed4321": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        7,
+        8
+      ]
+    ],
+    "eeg-continuous-positive_control-seed4322": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        7,
+        8
+      ]
+    ],
+    "eeg-continuous-positive_control-seed4323": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        7,
+        8
+      ]
+    ]
+  },
+  "stage_grid_labels": [
+    "0->1",
+    "1->2",
+    "2->3",
+    "3->4",
+    "4->5",
+    "5->6",
+    "6->7",
+    "7->8"
+  ],
+  "stage_grid_labels_by_experiment": {
+    "eeg-continuous-positive_control-seed4321": [
+      "0->1",
+      "1->2",
+      "2->3",
+      "3->4",
+      "4->5",
+      "5->6",
+      "6->7",
+      "7->8"
+    ],
+    "eeg-continuous-positive_control-seed4322": [
+      "0->1",
+      "1->2",
+      "2->3",
+      "3->4",
+      "4->5",
+      "5->6",
+      "6->7",
+      "7->8"
+    ],
+    "eeg-continuous-positive_control-seed4323": [
+      "0->1",
+      "1->2",
+      "2->3",
+      "3->4",
+      "4->5",
+      "5->6",
+      "6->7",
+      "7->8"
+    ]
+  },
+  "stage_summaries": [
+    {
+      "bootstrap_ci95": [
+        0.3671875,
+        0.515625
+      ],
+      "direction_supported": true,
+      "mean": 0.44791667,
+      "median": 0.4609375,
+      "missing_seeds": [],
+      "negative_seed_count": 0,
+      "outcome_stage": 1,
+      "positive_seed_count": 3,
+      "seed_count": 3,
+      "seed_values": {
+        "4321": 0.3671875,
+        "4322": 0.4609375,
+        "4323": 0.515625
+      },
+      "source_stage": 0,
+      "std": 0.0612948,
+      "transition": "0->1",
+      "transition_key": [
+        0,
+        1
+      ],
+      "zero_seed_count": 0
+    },
+    {
+      "bootstrap_ci95": [
+        0.4609375,
+        0.6171875
+      ],
+      "direction_supported": true,
+      "mean": 0.52604167,
+      "median": 0.5,
+      "missing_seeds": [],
+      "negative_seed_count": 0,
+      "outcome_stage": 2,
+      "positive_seed_count": 3,
+      "seed_count": 3,
+      "seed_values": {
+        "4321": 0.5,
+        "4322": 0.4609375,
+        "4323": 0.6171875
+      },
+      "source_stage": 1,
+      "std": 0.06639348,
+      "transition": "1->2",
+      "transition_key": [
+        1,
+        2
+      ],
+      "zero_seed_count": 0
+    },
+    {
+      "bootstrap_ci95": [
+        0.4921875,
+        0.6015625
+      ],
+      "direction_supported": true,
+      "mean": 0.54427083,
+      "median": 0.5390625,
+      "missing_seeds": [],
+      "negative_seed_count": 0,
+      "outcome_stage": 3,
+      "positive_seed_count": 3,
+      "seed_count": 3,
+      "seed_values": {
+        "4321": 0.5390625,
+        "4322": 0.6015625,
+        "4323": 0.4921875
+      },
+      "source_stage": 2,
+      "std": 0.04480378,
+      "transition": "2->3",
+      "transition_key": [
+        2,
+        3
+      ],
+      "zero_seed_count": 0
+    },
+    {
+      "bootstrap_ci95": [
+        0.421875,
+        0.5
+      ],
+      "direction_supported": true,
+      "mean": 0.453125,
+      "median": 0.4375,
+      "missing_seeds": [],
+      "negative_seed_count": 0,
+      "outcome_stage": 4,
+      "positive_seed_count": 3,
+      "seed_count": 3,
+      "seed_values": {
+        "4321": 0.5,
+        "4322": 0.421875,
+        "4323": 0.4375
+      },
+      "source_stage": 3,
+      "std": 0.03375386,
+      "transition": "3->4",
+      "transition_key": [
+        3,
+        4
+      ],
+      "zero_seed_count": 0
+    },
+    {
+      "bootstrap_ci95": [
+        0.53125,
+        0.640625
+      ],
+      "direction_supported": true,
+      "mean": 0.57291667,
+      "median": 0.546875,
+      "missing_seeds": [],
+      "negative_seed_count": 0,
+      "outcome_stage": 5,
+      "positive_seed_count": 3,
+      "seed_count": 3,
+      "seed_values": {
+        "4321": 0.546875,
+        "4322": 0.53125,
+        "4323": 0.640625
+      },
+      "source_stage": 4,
+      "std": 0.0483001,
+      "transition": "4->5",
+      "transition_key": [
+        4,
+        5
+      ],
+      "zero_seed_count": 0
+    },
+    {
+      "bootstrap_ci95": [
+        0.53125,
+        0.6875
+      ],
+      "direction_supported": true,
+      "mean": 0.6015625,
+      "median": 0.5859375,
+      "missing_seeds": [],
+      "negative_seed_count": 0,
+      "outcome_stage": 6,
+      "positive_seed_count": 3,
+      "seed_count": 3,
+      "seed_values": {
+        "4321": 0.53125,
+        "4322": 0.5859375,
+        "4323": 0.6875
+      },
+      "source_stage": 5,
+      "std": 0.06473856,
+      "transition": "5->6",
+      "transition_key": [
+        5,
+        6
+      ],
+      "zero_seed_count": 0
+    },
+    {
+      "bootstrap_ci95": [
+        0.3515625,
+        0.6484375
+      ],
+      "direction_supported": true,
+      "mean": 0.52604167,
+      "median": 0.578125,
+      "missing_seeds": [],
+      "negative_seed_count": 0,
+      "outcome_stage": 7,
+      "positive_seed_count": 3,
+      "seed_count": 3,
+      "seed_values": {
+        "4321": 0.578125,
+        "4322": 0.3515625,
+        "4323": 0.6484375
+      },
+      "source_stage": 6,
+      "std": 0.12667069,
+      "transition": "6->7",
+      "transition_key": [
+        6,
+        7
+      ],
+      "zero_seed_count": 0
+    },
+    {
+      "bootstrap_ci95": [
+        0.3203125,
+        0.609375
+      ],
+      "direction_supported": true,
+      "mean": 0.4921875,
+      "median": 0.546875,
+      "missing_seeds": [],
+      "negative_seed_count": 0,
+      "outcome_stage": 8,
+      "positive_seed_count": 3,
+      "seed_count": 3,
+      "seed_values": {
+        "4321": 0.546875,
+        "4322": 0.609375,
+        "4323": 0.3203125
+      },
+      "source_stage": 7,
+      "std": 0.12418353,
+      "transition": "7->8",
+      "transition_key": [
+        7,
+        8
+      ],
+      "zero_seed_count": 0
+    }
+  ],
+  "stages_consistent": true,
+  "status": "candidate",
+  "varied_design_by_experiment": {}
+}

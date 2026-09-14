@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "worker_work_root": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/synthetic-target-conflict-v2/audit-v1",
+  "source": {
+    "name": "EdgeForge continuous EEG trajectory adapter",
+    "summary_path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/synthetic-target-conflict-v2/summary.json",
+    "summary_sha256": "402c58bb6f1ceda0784d0b5785b9c2867ebd21fb79cdc4e17cb20b68cdf61b50",
+    "result_count": 3,
+    "probe_budget": 50
+  },
+  "defaults": {},
+  "experiments": [
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4321",
+      "workload": "raeeg-lop",
+      "protocol": "eeg-continuous-lop-v1",
+      "method": "positive_control",
+      "seed": 4321,
+      "dataset": {
+        "name": "edgeforge-synthetic-eeg-target-conflict-v2"
+      },
+      "model": {
+        "name": "positive_control",
+        "parameter_count": 154
+      },
+      "model_structure": {
+        "name": "positive_control",
+        "parameter_count": 154
+      },
+      "subject": "continuous-target-stream",
+      "split": "first10-adapt-last10-heldout",
+      "task_order": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "probe_budget": 50,
+      "optimizer": {
+        "name": "Adam",
+        "scope": "target-train-only",
+        "state_persisted": false
+      },
+      "learning_rate": 0.005,
+      "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+      "runner": {
+        "mode": "import",
+        "adapter": "eeg-continuous-lop-v1",
+        "result_path": "trajectories/positive_control/seed4321.json"
+      },
+      "metadata": {
+        "comparison_group": "ISRUC-medium-continuous-final50",
+        "dataset": {
+          "name": "edgeforge-synthetic-eeg-target-conflict-v2"
+        },
+        "subject": "continuous-target-stream",
+        "split": "first10-adapt-last10-heldout",
+        "task_order": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "probe_budget": 50,
+        "optimizer": {
+          "name": "Adam",
+          "scope": "target-train-only",
+          "state_persisted": false
+        },
+        "learning_rate": 0.005,
+        "model_structure": {
+          "name": "positive_control",
+          "parameter_count": 154
+        },
+        "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+        "scientific_conclusion_allowed": false
+      }
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4322",
+      "workload": "raeeg-lop",
+      "protocol": "eeg-continuous-lop-v1",
+      "method": "positive_control",
+      "seed": 4322,
+      "dataset": {
+        "name": "edgeforge-synthetic-eeg-target-conflict-v2"
+      },
+      "model": {
+        "name": "positive_control",
+        "parameter_count": 154
+      },
+      "model_structure": {
+        "name": "positive_control",
+        "parameter_count": 154
+      },
+      "subject": "continuous-target-stream",
+      "split": "first10-adapt-last10-heldout",
+      "task_order": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "probe_budget": 50,
+      "optimizer": {
+        "name": "Adam",
+        "scope": "target-train-only",
+        "state_persisted": false
+      },
+      "learning_rate": 0.005,
+      "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+      "runner": {
+        "mode": "import",
+        "adapter": "eeg-continuous-lop-v1",
+        "result_path": "trajectories/positive_control/seed4322.json"
+      },
+      "metadata": {
+        "comparison_group": "ISRUC-medium-continuous-final50",
+        "dataset": {
+          "name": "edgeforge-synthetic-eeg-target-conflict-v2"
+        },
+        "subject": "continuous-target-stream",
+        "split": "first10-adapt-last10-heldout",
+        "task_order": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "probe_budget": 50,
+        "optimizer": {
+          "name": "Adam",
+          "scope": "target-train-only",
+          "state_persisted": false
+        },
+        "learning_rate": 0.005,
+        "model_structure": {
+          "name": "positive_control",
+          "parameter_count": 154
+        },
+        "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+        "scientific_conclusion_allowed": false
+      }
+    },
+    {
+      "experiment_id": "eeg-continuous-positive_control-seed4323",
+      "workload": "raeeg-lop",
+      "protocol": "eeg-continuous-lop-v1",
+      "method": "positive_control",
+      "seed": 4323,
+      "dataset": {
+        "name": "edgeforge-synthetic-eeg-target-conflict-v2"
+      },
+      "model": {
+        "name": "positive_control",
+        "parameter_count": 154
+      },
+      "model_structure": {
+        "name": "positive_control",
+        "parameter_count": 154
+      },
+      "subject": "continuous-target-stream",
+      "split": "first10-adapt-last10-heldout",
+      "task_order": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "probe_budget": 50,
+      "optimizer": {
+        "name": "Adam",
+        "scope": "target-train-only",
+        "state_persisted": false
+      },
+      "learning_rate": 0.005,
+      "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+      "runner": {
+        "mode": "import",
+        "adapter": "eeg-continuous-lop-v1",
+        "result_path": "trajectories/positive_control/seed4323.json"
+      },
+      "metadata": {
+        "comparison_group": "ISRUC-medium-continuous-final50",
+        "dataset": {
+          "name": "edgeforge-synthetic-eeg-target-conflict-v2"
+        },
+        "subject": "continuous-target-stream",
+        "split": "first10-adapt-last10-heldout",
+        "task_order": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "probe_budget": 50,
+        "optimizer": {
+          "name": "Adam",
+          "scope": "target-train-only",
+          "state_persisted": false
+        },
+        "learning_rate": 0.005,
+        "model_structure": {
+          "name": "positive_control",
+          "parameter_count": 154
+        },
+        "fresh_warm_protocol": "warm-carried-across-subjects-vs-fresh-reinit",
+        "scientific_conclusion_allowed": false
+      }
+    }
+  ],
+  "scientific_conclusion_allowed": false
+}

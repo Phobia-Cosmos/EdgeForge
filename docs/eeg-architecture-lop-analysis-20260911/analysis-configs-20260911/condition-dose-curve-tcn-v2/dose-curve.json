@@ -1,0 +1,550 @@
+{
+  "schema_version": 1,
+  "analysis": "eeg-lop-dose-curve-v1",
+  "architecture": "tcn",
+  "conditions": {
+    "raw": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/summary.json",
+    "target_crosstalk5": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk5-tcn-v1/summary.json",
+    "target_crosstalk10": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk10-tcn-v1/summary.json",
+    "target_baseline_drift5": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift5-tcn-v1/summary.json",
+    "target_baseline_drift10": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift10-tcn-v1/summary.json"
+  },
+  "budgets": [
+    0,
+    5,
+    10,
+    25,
+    50
+  ],
+  "rows": [
+    {
+      "condition": "raw",
+      "budget": 0,
+      "dose": 0.0,
+      "dose_axis": "noise_rms_ratio",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/summary.json",
+      "count": 24,
+      "mean": -0.02666666777804494,
+      "std": 0.17943550835249672,
+      "standard_error": 0.0366271197667105,
+      "ci95": [
+        -0.09845582252079751,
+        0.04512248696470764
+      ],
+      "positive": 10,
+      "zero": 6,
+      "negative": 8,
+      "min": -0.41999998688697815,
+      "max": 0.2800000011920929
+    },
+    {
+      "condition": "raw",
+      "budget": 5,
+      "dose": 0.0,
+      "dose_axis": "noise_rms_ratio",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/summary.json",
+      "count": 24,
+      "mean": -0.05249999991307656,
+      "std": 0.17009587828044673,
+      "standard_error": 0.03472067576147086,
+      "ci95": [
+        -0.12055252440555944,
+        0.01555252457940632
+      ],
+      "positive": 11,
+      "zero": 4,
+      "negative": 9,
+      "min": -0.41999998688697815,
+      "max": 0.24000000953674316
+    },
+    {
+      "condition": "raw",
+      "budget": 10,
+      "dose": 0.0,
+      "dose_axis": "noise_rms_ratio",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/summary.json",
+      "count": 24,
+      "mean": 0.01999999862164259,
+      "std": 0.1337096145727825,
+      "standard_error": 0.027293360783960243,
+      "ci95": [
+        -0.033494988514919485,
+        0.07349498575820466
+      ],
+      "positive": 13,
+      "zero": 6,
+      "negative": 5,
+      "min": -0.26000000536441803,
+      "max": 0.36000001430511475
+    },
+    {
+      "condition": "raw",
+      "budget": 25,
+      "dose": 0.0,
+      "dose_axis": "noise_rms_ratio",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/summary.json",
+      "count": 24,
+      "mean": 0.02083333395421505,
+      "std": 0.1740044103225419,
+      "standard_error": 0.03551850152367515,
+      "ci95": [
+        -0.048782929032188255,
+        0.09044959694061835
+      ],
+      "positive": 15,
+      "zero": 2,
+      "negative": 7,
+      "min": -0.23999997973442078,
+      "max": 0.4399999976158142
+    },
+    {
+      "condition": "raw",
+      "budget": 50,
+      "dose": 0.0,
+      "dose_axis": "noise_rms_ratio",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/summary.json",
+      "count": 24,
+      "mean": -0.007499999677141507,
+      "std": 0.14201193866250933,
+      "standard_error": 0.028988065592214205,
+      "ci95": [
+        -0.06431660823788135,
+        0.04931660888359833
+      ],
+      "positive": 11,
+      "zero": 6,
+      "negative": 7,
+      "min": -0.3799999952316284,
+      "max": 0.20000001788139343
+    },
+    {
+      "condition": "target_crosstalk5",
+      "budget": 0,
+      "dose": 0.05,
+      "dose_axis": "cross_talk_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk5-tcn-v1/summary.json",
+      "count": 24,
+      "mean": -0.014166668678323427,
+      "std": 0.15720152275168583,
+      "standard_error": 0.032088626460845905,
+      "ci95": [
+        -0.0770603765415814,
+        0.04872703918493455
+      ],
+      "positive": 6,
+      "zero": 5,
+      "negative": 13,
+      "min": -0.2199999913573265,
+      "max": 0.3799999952316284
+    },
+    {
+      "condition": "target_crosstalk5",
+      "budget": 5,
+      "dose": 0.05,
+      "dose_axis": "cross_talk_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk5-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.0699999996771415,
+      "std": 0.18481483220022166,
+      "standard_error": 0.0377251696490531,
+      "ci95": [
+        -0.003941332835002573,
+        0.14394133218928556
+      ],
+      "positive": 13,
+      "zero": 3,
+      "negative": 8,
+      "min": -0.2199999913573265,
+      "max": 0.3799999952316284
+    },
+    {
+      "condition": "target_crosstalk5",
+      "budget": 10,
+      "dose": 0.05,
+      "dose_axis": "cross_talk_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk5-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.07833333282421033,
+      "std": 0.14360775882665672,
+      "standard_error": 0.029313811019164672,
+      "ci95": [
+        0.020878263226647577,
+        0.1357884024217731
+      ],
+      "positive": 14,
+      "zero": 6,
+      "negative": 4,
+      "min": -0.1599999964237213,
+      "max": 0.4399999976158142
+    },
+    {
+      "condition": "target_crosstalk5",
+      "budget": 25,
+      "dose": 0.05,
+      "dose_axis": "cross_talk_fraction",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk5-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.037500000869234405,
+      "std": 0.15439221752430438,
+      "standard_error": 0.03151517943261107,
+      "ci95": [
+        -0.024269750818683287,
+        0.09926975255715209
+      ],
+      "positive": 15,
+      "zero": 2,
+      "negative": 7,
+      "min": -0.24000000953674316,
+      "max": 0.36000001430511475
+    },
+    {
+      "condition": "target_crosstalk5",
+      "budget": 50,
+      "dose": 0.05,
+      "dose_axis": "cross_talk_fraction",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk5-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.024166667213042576,
+      "std": 0.13906259664207005,
+      "standard_error": 0.02838603367329542,
+      "ci95": [
+        -0.031469958786616445,
+        0.0798032932127016
+      ],
+      "positive": 10,
+      "zero": 6,
+      "negative": 8,
+      "min": -0.23999997973442078,
+      "max": 0.4000000096857548
+    },
+    {
+      "condition": "target_crosstalk10",
+      "budget": 0,
+      "dose": 0.1,
+      "dose_axis": "cross_talk_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk10-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.003333332637945811,
+      "std": 0.15181987871718064,
+      "standard_error": 0.03099010297236001,
+      "ci95": [
+        -0.05740726918787981,
+        0.06407393446377144
+      ],
+      "positive": 9,
+      "zero": 6,
+      "negative": 9,
+      "min": -0.2199999913573265,
+      "max": 0.30000001192092896
+    },
+    {
+      "condition": "target_crosstalk10",
+      "budget": 5,
+      "dose": 0.1,
+      "dose_axis": "cross_talk_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk10-tcn-v1/summary.json",
+      "count": 24,
+      "mean": -0.0016666697338223457,
+      "std": 0.16204311652005673,
+      "standard_error": 0.033076912650374865,
+      "ci95": [
+        -0.06649741852855708,
+        0.06316407906091238
+      ],
+      "positive": 10,
+      "zero": 6,
+      "negative": 8,
+      "min": -0.4000000096857548,
+      "max": 0.24000000953674316
+    },
+    {
+      "condition": "target_crosstalk10",
+      "budget": 10,
+      "dose": 0.1,
+      "dose_axis": "cross_talk_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk10-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.052499999136974417,
+      "std": 0.1670003914794305,
+      "standard_error": 0.03408881216413669,
+      "ci95": [
+        -0.014314072704733498,
+        0.11931407097868232
+      ],
+      "positive": 13,
+      "zero": 7,
+      "negative": 4,
+      "min": -0.4000000096857548,
+      "max": 0.36000001430511475
+    },
+    {
+      "condition": "target_crosstalk10",
+      "budget": 25,
+      "dose": 0.1,
+      "dose_axis": "cross_talk_fraction",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk10-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.04416666738688946,
+      "std": 0.15208454935377447,
+      "standard_error": 0.031044128639822716,
+      "ci95": [
+        -0.016679824747163063,
+        0.10501315952094198
+      ],
+      "positive": 14,
+      "zero": 4,
+      "negative": 6,
+      "min": -0.24000000953674316,
+      "max": 0.26000000536441803
+    },
+    {
+      "condition": "target_crosstalk10",
+      "budget": 50,
+      "dose": 0.1,
+      "dose_axis": "cross_talk_fraction",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-crosstalk10-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.0824999981559813,
+      "std": 0.17764767235117992,
+      "standard_error": 0.036262179271126835,
+      "ci95": [
+        0.011426126784572707,
+        0.15357386952738988
+      ],
+      "positive": 17,
+      "zero": 3,
+      "negative": 4,
+      "min": -0.3799999952316284,
+      "max": 0.4000000096857548
+    },
+    {
+      "condition": "target_baseline_drift5",
+      "budget": 0,
+      "dose": 0.05,
+      "dose_axis": "baseline_drift_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift5-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.025833333221574623,
+      "std": 0.19430850797029084,
+      "standard_error": 0.03966305810072757,
+      "ci95": [
+        -0.051906260655851424,
+        0.10357292709900066
+      ],
+      "positive": 10,
+      "zero": 6,
+      "negative": 8,
+      "min": -0.41999998688697815,
+      "max": 0.3799999952316284
+    },
+    {
+      "condition": "target_baseline_drift5",
+      "budget": 5,
+      "dose": 0.05,
+      "dose_axis": "baseline_drift_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift5-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.024166665971279144,
+      "std": 0.1888159171415877,
+      "standard_error": 0.0385418876927098,
+      "ci95": [
+        -0.051375433906432066,
+        0.09970876584899035
+      ],
+      "positive": 11,
+      "zero": 5,
+      "negative": 8,
+      "min": -0.4000000096857548,
+      "max": 0.36000001430511475
+    },
+    {
+      "condition": "target_baseline_drift5",
+      "budget": 10,
+      "dose": 0.05,
+      "dose_axis": "baseline_drift_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift5-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.06916666682809591,
+      "std": 0.18023937380557664,
+      "standard_error": 0.03679120811520192,
+      "ci95": [
+        -0.002944101077699851,
+        0.14127743473389168
+      ],
+      "positive": 15,
+      "zero": 4,
+      "negative": 5,
+      "min": -0.4000000096857548,
+      "max": 0.3400000035762787
+    },
+    {
+      "condition": "target_baseline_drift5",
+      "budget": 25,
+      "dose": 0.05,
+      "dose_axis": "baseline_drift_fraction",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift5-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.07000000029802322,
+      "std": 0.1686777227265235,
+      "standard_error": 0.03443119597122036,
+      "ci95": [
+        0.002514856194431328,
+        0.13748514440161513
+      ],
+      "positive": 14,
+      "zero": 4,
+      "negative": 6,
+      "min": -0.24000000953674316,
+      "max": 0.4399999976158142
+    },
+    {
+      "condition": "target_baseline_drift5",
+      "budget": 50,
+      "dose": 0.05,
+      "dose_axis": "baseline_drift_fraction",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift5-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.04999999888241291,
+      "std": 0.18594061836551865,
+      "standard_error": 0.03795496978775828,
+      "ci95": [
+        -0.024391741901593322,
+        0.12439173966641914
+      ],
+      "positive": 11,
+      "zero": 5,
+      "negative": 8,
+      "min": -0.24000000953674316,
+      "max": 0.4399999976158142
+    },
+    {
+      "condition": "target_baseline_drift10",
+      "budget": 0,
+      "dose": 0.1,
+      "dose_axis": "baseline_drift_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift10-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.013333330862224102,
+      "std": 0.19503994334975153,
+      "standard_error": 0.03981236172235238,
+      "ci95": [
+        -0.06469889811358656,
+        0.09136555983803477
+      ],
+      "positive": 11,
+      "zero": 2,
+      "negative": 11,
+      "min": -0.36000001430511475,
+      "max": 0.3400000035762787
+    },
+    {
+      "condition": "target_baseline_drift10",
+      "budget": 5,
+      "dose": 0.1,
+      "dose_axis": "baseline_drift_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift10-tcn-v1/summary.json",
+      "count": 24,
+      "mean": -0.02333333157002926,
+      "std": 0.1782686470681828,
+      "standard_error": 0.03638893520444569,
+      "ci95": [
+        -0.0946556445707428,
+        0.04798898143068428
+      ],
+      "positive": 8,
+      "zero": 7,
+      "negative": 9,
+      "min": -0.41999998688697815,
+      "max": 0.24000000953674316
+    },
+    {
+      "condition": "target_baseline_drift10",
+      "budget": 10,
+      "dose": 0.1,
+      "dose_axis": "baseline_drift_fraction",
+      "gate": null,
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift10-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.02833333642532428,
+      "std": 0.16225762064271457,
+      "standard_error": 0.033120698121061116,
+      "ci95": [
+        -0.03658323189195552,
+        0.09324990474260407
+      ],
+      "positive": 12,
+      "zero": 5,
+      "negative": 7,
+      "min": -0.23999997973442078,
+      "max": 0.3400000035762787
+    },
+    {
+      "condition": "target_baseline_drift10",
+      "budget": 25,
+      "dose": 0.1,
+      "dose_axis": "baseline_drift_fraction",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift10-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.10083333309739828,
+      "std": 0.15983460660914306,
+      "standard_error": 0.03262610245257336,
+      "ci95": [
+        0.0368861722903545,
+        0.16478049390444205
+      ],
+      "positive": 16,
+      "zero": 5,
+      "negative": 3,
+      "min": -0.2199999988079071,
+      "max": 0.4399999976158142
+    },
+    {
+      "condition": "target_baseline_drift10",
+      "budget": 50,
+      "dose": 0.1,
+      "dose_axis": "baseline_drift_fraction",
+      "gate": "blocked-inconsistent-direction",
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-baseline-drift10-tcn-v1/summary.json",
+      "count": 24,
+      "mean": 0.0350000006146729,
+      "std": 0.19730797093806013,
+      "standard_error": 0.04027532091517831,
+      "ci95": [
+        -0.043939628379076584,
+        0.11393962960842238
+      ],
+      "positive": 11,
+      "zero": 5,
+      "negative": 8,
+      "min": -0.30000001192092896,
+      "max": 0.36000001430511475
+    }
+  ],
+  "excluded_from_shared_axes": [],
+  "interval": "normal-approximation-95-percent-over-seed-transition-cells",
+  "scientific_conclusion_allowed": false,
+  "interpretation": "descriptive dose response; positive mean fresh-gap is not sufficient for a LoP claim"
+}
