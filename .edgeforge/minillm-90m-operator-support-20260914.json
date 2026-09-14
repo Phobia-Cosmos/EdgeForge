@@ -1,0 +1,196 @@
+{
+  "timestamp": "2026-09-14T10:00:00+08:00",
+  "model": "/home/orangepi/.local/share/edgeforge/models/minillm-90m/minillm-90m-static8.onnx",
+  "onnx_checker": "pass",
+  "onnx_operator_types": [
+    "Add",
+    "Cast",
+    "Concat",
+    "Constant",
+    "ConstantOfShape",
+    "Div",
+    "Equal",
+    "Expand",
+    "Gather",
+    "MatMul",
+    "Mul",
+    "Pow",
+    "ReduceMean",
+    "Reshape",
+    "Shape",
+    "Sigmoid",
+    "Slice",
+    "Softmax",
+    "Split",
+    "Sqrt",
+    "Sub",
+    "Transpose",
+    "Unsqueeze",
+    "Where"
+  ],
+  "onnxruntime": {
+    "providers": [
+      "CPUExecutionProvider"
+    ],
+    "status": "pass",
+    "output_shape": [
+      1,
+      8,
+      16384
+    ],
+    "latency_ms": 32.557
+  },
+  "edgeforge_reference": [
+    {
+      "operator": {
+        "name": "matmul",
+        "shape": [
+          16,
+          16,
+          16
+        ],
+        "dtype": "fp32",
+        "backend": "python-reference",
+        "attrs": {}
+      },
+      "backend": "python-reference",
+      "correctness": true,
+      "errors": [],
+      "checksum": "dd3604b5f9f88d00b2ce48d83192eb36d1e9c8ab576b1929fdf3c9bb182c5628",
+      "timings_ms": [
+        1.501,
+        1.48,
+        1.467
+      ],
+      "summary": {
+        "runs": 3,
+        "min_ms": 1.467,
+        "median_ms": 1.48,
+        "p95_ms": 1.501
+      }
+    },
+    {
+      "operator": {
+        "name": "softmax",
+        "shape": [
+          128
+        ],
+        "dtype": "fp32",
+        "backend": "python-reference",
+        "attrs": {}
+      },
+      "backend": "python-reference",
+      "correctness": true,
+      "errors": [],
+      "checksum": "99876746d04cabcba57a7e1e966118903db092c2e190110de482b55519782188",
+      "timings_ms": [
+        0.1,
+        0.082,
+        0.08
+      ],
+      "summary": {
+        "runs": 3,
+        "min_ms": 0.08,
+        "median_ms": 0.082,
+        "p95_ms": 0.1
+      }
+    },
+    {
+      "operator": {
+        "name": "rmsnorm",
+        "shape": [
+          128
+        ],
+        "dtype": "fp32",
+        "backend": "python-reference",
+        "attrs": {}
+      },
+      "backend": "python-reference",
+      "correctness": true,
+      "errors": [],
+      "checksum": "c81e09383ecd1dceea9cf36ec2765d3dc08a9679e43dcd42b9b0c6816fff90dc",
+      "timings_ms": [
+        0.07,
+        0.062,
+        0.062
+      ],
+      "summary": {
+        "runs": 3,
+        "min_ms": 0.062,
+        "median_ms": 0.062,
+        "p95_ms": 0.07
+      }
+    },
+    {
+      "operator": {
+        "name": "silu",
+        "shape": [
+          128
+        ],
+        "dtype": "fp32",
+        "backend": "python-reference",
+        "attrs": {}
+      },
+      "backend": "python-reference",
+      "correctness": true,
+      "errors": [],
+      "checksum": "7987a91ac83fa715e7f31d796413d33ac649f4361f5ff46228bfa26267e2670c",
+      "timings_ms": [
+        0.074,
+        0.071,
+        0.07
+      ],
+      "summary": {
+        "runs": 3,
+        "min_ms": 0.07,
+        "median_ms": 0.071,
+        "p95_ms": 0.074
+      }
+    },
+    {
+      "operator": {
+        "name": "conv_nchwc",
+        "shape": [
+          1,
+          1,
+          4,
+          4,
+          1,
+          3,
+          3,
+          1,
+          4
+        ],
+        "dtype": "fp32",
+        "backend": "python-reference",
+        "attrs": {
+          "stride_h": 1,
+          "stride_w": 1,
+          "dilation_h": 1,
+          "dilation_w": 1,
+          "accumulate": false
+        }
+      },
+      "backend": "python-reference",
+      "correctness": true,
+      "errors": [],
+      "checksum": "cbf65b3b66a9982ece0b600bf9e9f180d72534e6d895493d8e225c425352099b",
+      "timings_ms": [
+        0.706,
+        0.514,
+        0.478
+      ],
+      "summary": {
+        "runs": 3,
+        "min_ms": 0.478,
+        "median_ms": 0.514,
+        "p95_ms": 0.706
+      }
+    }
+  ],
+  "rknn_scope": {
+    "status": "not-tested-for-minillm",
+    "evidence": "RKNN MobileNet v1 API smoke passed separately; no MiniLLM .rknn conversion was attempted",
+    "required_host_toolkit": "rknn-toolkit2"
+  }
+}
