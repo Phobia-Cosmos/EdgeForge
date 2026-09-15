@@ -24,7 +24,7 @@
 - `condition-target-channel-polarity-ch0-v1/visualizations-v1`：查看该目录的 `EXPLANATION.md`。
 - `condition-target-gain-drift10-tcn-v1/visualizations-v1`：查看该目录的 `EXPLANATION.md`。
 - `condition-target-gain-drift10-tcn-v1/visualizations-v2`：查看该目录的 `EXPLANATION.md`。
-- `condition-target-gain-drift10-tcn-v1/visualizations-v3`：新版完整 30 秒波形、全部 epoch×8 通道热图和修正后的逐文件 adaptation/evaluation 边界。
+- `condition-target-gain-drift10-tcn-v1/visualizations-v3`：新版 30 秒波形、聚合漂移/PCA/频谱图和修正后的逐文件 adaptation/evaluation 边界；逐被试全 epoch 大图不纳入仓库，按需由 `scripts/visualize-eeg-drift.py` 重生成。
 - `condition-target-snr10-tcn-v1/visualizations-v1`：查看该目录的 `EXPLANATION.md`。
 - `condition-target-snr10-tcn-v1/visualizations-v3`：查看该目录的 `EXPLANATION.md`。
 - `condition-target-snr15-tcn-v1/visualizations-v1`：查看该目录的 `EXPLANATION.md`。
@@ -43,3 +43,6 @@
 - `subject-invariance-audit-20260914`：按 sequence 聚合的波形特征与 BrainUICL 各层个体不变性、ICC 和增益不变子集对照；大矩阵与 JSON 位于分析归档。
 - `brainuicl-subject-stability-audit-20260914`：BrainUICL 随机初始化架构分层审计；对应大矩阵位于分析归档。
 - `brainuicl-subject-stability-trained-pilot-20260914`：5 epoch medium source-supervised BrainUICL 分层稳定性 pilot；对应大矩阵位于分析归档。
+- `../eeg-architecture-lop-analysis-20260911/subject-id-probe-20260915`：真实 ISRUC/FACED 的冻结表征 subject-ID probe，包含原始输入、CNN branch、fusion、Transformer 各层、classifier input 和 logits。
+- `../eeg-architecture-lop-analysis-20260911/subject-id-granularity-20260915`：epoch/sequence 粒度、k-epoch 聚合和 known/unknown open-set 审计。
+- `../eeg-architecture-lop-analysis-20260911/subject-id-cl-tracking-20260915`：ISRUC pretrain 与持续学习 checkpoint 的 identity tracking 对照。
