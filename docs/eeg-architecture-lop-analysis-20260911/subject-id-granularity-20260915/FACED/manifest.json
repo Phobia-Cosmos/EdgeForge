@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-15T22:30:18+08:00",
+  "source_summary_created_at": "2026-09-15T21:33:08+08:00",
+  "script": "scripts/subject_identity_granularity.py",
+  "experiment": "subject-identity-granularity-open-set-v1",
+  "dataset": "FACED",
+  "arguments": {
+    "data_root": "/home/undefined/Disk/datasets/FACED_processed",
+    "brainuicl_root": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL",
+    "checkpoint_root": "/home/undefined/Disk/ai-storage/EdgeForge/raeeg-pretrain/v0.16.4/FACED/seed4321/checkpoints/FACED/Pretrain",
+    "checkpoint_seed": 4321,
+    "gpu": 0,
+    "seed": 4321,
+    "known_subject_fraction": 0.8,
+    "unit": "both",
+    "probe_dim": 128,
+    "aggregation_ks": "1,2,5,10,20",
+    "curve_stages": "raw_waveform,eeg_branch,transformer_layer1,classifier_input",
+    "save_vectors": false
+  },
+  "sequence_count": 984,
+  "epoch_count": 19680,
+  "known_subject_count": 98,
+  "unknown_subject_count": 25,
+  "device": "cuda:0"
+}

@@ -55,6 +55,14 @@
 3. **后层逐步压低身份信息。** Transformer layer1→3、classifier input 和最终 logits 的 top-1 下降，说明任务头的低维瓶颈和时序混合丢弃了一部分身份信息。logits 仍高于机会水平，因此“任务输出不含身份”尚未得到严格证明。
 4. **这不是 LoP 证据。** 身份可分性是数据/表征机制变量；LoP 仍需 fresh-vs-warm、固定更新预算、至少 3 个 seed、旧任务 retention、AULC/fresh gap 等持续学习结果。
 
+## Epoch 粒度与未知 subject 扩展
+
+针对“只给一个 epoch 能否判断是谁”，已增加 [subject_identity_granularity.py](../../../scripts/subject_identity_granularity.py)。它将 80% subject 作为 enrollment，20% subject 完全留作 unseen-test；known subject 的一半完整 group 训练 probe，另一半完整 group 测试具体 subject id，同时报告 unknown rejection/AUROC。每个 group 还分别抽取 k=1、2、5、10、20 个 epoch 做 median，形成 epoch-count aggregation curve。
+
+当前结果显示身份信息随聚合增强：ISRUC EEG branch 的 k=1/2/5/10/20 top-1 为 36.48%/52.49%/58.58%/70.82%/75.41%；FACED 为 13.52%/30.10%/59.44%/75.26%/86.22%。严格 epoch probe（将每个 epoch 作为测试单元）ISRUC frontend 为 51.98%、FACED 为 44.27%。Transformer epoch tap 仍带有同一 20-token sequence 的 attention context，不能当作完全孤立的单 epoch 输入。
+
+开放集完整报告位于 `../subject-id-granularity-20260915/`；其中具体新 subject id 不会被错误地当成已知类别预测，unknown 只用拒识率和 AUROC 评价。
+
 ## 局限与下一步
 
 - 当前划分是 group-disjoint，不是 session-disjoint。ISRUC 主要是每人一晚记录，FACED processed 副本也没有可靠 session 元数据；因此要发布结论前必须补充按 recording/session 的划分，或从原始元数据构造 session。
@@ -69,6 +77,7 @@
 - FACED 数值、混淆矩阵和 PCA：[FACED/](FACED/)
 - 两个目录中的 `subject-id-summary.json` 保存了数据根目录、checkpoint、split manifest、阶段维度和所有指标；`REPORT.md` 是自动生成的简表。
 - 原始 EEG、BDF 和完整 checkpoint 没有复制进 EdgeForge；结果目录约 12 MB，可安全纳入版本控制。
+- Epoch/sequence/open-set 扩展结果：[subject-id-granularity-20260915/](../subject-id-granularity-20260915/)。
 
 复现示例（使用共享 `brainuicl` 环境）：
 
