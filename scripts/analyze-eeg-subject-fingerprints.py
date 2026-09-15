@@ -255,7 +255,11 @@ def analyze_dataset(name: str, features: np.ndarray, subjects: np.ndarray, group
     centroid = _nearest_centroid(x_train, y_train, x_test, y_test)
     # Logistic probe is a complementary decoder; it is evaluated on held-out
     # sequence/trial groups, never on epochs from a seen group.
-    probe = make_pipeline(StandardScaler(), LogisticRegression(max_iter=600, solver="lbfgs", multi_class="auto"))
+    # scikit-learn 1.8 removed the ``multi_class`` constructor argument;
+    # lbfgs already selects the multinomial objective when there are more than
+    # two subject classes.  Omitting the deprecated argument keeps this audit
+    # runnable on both 1.7 and 1.8 without changing the probe protocol.
+    probe = make_pipeline(StandardScaler(), LogisticRegression(max_iter=600, solver="lbfgs"))
     probe.fit(features[train], y_train)
     prediction = probe.predict(features[test])
     profiles = _profile_rows(features, subjects)

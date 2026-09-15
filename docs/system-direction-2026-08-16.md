@@ -1,5 +1,11 @@
 # EdgeForge × RA-EEG 系统方向决策（2026-08-16）
 
+## 2026-09-15 优先级更新
+
+近期路线不再要求在 Orange Pi、P550 或 Meles 上部署 EEG/LLM 模型，也不继续投入板端推理引擎、模型转换或性能优化。开发板不适合承担当前模型训练、编译优化和推理性能主线；此前完成的 ARM64 CPU、ONNX Runtime、OpenCL、Vulkan loader 与 RKNN MobileNet smoke 作为能力探测和历史证据保留，但不构成真实 EEG/LLM 模型可部署的结论。
+
+当前主线固定在 x86_64 + RTX 4070 SUPER：真实 EEG workload、模型导出与 Graph/Operator IR、reference correctness、PyTorch eager/`torch.compile`、CUDA/Triton Kernel、自动调优、Compiler-aware Scheduler、回归门禁和 ExperimentBundle 闭环。开发板只在任务确实需要时承担只读 capability probe、Worker/Artifact 协议、跨架构 reference backend、构建兼容和可选 accelerator API smoke；RKNN EEG 转换、IREE/Vulkan 模型执行、llama.cpp、SGLang、Ollama 与板端模型 serving 全部移入 future/parking lot，不再作为近期版本验收条件。
+
 ## 结论
 
 系统主线调整为“面向持续适应模型的可靠性评测、编译验证与发布基础设施”。RA-EEG 提供真实研究 workload 和模型能力指标，EdgeForge 提供异构执行、Artifact、版本证据、性能回归与发布准入。两者保持独立版本和清晰接口，不把 EdgeForge 变成 EEG 训练框架，也不让 RA-EEG 重写调度、Artifact Store 和多节点控制面。
@@ -53,8 +59,8 @@ EdgeForge Experiment Registry
                   ▼
 Execution and compiler plane
 4070S: eager / torch.compile / profiling / training
-Orange Pi: ARM64 / LLVM CPU / optional Vulkan or RKNN
-P550 + Meles: RISC-V build, runtime smoke and portability
+Orange Pi: optional ARM64 capability / protocol / reference smoke
+P550 + Meles: optional RISC-V protocol, build and portability smoke
 Optional A100: only after access and workload need are verified
 ```
 
@@ -91,18 +97,18 @@ Candidate checkpoint
 | 设备 | 主线任务 | 条件性任务 | 暂不承担 |
 |---|---|---|---|
 | RTX 4070 SUPER 12 GB | ISRUC/FACED 实验、LoP/ER instrumentation、PyTorch eager/compile 对照、Profiler、GPU correctness/performance gate | Triton 热点 Kernel、IREE CUDA | 多用户 GPU 资源隔离研究 |
-| Orange Pi 5 Ultra | ARM64 构建、CPU Runtime、Artifact 可加载性、冷启动/内存测试 | 驱动与 Runtime 真实可用后接 IREE Vulkan 或 RKNN | 摄像头采集主线、未经验证的 NPU 承诺 |
-| P550 | EdgeForge Worker/控制面兼容、RISC-V 构建与 CLI/API smoke test | 可获得稳定工具链后做 LLVM/IREE CPU Runtime 验证 | PyTorch 训练、GPU 级性能竞争 |
-| Meles | 第二种 RISC-V 系统/工具链差分、故障与版本混跑测试 | 小型原生 Runtime benchmark | 强制参与每次模型推理 |
+| Orange Pi 5 Ultra | 无近期主线任务 | 只读 capability probe、Worker/Artifact 协议、ARM64 reference smoke、可选 accelerator API smoke | 模型部署、推理引擎安装、模型转换与性能优化 |
+| P550 | 无近期主线任务 | EdgeForge Worker/控制面兼容、RISC-V 构建与 CLI/API smoke | PyTorch 训练、模型部署与推理性能竞争 |
+| Meles | 无近期主线任务 | 恢复在线后做第二种 RISC-V 协议/工具链差分 | 强制参与实验、模型部署或推理 |
 | 可选 A100 配额 | 访问、CUDA/MIG 配额和 workload 均确认后做跨 GPU 与并发验证 | vLLM/HAMi 相关研究 | 当前发布基线 |
 
-没有摄像头不影响这个方向：EEG 输入来自离线真实数据集，Orange Pi 的价值是部署与 Runtime 验证，而不是传感器采集。RISC-V 板也不再决定算法选题；只有 Runtime、Agent、编译产物或发布协议需要跨 ISA 时才进入门禁。
+没有摄像头不影响这个方向：EEG 输入来自离线真实数据集。开发板当前只提供异构硬件、协议和跨 ISA 验证价值，不承担近期模型部署；只有 capability、Worker、Artifact、构建或 reference correctness 明确需要跨 ISA 时才进入实验。
 
 ## 研究、产品与上游贡献的优先级
 
 RA-EEG 研究主线先完成自然 LoP：对齐真实 BrainUICL 协议，接现有 CL 方法，至少 3 seeds 记录 plasticity、forgetting、spectrum 和 norm，再检验前一阶段 ER 是否预测后一阶段 plasticity。自然机制未建立前，不进入大规模攻击、归因或防御搜索。
 
-EdgeForge 产品主线先支持真实 ExperimentBundle 与 Capability Gate，再进入模型编译和多架构部署。原计划中的 LLM 专用 RoPE/KV Cache、llama.cpp/vLLM Serving、HAMi 并发与安全问题不再作为近期版本目标；除非未来增加独立 LLM workload，否则它们与当前 EEG 模型没有直接产品依赖。
+EdgeForge 产品主线先支持真实 ExperimentBundle 与 Capability Gate，再完成本机模型 Compiler、Operator IR、Kernel、自动调优和调度闭环。多架构模型部署不再是近期目标。原计划中的 LLM 专用 RoPE/KV Cache、llama.cpp/vLLM/SGLang/Ollama Serving、RKNN EEG 转换和 HAMi 并发与安全问题进入 future/parking lot；除非未来出现独立 workload 和硬件需求，否则它们与当前 EEG 主线没有直接产品依赖。
 
 上游 Issue/PR 是能力学习和贡献通道，不是系统路线的驱动器。2026-08-16 的 Issue 状态快照只用于候选筛选：IREE 工作必须由真实模型 export/target 问题触发，Braindecode hook 必须先由内部 instrumentation 验证稳定接口，vLLM/HAMi 必须等待实际服务器和对应 workload。
 
@@ -113,6 +119,6 @@ EdgeForge 产品主线先支持真实 ExperimentBundle 与 Capability Gate，再
 3. 修复 v0.2 测试数据依赖，生成小型确定性 fixture；新增真实 ISRUC 嵌套目录 manifest 和正式 experiment CLI。
 4. 先在 4070S 跑通一个受版本控制的 ISRUC FineTune/BrainUICL probe，生成完整 ExperimentBundle，不立即启动长时间多 seed 实验。
 5. 在 EdgeForge V7 增加模型实验任务和 Artifact/Metric 契约，把该 Bundle 纳入版本日志与可重放任务。
-6. Bundle 与 Gate 跑通以后再做 `eager → torch.compile` correctness/performance 对照；Orange Pi、IREE 和上游 PR 排在可导出模型之后。
+6. Bundle 与 Gate 跑通以后做 `eager → torch.compile → CUDA/Triton hotspot` correctness/performance 对照，并把结果接入自动调优和 Scheduler；开发板模型部署不进入该顺序。
 
 本决策不修改或重写 EdgeForge v0.1.0–v0.6.0 的历史。后续功能只有在自动化测试、真实 workload 验证、发布说明、版本日志与 Git tag 全部完成后才冻结为新版本。

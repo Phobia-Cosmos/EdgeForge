@@ -90,6 +90,29 @@ class EEGLoPScriptConfigTests(unittest.TestCase):
         self.assertGreater(len(payload["metrics"]), 0)
         self.assertTrue(all("metric_role" in item["context"] for item in payload["metrics"]))
 
+    def test_cuda_eval_lstm_gradient_probe(self):
+        module = _load_script_module()
+        torch = module.torch
+        if not torch.cuda.is_available():
+            self.skipTest("CUDA is required for the cuDNN RNN regression")
+
+        class LstmProbe(module.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.lstm = module.nn.LSTM(input_size=3, hidden_size=4, batch_first=True)
+                self.head = module.nn.Linear(4, 2)
+
+            def forward(self, values):
+                hidden, _state = self.lstm(values)
+                return self.head(hidden[:, -1])
+
+        model = LstmProbe().cuda().eval()
+        batches = [(torch.randn(2, 5, 3), torch.tensor([0, 1]))]
+        gradients = module._collect_gradients(model, batches, device=torch.device("cuda"), max_batches=1)
+        self.assertEqual(gradients.shape[0], 1)
+        self.assertEqual(gradients.shape[1], sum(parameter.numel() for parameter in model.parameters()))
+        self.assertFalse(model.training)
+
 
 if __name__ == "__main__":
     unittest.main()

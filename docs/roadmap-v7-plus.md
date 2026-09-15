@@ -7,7 +7,7 @@
 - EdgeForge 和 RA-EEG 保持独立版本：EdgeForge 管执行与证据，RA-EEG 管数据、模型、持续学习协议和研究指标。
 - `/home/undefined/Desktop/bci/code/tta_security/BrainUICL/` 是当前已用真实数据运行的实现来源；`raeeg-v0.2.zip` 是待整合的 SDK 骨架，不直接替代现有实验代码。
 - 不上传原始 EEG 到控制面；只保存数据 manifest digest、版本和 Worker 数据访问能力。
-- 不要求每次实验使用所有设备。4070S 是主线计算节点，Orange Pi 和 RISC-V 板只在相应部署、Runtime 或兼容目标中参与。
+- 不要求每次实验使用所有设备。4070S 是唯一近期模型计算、Compiler 和性能主线；Orange Pi 与 RISC-V 板只按需参与 capability、协议、构建和跨架构 reference smoke，不承担近期模型或推理引擎部署。
 - 不先做攻击和自动优化 Agent。自然 LoP、可塑性指标和可复现实验链未稳定前，不扩大研究面。
 
 ## V7：Experiment Contract 与 RA-EEG Adapter（已完成）
@@ -30,6 +30,7 @@
 ## V9：4070S 真实模型 Compiler Pipeline（进行中；0.9.0 完成 IREE 算子路径）
 
 - 第一条路径只比较 PyTorch eager 与 `torch.compile`，先验证可复现性、数值正确性和模型能力等价，再扩大 Backend。
+- 2026-09-15 在 RTX 4070 SUPER 上重新执行真实 ISRUC subject 1、BrainUICL seed 4321：eager correctness 误差为 0；关闭 Inductor `pattern_matcher` 的安全 profile 最大绝对误差约 `4.10e-5`，100 次 steady latency 中位数由约 `0.935 ms` 降至 `0.688 ms`，但 compile-stage first call 由约 `107 ms` 增至 `3964 ms`。该结果只覆盖固定样本和单 checkpoint，详见 `docs/brainuicl-cuda-compiler-revalidation-20260915.md`。
 - 0.9.0 先完成独立的 IREE `conv_nchwc` dilation runtime-only Pipeline：以真实注册的预构建 binary 完成 correctness/benchmark/manifest 闭环；这不是模型级 `torch.compile` 验收。
 - 保存 graph break、编译日志、compile time、first-call latency、steady latency、峰值显存、accuracy/MF1 差异和编译 Artifact。
 - 使用 Profiler 确认实际热点后，再决定是否为 Conv1d、Attention、LayerNorm 或其他算子增加 Triton Kernel；不以现有 MatMul Demo 代替模型级结论。
@@ -43,24 +44,23 @@
 - 结果写入 `model_runs`、版本化事件和 `model-compiler-manifest` Artifact；提供 Python reference baseline，真实 PyTorch/ONNX/Triton/IREE 通过同一 argv contract 接入。
 - 验收：标准库 reference adapter 在本机完成合成 EEG normalize/window、编译描述、推理、数值正确性和 benchmark；0.10.1 完成 BrainUICL 817 个历史结果的 catalog 扫描和 LoP 验证；0.10.2 增加 explicit Backend/Target Registry；不把 reference 或历史导入结果当作真实硬件性能。
 
-## V11：Orange Pi 部署目标与条件性 IREE（进行中；0.11.0 完成 Target Probe 基座）
+## V11：Target Probe 与历史开发板能力证据（基座已完成；后续部署暂停）
 
 - 0.11.0 增加 `target-probe`，记录 ARM64 CPU、板型/SoC、驱动、Vulkan、内存、设备节点和可用 Runtime 的可审计证据；不从 RK3588 型号或 Vulkan 文件推断 NPU/Backend 已就绪。
-- 在 Orange Pi 上执行并保存 probe 后，基于真实结果选取可运行路径，不预设 NPU 已可用。
+- Orange Pi probe、ARM64 CPU/ONNX、OpenCL、Vulkan loader 和 RKNN MobileNet smoke 作为历史能力证据保留，不从中推断 EEG/LLM 模型或通用 NPU Backend 已就绪。
 - 4070S 上真实 BrainUICL seed 4321 已完成 eager 与 Inductor 模型级 correctness/benchmark；默认 Inductor attention 候选被 Gate 拦截，safe profile 仅作为临时安全路径。该 GPU 证据不等价于 Orange Pi 部署成功。
-- 在模型可稳定导出后，比较 LLVM CPU、条件性 IREE Vulkan 和 PyTorch/ONNX 可用路径的正确性、冷启动、steady latency、内存与 Artifact size。
-- RKNN/NPU 是并行实验：只有工具链、算子覆盖和量化正确性真实通过后才注册为正式 Backend。
-- P550/Meles 在这一阶段运行 Agent、CLI/API、Artifact 校验和 RISC-V 构建 smoke；仅在 Runtime 真实可构建时增加模型执行门禁。
-- 验收：至少一个非 x86 目标加载真实模型 Artifact 并完成离线 EEG inference；不能用 Python Reference Operator 代替模型部署成功。
+- LLVM CPU、IREE Vulkan、RKNN/NPU、llama.cpp、SGLang、Ollama 和其他板端推理引擎路径全部移入 future/parking lot；不再安装大型工具链，也不再要求真实模型转换。
+- P550/Meles 只在协议、Artifact 校验、RISC-V 构建或故障验证有明确需求时运行 smoke。
+- 当前验收只要求 probe、Worker/Artifact 协议与 reference correctness 证据可审计；“非 x86 真实模型部署”不再是近期发布门禁。
 
 ## V12：模型级回归、调度与多架构 CI（本机前置已开始）
 
 - 0.11.0 在本机共享 PyTorch 环境完成 `torch-eager` 与 CPU `torch-compile` adapter contract、correctness failure gate 和重复 benchmark；这不代表 CUDA 或真实 BrainUICL 模型结论。
-- V12 已实际探测 Orange Pi/P550，并对 Orange Pi BrainUICL ARM64 manifest 执行 deployment preflight；因缺少 `torch_python` 返回 `BLOCKED`，没有执行板端模型命令。
+- V12 已实际探测 Orange Pi/P550，并对 Orange Pi BrainUICL ARM64 manifest 执行 deployment preflight；因缺少 `torch_python` 返回 `BLOCKED`，没有执行板端模型命令。该结果作为边界证据封存，不再继续补齐板端模型环境。
 - 当前开发线暂不考虑 4 卡或开发板并行；所有 LoP 结论先在本机单 GPU/CPU 复现，未来若恢复并行也只能作为不改变 cell 语义的调度层。
 - 将 V6 的算子 Cost Model 扩展为 workload/model/runtime 级候选，不把不同能力或不同精度的路径当作可互换候选。
 - 对 checkpoint、Compiler、Runtime 和目标设备建立 Baseline/Canary，使用重复采样与明确阈值判断回归。
-- 建立适配不同目标的发布矩阵：4070S 执行能力与性能门禁，Orange Pi 执行部署门禁，P550/Meles 执行协议与可移植性门禁。
+- 建立以 4070S 为核心的发布矩阵：执行 EEG 能力、导出/Compiler correctness、CUDA/Triton 性能与回归门禁；开发板协议与可移植性检查仅为按需附加项，不阻塞本机发布。
 - 增加长实验优先级、资源配额、断点恢复、Worker 离线重调度和 checkpoint 安全恢复。
 - 验收：给定两个候选版本，系统能回答研究能力、编译正确性和性能在哪个阶段发生变化，并自动阻止不满足目标 profile 的发布。
 
@@ -88,11 +88,13 @@
 
 ## V16：ARM/RISC-V Target Setup 与 Backend 边界（进行中；0.16.1 完成 RK3588 API smoke）
 
+本阶段在 2026-09-15 后转为维护/证据归档状态，不再推进开发板模型部署或推理引擎安装。
+
 - 用只读 inventory 分离 ARM/RISC-V 架构、Runtime 文件、设备节点和显式 Backend 广告；厂商 RKNN 文件存在不等于 RK3588 NPU 可执行。
 - `scripts/configure-arm-target.py --apply --sync-source` 为 Orange Pi/P550 创建用户目录、源码、work/log/config 和 Worker 启动模板，不安装未知包、不写凭证、不启动远端任务。
 - 明确 `OperatorSpec`、`torch.export` Graph IR 与 MLIR/LLVM/backend lowering 的层次；后端只能通过独立 adapter 消费自己支持的输入格式。
-- Orange Pi 已完成 Mali OpenCL vector-add、用户目录 RKNPU2 v1.5.2 C API MobileNet smoke，以及用户目录 Rockchip `g610-g24p0` Mali Vulkan loader/instance/physical-device smoke；系统默认 ICD 仍未注册，故 Vulkan candidate 必须通过显式 manifest 和目标绑定证据使用。只有 RKNN conversion、量化、EEG 子图 correctness 和 benchmark 通过后才解除 `rknn` backend blocked。
-- `brainuicl.pt2` 的统一 lowering 暂不扩展为无证据的多后端广播；先绑定 Graph IR digest、layout/dtype contract 和一个真实转换后端。RKNN Toolkit2 只在主机侧负责转换，板端只接收受控 `.rknn` Artifact。
+- Orange Pi 已完成 Mali OpenCL vector-add、用户目录 RKNPU2 v1.5.2 C API MobileNet smoke，以及用户目录 Rockchip `g610-g24p0` Mali Vulkan loader/instance/physical-device smoke；这些结果只证明对应 API smoke，不升级为 EEG 模型或通用 Backend 支持。
+- `brainuicl.pt2` 的统一 lowering 优先绑定本机 Graph IR digest、layout/dtype contract 与 CUDA/Inductor/Triton 路径；RKNN Toolkit2 和板端 `.rknn` 发布暂停。
 
 ## 独立研究里程碑
 
@@ -103,6 +105,7 @@ RA-EEG 的科研节奏不与 EdgeForge 版本号绑定：先对齐 BrainUICL 协
 - 摄像头或工业视觉主场景。
 - 让 P550/Meles 承担 PyTorch 训练或大模型推理。
 - 没有真实可用性验证前承诺 Orange Pi NPU。
+- 在 Orange Pi/P550/Meles 上部署 EEG/LLM 模型、安装推理引擎或追求板端模型性能。
 - 与当前 EEG workload 无关的 RoPE/KV Cache、llama.cpp/vLLM Serving 和 HAMi 多租户 GPU 方向。
 - 为了匹配上游 Issue 而提前实现没有内部需求的 Compiler 功能。
 

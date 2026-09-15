@@ -63,6 +63,25 @@ class LopMetricsTests(unittest.TestCase):
         self.assertTrue(summary["jacobian"]["data_dependent"])
         self.assertTrue(summary["ntk"]["data_dependent"])
 
+    @unittest.skipUnless(torch is not None and torch.cuda.is_available(), "CUDA is required for the cuDNN RNN regression")
+    def test_sampled_jacobian_supports_eval_mode_cuda_lstm(self):
+        class LstmProbe(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.lstm = nn.LSTM(input_size=3, hidden_size=4, batch_first=True)
+                self.head = nn.Linear(4, 2)
+
+            def forward(self, values):
+                hidden, _state = self.lstm(values)
+                return self.head(hidden[:, -1])
+
+        model = LstmProbe().cuda().eval()
+        inputs = torch.randn(2, 5, 3, device="cuda")
+        jacobian = lop_metrics.sampled_parameter_jacobian(model, inputs, max_samples=2)
+        self.assertEqual(jacobian.shape[0], 2)
+        self.assertEqual(jacobian.shape[1], sum(parameter.numel() for parameter in model.parameters()))
+        self.assertFalse(model.training)
+
     def test_ntk_spectrum_uses_kernel_matrix_not_eigenvalue_column(self):
         jacobian = torch.eye(3)
         summary = lop_metrics.jacobian_summary(jacobian)

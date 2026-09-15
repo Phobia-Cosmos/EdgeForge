@@ -376,16 +376,23 @@ def sampled_parameter_jacobian(
     was_training = bool(model.training)
     model.eval()
     try:
-        for sample in samples:
-            output = forward_fn(model, sample)
-            if not isinstance(output, torch.Tensor):
-                raise TypeError("forward_fn must return a tensor")
-            scalar = output.float().reshape(-1).mean()
-            gradients = torch.autograd.grad(scalar, parameters, retain_graph=False, allow_unused=True)
-            rows.append(torch.cat([
-                (gradient if gradient is not None else torch.zeros_like(parameter)).detach().float().reshape(-1)
-                for parameter, gradient in zip(parameters, gradients)
-            ]).cpu())
+        # cuDNN RNN kernels reserve backward state only for training-mode
+        # forwards.  Diagnostics deliberately use eval mode to freeze dropout
+        # and BatchNorm, so an LSTM/GRU on CUDA would otherwise fail with
+        # "cudnn RNN backward can only be called in training mode".  Disable
+        # only the cuDNN fast path for this bounded Jacobian probe; PyTorch's
+        # native CUDA implementation preserves eval semantics and gradients.
+        with torch.backends.cudnn.flags(enabled=False):
+            for sample in samples:
+                output = forward_fn(model, sample)
+                if not isinstance(output, torch.Tensor):
+                    raise TypeError("forward_fn must return a tensor")
+                scalar = output.float().reshape(-1).mean()
+                gradients = torch.autograd.grad(scalar, parameters, retain_graph=False, allow_unused=True)
+                rows.append(torch.cat([
+                    (gradient if gradient is not None else torch.zeros_like(parameter)).detach().float().reshape(-1)
+                    for parameter, gradient in zip(parameters, gradients)
+                ]).cpu())
     finally:
         model.train(was_training)
     if not rows:

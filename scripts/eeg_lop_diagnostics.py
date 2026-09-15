@@ -533,20 +533,24 @@ def _collect_gradients(
     was_training = bool(model.training)
     model.eval()
     try:
-        for values, labels in batches[:max_batches]:
-            values, labels = values.to(device), labels.to(device)
-            model.zero_grad(set_to_none=True)
-            logits = _logits_from_output(model(values))
-            loss = _diagnostic_objective_loss(
-                model,
-                values,
-                logits,
-                labels,
-                objective=objective,
-                label_source=label_source,
-            )
-            loss.backward()
-            rows.append(torch.cat([(parameter.grad if parameter.grad is not None else torch.zeros_like(parameter)).detach().float().reshape(-1) for parameter in parameters]).cpu())
+        # Match sampled_parameter_jacobian's CUDA policy: eval-mode cuDNN
+        # LSTM/GRU forwards do not retain the reserve space required by
+        # backward, while the native CUDA path supports this diagnostic.
+        with torch.backends.cudnn.flags(enabled=False):
+            for values, labels in batches[:max_batches]:
+                values, labels = values.to(device), labels.to(device)
+                model.zero_grad(set_to_none=True)
+                logits = _logits_from_output(model(values))
+                loss = _diagnostic_objective_loss(
+                    model,
+                    values,
+                    logits,
+                    labels,
+                    objective=objective,
+                    label_source=label_source,
+                )
+                loss.backward()
+                rows.append(torch.cat([(parameter.grad if parameter.grad is not None else torch.zeros_like(parameter)).detach().float().reshape(-1) for parameter in parameters]).cpu())
     finally:
         model.zero_grad(set_to_none=True)
         model.train(was_training)

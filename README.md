@@ -1,17 +1,19 @@
 # EdgeForge
 
-EdgeForge 是面向 x86_64、ARM64、RISC-V64、GPU 与 NPU 的异构 AI Compiler / Runtime 实验基础设施。当前 `0.16.5` development snapshot 在 ISRUC/FACED 多 seed 预训练、BrainUICL 的 torch.export/CPU eager/CUDA Inductor 验证和 RK3588 runtime smoke 之上增加 EEG 对齐的简单 Transformer LoP 诊断；模型框架通过受控外部命令接入，IREE 仍是可插拔后端而非系统依赖。
+EdgeForge 是以 x86_64 + RTX 4070 SUPER 为近期主线、兼容 ARM64/RISC-V64 能力探测的异构 AI Compiler / Runtime 实验基础设施。当前 `0.16.5` development snapshot 聚焦 ISRUC/FACED、BrainUICL、模型导出、Operator IR、CPU/CUDA correctness、Compiler/Kernel/自动调优与调度闭环；Orange Pi、P550 和 Meles 不承担近期模型或推理引擎部署，只作为按需 capability、Worker/Artifact 协议、构建与跨架构 reference 验证节点。已有 RK3588 runtime smoke 作为历史证据保留，不代表 EEG/LLM 模型支持。
 
 完整的 V1 取舍见 [docs/design-v1.md](docs/design-v1.md)，V4 Compiler Pipeline 见 [docs/design-v4.md](docs/design-v4.md)，V5 Auto Tuning 见 [docs/design-v5.md](docs/design-v5.md)，V6 Compiler-aware Scheduler 见 [docs/design-v6.md](docs/design-v6.md)，V7 RA-EEG Experiment Contract 见 [docs/design-v7.md](docs/design-v7.md)，V8 Model Registry/Capability Gate 见 [docs/design-v8.md](docs/design-v8.md)，V9 IREE runtime-only Pipeline 见 [docs/design-v9.md](docs/design-v9.md)，V10 Model Pipeline 见 [docs/design-v10.md](docs/design-v10.md)，V11 Target Probe 见 [docs/design-v11.md](docs/design-v11.md)，BrainUICL/RA-EEG 迁移见 [docs/raeeg-migration.md](docs/raeeg-migration.md)。2026-08-16 的方向决策见 [docs/system-direction-2026-08-16.md](docs/system-direction-2026-08-16.md)，V7+ 路线见 [docs/roadmap-v7-plus.md](docs/roadmap-v7-plus.md)，双机进度与 LoP 计划见 [docs/sync-progress-and-lop-plan-20260822.md](docs/sync-progress-and-lop-plan-20260822.md)，LoP 统一数学与 FACED/ISRUC 实验计划见 [docs/lop-eeg-unified-plan-20260822.md](docs/lop-eeg-unified-plan-20260822.md)，BrainUICL 指标采集见 [docs/brainuicl-instrumentation-v1.md](docs/brainuicl-instrumentation-v1.md)，LoP 矩阵运行器见 [docs/raeeg-lop-matrix-v1.md](docs/raeeg-lop-matrix-v1.md)，连续 EEG 架构 LoP 适配与一键审计见 [docs/eeg-continuous-lop.md](docs/eeg-continuous-lop.md)，0.14.0 本地结果见 [docs/raeeg-lop-local-results-20260823.md](docs/raeeg-lop-local-results-20260823.md)，0.15.0 retention 结果见 [docs/raeeg-lop-retention-local-results-20260823.md](docs/raeeg-lop-retention-local-results-20260823.md)，0.16.3 ISRUC 剂量/retention 验证见 [releases/v0.16.3.md](releases/v0.16.3.md)，RK3588 Vulkan 用户态验证见 [docs/rk3588-vulkan-userspace-validation-v1.md](docs/rk3588-vulkan-userspace-validation-v1.md)，版本与日志规则见 [docs/versioning-and-logs.md](docs/versioning-and-logs.md)，历史变更见 [CHANGELOG.md](CHANGELOG.md)。
+
+2026-09-15 的真实 ISRUC BrainUICL eager/安全 Inductor CUDA 复验见 [docs/brainuicl-cuda-compiler-revalidation-20260915.md](docs/brainuicl-cuda-compiler-revalidation-20260915.md)。
 
 ## 当前硬件基线
 
 | Worker | 架构 | 资源 | 第一阶段角色 |
 | --- | --- | --- | --- |
 | RTX 4070S 主机 | x86_64 | 16 CPU，32 GB，RTX 4070 SUPER 12 GB | RA-EEG 实验、GPU Compiler/Profiler、控制面 |
-| Orange Pi 5 Ultra | aarch64 | 8 CPU，16 GB，RK3588 | ARM64 部署验证；Vulkan/RKNN 仅在真实可用后启用 |
-| P550 | riscv64 | 4 CPU，26 GB | RISC-V Agent/Runtime 兼容、构建与协议 smoke |
-| Meles | riscv64 | 当前下线 | 暂不纳入调度和验证；恢复后再作为第二种 RISC-V 差分节点 |
+| Orange Pi 5 Ultra | aarch64 | 8 CPU，16 GB，RK3588 | 可选 capability、Worker/Artifact 协议、ARM64 reference 与 accelerator API smoke；不部署模型/推理引擎 |
+| P550 | riscv64 | 4 CPU，26 GB | 可选 RISC-V 构建、协议与 reference smoke；不部署模型/推理引擎 |
+| Meles | riscv64 | 当前下线 | 恢复后仅作为可选 RISC-V 差分节点 |
 
 ## 本机快速启动
 
@@ -32,7 +34,7 @@ python3 -m edgeforge target-probe --output ./edgeforge-target-probe.json
 
 清单记录架构、CPU features、板型/SoC、内存、设备节点、内核 GPU/NPU 驱动、Vulkan ICD/loader 和已发现 Runtime 的实际探测结果。`backend_claims.inferred` 固定为空；只有显式配置且通过 Runtime correctness 后，Backend 才能加入 Worker 广告。
 
-ARM/RISC-V 目标的用户目录级准备使用 [docs/ai-compiler-arm-target-setup-v1.md](docs/ai-compiler-arm-target-setup-v1.md) 和 `scripts/configure-arm-target.py`。默认只读；`--apply --sync-source` 只创建 work/log/config、同步排除数据和 checkpoint 的源码，并让 Orange Pi/P550 只广告 `python-reference`。RKNN 文件或 `/dev/dri` 节点不会自动解锁 NPU Backend。
+ARM/RISC-V 目标的用户目录级准备属于按需兼容性工具，使用 [docs/ai-compiler-arm-target-setup-v1.md](docs/ai-compiler-arm-target-setup-v1.md) 和 `scripts/configure-arm-target.py`。默认只读；近期不为模型部署主动执行 `--apply`、安装推理引擎或补齐 RKNN/Vulkan 工具链。若协议测试确有需要，`--apply --sync-source` 也只创建 work/log/config、同步排除数据和 checkpoint 的源码，并让 Orange Pi/P550 只广告 `python-reference`。
 
 ```sh
 PYTHONPATH=src python3 scripts/configure-arm-target.py \
@@ -52,7 +54,7 @@ python3 -m edgeforge target-audit \
 
 该审计只判断部署证据是否完整，不把 RK3588 字符串、驱动文件或 `backend_claims.inferred` 当成 NPU/Runtime correctness，也不产生性能或科研结论。完整契约见 [docs/deployment-target-audit.md](docs/deployment-target-audit.md)。
 
-RKNN/OpenCL/Vulkan 的 capability preflight 还要求已保存的 API smoke 证据；例如 RKNN 使用 `scripts/model-deploy-preflight.py --runtime-validation .edgeforge/rk3588-accelerator-smoke-v0.16.3.json`。Orange Pi 的 Mali Vulkan 用户态包应以 `--vulkan-icd` 显式传入用户目录 manifest，再把同一份 smoke JSON 交给 preflight；仅发现 `librknnrt.so`、DRM 节点或 Vulkan loader 不会自动解锁 backend。
+RKNN/OpenCL/Vulkan 的 capability preflight 与已有 smoke 文件保留用于历史审计和未来按需复验；它们不是近期模型部署入口。仅发现 `librknnrt.so`、DRM 节点、Vulkan loader 或通过 MobileNet/vector-add smoke 都不会自动解锁 EEG/LLM backend。
 
 另开终端启动本机 Worker：
 
@@ -172,14 +174,14 @@ python3 -m edgeforge gate-evaluations --token "$EDGEFORGE_TOKEN"
 
 ```sh
 cd /home/undefined/Desktop/EdgeForge
-PYTHONPATH=src /home/undefined/UbuntuData/python-envs/research/bin/python \
+PYTHONPATH=src /home/undefined/Disk/python-envs/brainuicl/bin/python \
   scripts/eeg_lop_diagnostics.py --data synthetic-eeg --architectures all \
   --tasks 3 --train-samples 24 --eval-samples 16 --epochs 1 --batch-size 8 \
   --length 64 --channels 4 --classes 3 --probe-steps 0,1,2 \
   --output-dir logs/lop-diagnostics-registry-smoke
 ```
 
-该输出只验证模型/指标 plumbing；正式 LoP 结论必须使用固定 calibration manifest、至少三个独立 seed、多个 checkpoint stage、相同 fresh-vs-warm 预算和 old-task retention。完整指标边界见 [`docs/eeg-lop-metrics-baseline-20260827.md`](docs/eeg-lop-metrics-baseline-20260827.md) 与模板 [`config/eeg-lop-diagnostics.example.json`](config/eeg-lop-diagnostics.example.json)。
+加入 `--device cuda` 可在 RTX 4070 SUPER 上执行同一 registry smoke。2026-09-15 的 CPU/CUDA 结果和 cuDNN LSTM 诊断兼容修复见 [docs/eeg-registry-cuda-smoke-20260915.md](docs/eeg-registry-cuda-smoke-20260915.md)。该输出只验证模型/指标 plumbing；正式 LoP 结论必须使用固定 calibration manifest、至少三个独立 seed、多个 checkpoint stage、相同 fresh-vs-warm 预算和 old-task retention。完整指标边界见 [`docs/eeg-lop-metrics-baseline-20260827.md`](docs/eeg-lop-metrics-baseline-20260827.md) 与模板 [`config/eeg-lop-diagnostics.example.json`](config/eeg-lop-diagnostics.example.json)。
 
 诊断目标可通过 `--objective` 选择 `cross_entropy`、`mse`、`mse_to_zero`、`output_mean` 或 `output_norm`，并通过 `--label-source true|pseudo|none` 明确标签权限；`pseudo` 会从当前 logits 生成伪标签，`none` 只适用于不需要标签的目标。训练仍使用 stream 自带标签，诊断 objective 只决定 gradient/Hessian/Fisher 的测量，不会改变训练过程。
 
