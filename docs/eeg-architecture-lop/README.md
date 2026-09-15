@@ -39,3 +39,7 @@
 - `subject-fingerprint-server-20260913/ISRUC-complete-all`：服务器 CPU 全量画像，包含 98 个被试的完整 profile、每个 sequence 的统计、PCA 和 sequence 漂移图。
 - `subject-fingerprint-server-20260913/ISRUC-balanced`：较小的 8-sequence 对照结果。
 - `subject-fingerprint-server-20260913`：FACED 全量身份探针报告和 PCA 图。
+- `expanded-fingerprint-audit-20260914`：medium ISRUC 的 295 维扩展波形特征 PCA 与特征组消融。
+- `subject-invariance-audit-20260914`：按 sequence 聚合的波形特征与 BrainUICL 各层个体不变性、ICC 和增益不变子集对照；大矩阵与 JSON 位于分析归档。
+- `brainuicl-subject-stability-audit-20260914`：BrainUICL 随机初始化架构分层审计；对应大矩阵位于分析归档。
+- `brainuicl-subject-stability-trained-pilot-20260914`：5 epoch medium source-supervised BrainUICL 分层稳定性 pilot；对应大矩阵位于分析归档。

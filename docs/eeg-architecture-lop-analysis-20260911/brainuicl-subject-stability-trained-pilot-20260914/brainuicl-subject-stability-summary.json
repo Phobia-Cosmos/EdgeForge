@@ -1,0 +1,275 @@
+{
+  "schema_version": 1,
+  "dataset": "ISRUC",
+  "data_root": "/home/undefined/UbuntuData/datasets/edgeforge-isruc-medium-target-baseline-drift5-v1",
+  "brainuicl_root": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL",
+  "initialization": "medium-source-supervised",
+  "checkpoint_status": "trained in this run on medium source subjects; not a full-data checkpoint",
+  "seed": 4321,
+  "training": {
+    "epochs": 5,
+    "batch_size_sequences": 4,
+    "learning_rate": 0.0001,
+    "source_sequence_count": 40,
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": 1.5671720623970031,
+        "train_accuracy": 0.27
+      },
+      {
+        "epoch": 2,
+        "train_loss": 1.5582938313484191,
+        "train_accuracy": 0.27875
+      },
+      {
+        "epoch": 3,
+        "train_loss": 1.490492570400238,
+        "train_accuracy": 0.31625
+      },
+      {
+        "epoch": 4,
+        "train_loss": 1.5322483777999878,
+        "train_accuracy": 0.28
+      },
+      {
+        "epoch": 5,
+        "train_loss": 1.4274524331092835,
+        "train_accuracy": 0.335
+      }
+    ]
+  },
+  "sequence_count": 100,
+  "epoch_count": 2000,
+  "subject_count": 20,
+  "input_layout": "B,T,C,S = (sequence,20,8,3000)",
+  "stage_shapes": {
+    "eeg_branch": [
+      512
+    ],
+    "eog_branch": [
+      512
+    ],
+    "fusion": [
+      512
+    ],
+    "transformer_layer1": [
+      512
+    ],
+    "transformer_layer2": [
+      512
+    ],
+    "transformer_layer3": [
+      512
+    ],
+    "classifier_input": [
+      128
+    ],
+    "logits": [
+      5
+    ]
+  },
+  "stages": {
+    "eeg_branch": {
+      "epoch_probe": {
+        "accuracy": 0.22083333333333333,
+        "balanced_accuracy": 0.22083333333333335,
+        "train_epochs": 800,
+        "test_epochs": 1200
+      },
+      "sequence_probe": {
+        "accuracy": 0.25,
+        "balanced_accuracy": 0.25,
+        "train_epochs": 40,
+        "test_epochs": 60
+      },
+      "stability": {
+        "profile_first_second_correlation_mean": 0.5127983326595669,
+        "profile_first_second_correlation_median": 0.5908144810742102,
+        "profile_first_second_distance_mean": 8.760471153259278,
+        "within_subject_epoch_radius_median": 14.28355598449707,
+        "between_subject_centroid_distance_median": 10.113505363464355,
+        "between_within_ratio": 0.7080523487597375
+      },
+      "raw_sequence_coordinate_std_mean": 0.22448483785497125,
+      "raw_sequence_norm_mean": 12.20192129103513,
+      "raw_relative_variation": 0.018397499254474165
+    },
+    "eog_branch": {
+      "epoch_probe": {
+        "accuracy": 0.2075,
+        "balanced_accuracy": 0.20750000000000002,
+        "train_epochs": 800,
+        "test_epochs": 1200
+      },
+      "sequence_probe": {
+        "accuracy": 0.23333333333333334,
+        "balanced_accuracy": 0.2333333333333333,
+        "train_epochs": 40,
+        "test_epochs": 60
+      },
+      "stability": {
+        "profile_first_second_correlation_mean": 0.5389445537708906,
+        "profile_first_second_correlation_median": 0.5761606458892633,
+        "profile_first_second_distance_mean": 9.156281292438507,
+        "within_subject_epoch_radius_median": 15.312474727630615,
+        "between_subject_centroid_distance_median": 8.405153751373291,
+        "between_within_ratio": 0.548908906031146
+      },
+      "raw_sequence_coordinate_std_mean": 0.20767782617097094,
+      "raw_sequence_norm_mean": 11.965066302357373,
+      "raw_relative_variation": 0.017357014238195568
+    },
+    "fusion": {
+      "epoch_probe": {
+        "accuracy": 0.1975,
+        "balanced_accuracy": 0.19749999999999995,
+        "train_epochs": 800,
+        "test_epochs": 1200
+      },
+      "sequence_probe": {
+        "accuracy": 0.23333333333333334,
+        "balanced_accuracy": 0.2333333333333333,
+        "train_epochs": 40,
+        "test_epochs": 60
+      },
+      "stability": {
+        "profile_first_second_correlation_mean": 0.5597867396121816,
+        "profile_first_second_correlation_median": 0.6401062673911293,
+        "profile_first_second_distance_mean": 6.9442940831184385,
+        "within_subject_epoch_radius_median": 13.38934326171875,
+        "between_subject_centroid_distance_median": 7.267427921295166,
+        "between_within_ratio": 0.5427770264187153
+      },
+      "raw_sequence_coordinate_std_mean": 0.1467974432945781,
+      "raw_sequence_norm_mean": 9.30243425111492,
+      "raw_relative_variation": 0.015780540805970657
+    },
+    "transformer_layer1": {
+      "epoch_probe": {
+        "accuracy": 0.14583333333333334,
+        "balanced_accuracy": 0.14583333333333334,
+        "train_epochs": 800,
+        "test_epochs": 1200
+      },
+      "sequence_probe": {
+        "accuracy": 0.18333333333333332,
+        "balanced_accuracy": 0.18333333333333335,
+        "train_epochs": 40,
+        "test_epochs": 60
+      },
+      "stability": {
+        "profile_first_second_correlation_mean": 0.40403966793745816,
+        "profile_first_second_correlation_median": 0.38654110782229634,
+        "profile_first_second_distance_mean": 7.603225827217102,
+        "within_subject_epoch_radius_median": 18.90980625152588,
+        "between_subject_centroid_distance_median": 6.818465232849121,
+        "between_within_ratio": 0.3605782704568389
+      },
+      "raw_sequence_coordinate_std_mean": 0.25621938608854156,
+      "raw_sequence_norm_mean": 25.237397254364677,
+      "raw_relative_variation": 0.010152369656273875
+    },
+    "transformer_layer2": {
+      "epoch_probe": {
+        "accuracy": 0.15416666666666667,
+        "balanced_accuracy": 0.15416666666666665,
+        "train_epochs": 800,
+        "test_epochs": 1200
+      },
+      "sequence_probe": {
+        "accuracy": 0.18333333333333332,
+        "balanced_accuracy": 0.18333333333333332,
+        "train_epochs": 40,
+        "test_epochs": 60
+      },
+      "stability": {
+        "profile_first_second_correlation_mean": 0.39386932190468427,
+        "profile_first_second_correlation_median": 0.4228017618353246,
+        "profile_first_second_distance_mean": 7.92856194972992,
+        "within_subject_epoch_radius_median": 20.637995719909668,
+        "between_subject_centroid_distance_median": 6.772352457046509,
+        "between_within_ratio": 0.32814971710228413
+      },
+      "raw_sequence_coordinate_std_mean": 0.396637152723877,
+      "raw_sequence_norm_mean": 46.87896157941217,
+      "raw_relative_variation": 0.00846087753142698
+    },
+    "transformer_layer3": {
+      "epoch_probe": {
+        "accuracy": 0.135,
+        "balanced_accuracy": 0.135,
+        "train_epochs": 800,
+        "test_epochs": 1200
+      },
+      "sequence_probe": {
+        "accuracy": 0.21666666666666667,
+        "balanced_accuracy": 0.21666666666666665,
+        "train_epochs": 40,
+        "test_epochs": 60
+      },
+      "stability": {
+        "profile_first_second_correlation_mean": 0.4080920205228632,
+        "profile_first_second_correlation_median": 0.41128088139534325,
+        "profile_first_second_distance_mean": 8.109816098213196,
+        "within_subject_epoch_radius_median": 21.476889610290527,
+        "between_subject_centroid_distance_median": 6.677335977554321,
+        "between_within_ratio": 0.31090796194039727
+      },
+      "raw_sequence_coordinate_std_mean": 0.5551507685900825,
+      "raw_sequence_norm_mean": 69.87683579743731,
+      "raw_relative_variation": 0.007944703881546427
+    },
+    "classifier_input": {
+      "epoch_probe": {
+        "accuracy": 0.06583333333333333,
+        "balanced_accuracy": 0.06583333333333334,
+        "train_epochs": 800,
+        "test_epochs": 1200
+      },
+      "sequence_probe": {
+        "accuracy": 0.11666666666666667,
+        "balanced_accuracy": 0.11666666666666667,
+        "train_epochs": 40,
+        "test_epochs": 60
+      },
+      "stability": {
+        "profile_first_second_correlation_mean": 0.5901317163891708,
+        "profile_first_second_correlation_median": 0.6034450729925871,
+        "profile_first_second_distance_mean": 3.169168245792389,
+        "within_subject_epoch_radius_median": 10.762845516204834,
+        "between_subject_centroid_distance_median": 2.331460118293762,
+        "between_within_ratio": 0.21662116350025207
+      },
+      "raw_sequence_coordinate_std_mean": 0.11293325727140642,
+      "raw_sequence_norm_mean": 9.506901139717632,
+      "raw_relative_variation": 0.011879081901840487
+    },
+    "logits": {
+      "epoch_probe": {
+        "accuracy": 0.075,
+        "balanced_accuracy": 0.07500000000000001,
+        "train_epochs": 800,
+        "test_epochs": 1200
+      },
+      "sequence_probe": {
+        "accuracy": 0.11666666666666667,
+        "balanced_accuracy": 0.11666666666666665,
+        "train_epochs": 40,
+        "test_epochs": 60
+      },
+      "stability": {
+        "profile_first_second_correlation_mean": 0.3282270627357079,
+        "profile_first_second_correlation_median": 0.4070978715151953,
+        "profile_first_second_distance_mean": 0.610409115254879,
+        "within_subject_epoch_radius_median": 1.7888717651367188,
+        "between_subject_centroid_distance_median": 0.5431196391582489,
+        "between_within_ratio": 0.303610157945972
+      },
+      "raw_sequence_coordinate_std_mean": 0.14636471176693652,
+      "raw_sequence_norm_mean": 2.0582065334492787,
+      "raw_relative_variation": 0.07111274276330706
+    }
+  },
+  "scientific_conclusion_allowed": false
+}

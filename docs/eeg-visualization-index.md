@@ -14,6 +14,14 @@
 - [标签先验](eeg-architecture-lop/full-isruc-visualizations-v3/eeg-drift-labels.png)：适应段和评估段的睡眠阶段比例。
 - [JSON 摘要](eeg-architecture-lop/full-isruc-visualizations-v3/visualization-summary.json)：所有分组、PCA、RMS、频带和个体距离统计。
 
+## 波形特征与 BrainUICL 网络特征的不变性
+
+- [特征/tap 不变性对比](eeg-architecture-lop/subject-invariance-audit-20260914/subject-invariance-comparison.png)：比较 295 维波形特征和 BrainUICL 各层的 sequence-level ICC、身份 probe，以及按 ICC 选取稳定维度后的变化。
+- [波形特征族 ICC](eeg-architecture-lop/subject-invariance-audit-20260914/waveform-feature-family-icc.png)：比较绝对增益、相对频谱、空间连接、形态和谱形状等特征族的跨 sequence 重复性。
+- [不变性审计说明](eeg-architecture-lop/subject-invariance-audit-20260914/EXPLANATION.md)：解释 ICC、sequence median、增益校正和图中每个柱子的含义。
+
+这组图的机器可读结果位于 `docs/eeg-architecture-lop-analysis-20260911/subject-invariance-audit-20260914/subject-invariance-summary.json`。绝对功率的 ICC 可能包含电极/增益条件，因此必须与去除绝对尺度后的相对特征结果一起解释。
+
 关键结论：target 个体 RMS 最大/最小约 `3.43x`；原始 PCA 的 PC1 解释 `90.77%` 方差，主要受幅度/功率尺度影响；去除整体 RMS 后 PC1/PC2 解释 `22.22%/16.48%`，仍保留频谱、通道平衡和波形形态差异。subject 65 是频谱离群点，subject 71 与 73 的标准化综合特征距离最大。可视化用于解释数据漂移，不单独构成 LoP 证据。
 
 ## 连续 sequence 的 20 个 epoch
