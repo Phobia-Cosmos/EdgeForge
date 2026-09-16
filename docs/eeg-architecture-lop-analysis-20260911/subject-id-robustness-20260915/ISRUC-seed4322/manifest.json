@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-16T09:13:52+08:00",
+  "script": "scripts/subject_identity_granularity.py",
+  "experiment": "subject-identity-granularity-open-set-v1",
+  "dataset": "ISRUC",
+  "arguments": {
+    "dataset": "ISRUC",
+    "data_root": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32",
+    "brainuicl_root": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL",
+    "checkpoint_root": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/ISRUC/Pretrain",
+    "checkpoint_seed": 4321,
+    "batch_size": 1,
+    "gpu": 0,
+    "seed": 4322,
+    "known_subject_fraction": 0.8,
+    "unit": "sequence",
+    "stages": "raw_waveform,eeg_branch,transformer_layer1,classifier_input",
+    "probe_dim": 128,
+    "max_sequences": 0,
+    "save_vectors": false,
+    "aggregation_ks": "1,5,20",
+    "curve_stages": "raw_waveform,eeg_branch,transformer_layer1,classifier_input",
+    "output": "docs/eeg-architecture-lop-analysis-20260911/subject-id-robustness-20260915/ISRUC-seed4322"
+  },
+  "sequence_count": 4276,
+  "epoch_count": 85520,
+  "known_subject_count": 78,
+  "unknown_subject_count": 20,
+  "runtime": {
+    "python": "3.12.3",
+    "platform": "Linux-6.14.0-36-generic-x86_64-with-glibc2.39",
+    "torch": "2.9.1+cu130",
+    "numpy": "2.5.0"
+  }
+}

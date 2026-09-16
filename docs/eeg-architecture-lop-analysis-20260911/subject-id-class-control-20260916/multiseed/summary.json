@@ -1,0 +1,304 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-16T18:37:27+08:00",
+  "experiment": "subject-identity-class-conditioned-control-multiseed-summary-v1",
+  "source_files": [
+    "/home/undefined/Desktop/EdgeForge/docs/eeg-architecture-lop-analysis-20260911/subject-id-class-control-20260916/ISRUC-seed4321/summary.json",
+    "/home/undefined/Desktop/EdgeForge/docs/eeg-architecture-lop-analysis-20260911/subject-id-class-control-20260916/ISRUC-seed4322/summary.json",
+    "/home/undefined/Desktop/EdgeForge/docs/eeg-architecture-lop-analysis-20260911/subject-id-class-control-20260916/ISRUC-seed4323/summary.json",
+    "/home/undefined/Desktop/EdgeForge/docs/eeg-architecture-lop-analysis-20260911/subject-id-class-control-20260916/FACED-seed4321/summary.json",
+    "/home/undefined/Desktop/EdgeForge/docs/eeg-architecture-lop-analysis-20260911/subject-id-class-control-20260916/FACED-seed4322/summary.json",
+    "/home/undefined/Desktop/EdgeForge/docs/eeg-architecture-lop-analysis-20260911/subject-id-class-control-20260916/FACED-seed4323/summary.json"
+  ],
+  "datasets": {
+    "FACED": {
+      "run_count": 3,
+      "seeds": [
+        4321,
+        4322,
+        4323
+      ],
+      "sequence_count": 984,
+      "subject_count": 123,
+      "class_count": 9,
+      "class_histogram_only_sequence_probe": {
+        "accuracy_top1": {
+          "count": 3,
+          "mean": 0.0006775067750677508,
+          "std": 0.0011734761568894833,
+          "min": 0.0,
+          "max": 0.0020325203252032522,
+          "values": [
+            0.0020325203252032522,
+            0.0,
+            0.0
+          ]
+        },
+        "balanced_accuracy_top1": {
+          "count": 3,
+          "mean": 0.0006775067750677508,
+          "std": 0.0011734761568894833,
+          "min": 0.0,
+          "max": 0.0020325203252032522,
+          "values": [
+            0.0020325203252032522,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "class_conditioned_macro": {
+        "raw_waveform": {
+          "balanced_accuracy": {
+            "count": 3,
+            "mean": 0.026128387195014865,
+            "std": 0.0003812169947060797,
+            "min": 0.025818371761153935,
+            "max": 0.02655403160592593,
+            "values": [
+              0.025818371761153935,
+              0.02655403160592593,
+              0.026012758217964723
+            ]
+          },
+          "class_to_class_std": {
+            "count": 3,
+            "mean": 0.023809309579736787,
+            "std": 0.0033092828673536544,
+            "min": 0.02125894285658577,
+            "max": 0.027548853969904367,
+            "values": [
+              0.027548853969904367,
+              0.022620131912720214,
+              0.02125894285658577
+            ]
+          }
+        },
+        "eeg_branch": {
+          "balanced_accuracy": {
+            "count": 3,
+            "mean": 0.2562904360480743,
+            "std": 0.014021892920255689,
+            "min": 0.24580910693253,
+            "max": 0.27221846632644614,
+            "values": [
+              0.27221846632644614,
+              0.24580910693253,
+              0.2508437348852468
+            ]
+          },
+          "class_to_class_std": {
+            "count": 3,
+            "mean": 0.09521864475799846,
+            "std": 0.027699479184426504,
+            "min": 0.06687461711111915,
+            "max": 0.12222511297783469,
+            "values": [
+              0.12222511297783469,
+              0.06687461711111915,
+              0.09655620418504152
+            ]
+          }
+        },
+        "transformer_layer1": {
+          "balanced_accuracy": {
+            "count": 3,
+            "mean": 0.25602116926251367,
+            "std": 0.0416096352886615,
+            "min": 0.21251200675540327,
+            "max": 0.29542727544460745,
+            "values": [
+              0.29542727544460745,
+              0.26012422558753023,
+              0.21251200675540327
+            ]
+          },
+          "class_to_class_std": {
+            "count": 3,
+            "mean": 0.09517762371017684,
+            "std": 0.024126106402913933,
+            "min": 0.07161173692971623,
+            "max": 0.11982741385291837,
+            "values": [
+              0.07161173692971623,
+              0.11982741385291837,
+              0.0940937203478959
+            ]
+          }
+        },
+        "classifier_input": {
+          "balanced_accuracy": {
+            "count": 3,
+            "mean": 0.1679515982542434,
+            "std": 0.00774115616581096,
+            "min": 0.1607060318354561,
+            "max": 0.1761077934498434,
+            "values": [
+              0.1761077934498434,
+              0.16704096947743075,
+              0.1607060318354561
+            ]
+          },
+          "class_to_class_std": {
+            "count": 3,
+            "mean": 0.06443322988026369,
+            "std": 0.02353862695086518,
+            "min": 0.04535559126837455,
+            "max": 0.09073807845606265,
+            "values": [
+              0.04535559126837455,
+              0.05720601991635386,
+              0.09073807845606265
+            ]
+          }
+        }
+      },
+      "chance_note": "Per-class chance is 1/N for the included subjects and is recorded in each source run; macro values are balanced accuracy."
+    },
+    "ISRUC": {
+      "run_count": 3,
+      "seeds": [
+        4321,
+        4322,
+        4323
+      ],
+      "sequence_count": 4276,
+      "subject_count": 98,
+      "class_count": 5,
+      "class_histogram_only_sequence_probe": {
+        "accuracy_top1": {
+          "count": 3,
+          "mean": 0.02310536044362292,
+          "std": 0.00211764126384281,
+          "min": 0.021256931608133085,
+          "max": 0.02541589648798521,
+          "values": [
+            0.02264325323475046,
+            0.021256931608133085,
+            0.02541589648798521
+          ]
+        },
+        "balanced_accuracy_top1": {
+          "count": 3,
+          "mean": 0.02351097701142067,
+          "std": 0.002461926833070615,
+          "min": 0.021648132996846398,
+          "max": 0.026302087934740998,
+          "values": [
+            0.02258271010267461,
+            0.021648132996846398,
+            0.026302087934740998
+          ]
+        }
+      },
+      "class_conditioned_macro": {
+        "raw_waveform": {
+          "balanced_accuracy": {
+            "count": 3,
+            "mean": 0.014546181189601668,
+            "std": 0.0028591487136506418,
+            "min": 0.0112898787399103,
+            "max": 0.01664560954509408,
+            "values": [
+              0.0112898787399103,
+              0.01664560954509408,
+              0.015703055283800626
+            ]
+          },
+          "class_to_class_std": {
+            "count": 3,
+            "mean": 0.004951514914766565,
+            "std": 0.0020669894762433082,
+            "min": 0.003208451355407231,
+            "max": 0.007235046186629485,
+            "values": [
+              0.003208451355407231,
+              0.004411047202262979,
+              0.007235046186629485
+            ]
+          }
+        },
+        "eeg_branch": {
+          "balanced_accuracy": {
+            "count": 3,
+            "mean": 0.2628519581555574,
+            "std": 0.004071347860179357,
+            "min": 0.25827631773981446,
+            "max": 0.2660743956583426,
+            "values": [
+              0.25827631773981446,
+              0.2660743956583426,
+              0.2642051610685151
+            ]
+          },
+          "class_to_class_std": {
+            "count": 3,
+            "mean": 0.06417765283469813,
+            "std": 0.0075425093035822515,
+            "min": 0.05637260075968237,
+            "max": 0.07142686651438954,
+            "values": [
+              0.07142686651438954,
+              0.05637260075968237,
+              0.06473349123002249
+            ]
+          }
+        },
+        "transformer_layer1": {
+          "balanced_accuracy": {
+            "count": 3,
+            "mean": 0.24504409012973016,
+            "std": 0.01221271300125878,
+            "min": 0.23679380441425465,
+            "max": 0.2590737747770148,
+            "values": [
+              0.23679380441425465,
+              0.2590737747770148,
+              0.23926469119792104
+            ]
+          },
+          "class_to_class_std": {
+            "count": 3,
+            "mean": 0.061662910097242916,
+            "std": 0.008240554661725637,
+            "min": 0.05683538886854677,
+            "max": 0.07117793962797164,
+            "values": [
+              0.05683538886854677,
+              0.056975401795210316,
+              0.07117793962797164
+            ]
+          }
+        },
+        "classifier_input": {
+          "balanced_accuracy": {
+            "count": 3,
+            "mean": 0.12968131120634538,
+            "std": 0.0074466431050954325,
+            "min": 0.12256973103806681,
+            "max": 0.13742297804061426,
+            "values": [
+              0.12256973103806681,
+              0.13742297804061426,
+              0.12905122454035498
+            ]
+          },
+          "class_to_class_std": {
+            "count": 3,
+            "mean": 0.013546998027328165,
+            "std": 0.0057992812170650524,
+            "min": 0.007574279855872713,
+            "max": 0.019155692116040426,
+            "values": [
+              0.019155692116040426,
+              0.007574279855872713,
+              0.013911022110071355
+            ]
+          }
+        }
+      },
+      "chance_note": "Per-class chance is 1/N for the included subjects and is recorded in each source run; macro values are balanced accuracy."
+    }
+  },
+  "scientific_conclusion_allowed": false
+}
