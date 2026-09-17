@@ -6,6 +6,10 @@ EdgeForge 是以 x86_64 + RTX 4070 SUPER 为近期主线、兼容 ARM64/RISC-V64
 
 2026-09-15 的真实 ISRUC BrainUICL eager/安全 Inductor CUDA 复验见 [docs/brainuicl-cuda-compiler-revalidation-20260915.md](docs/brainuicl-cuda-compiler-revalidation-20260915.md)。
 
+2026-09-16 的自训练 MiniLLM 推理对照（native CUDA/CPU、nano-vLLM、mini-sglang HTTP）见 [llm-systems-learning-pack/projects/minillm-general/benchmarks/inference_engine_comparison_20260916.md](../../llm-systems-learning-pack/projects/minillm-general/benchmarks/inference_engine_comparison_20260916.md)；该对照是 engine/CPU 基线，后续 Agent 实验优先复用同一 MiniLLM checkpoint。
+
+MiniLLM Agent 初版（native/nano/mini-sglang 可替换后端、显式 tool-call、JSON trace）见 [projects/minillm-general/agents/README.md](../../llm-systems-learning-pack/projects/minillm-general/agents/README.md)。模型生成是否遵循工具格式必须用专门 tool-call 数据验证，不能把普通语言模型输出自动当作安全调用。
+
 ## 当前硬件基线
 
 | Worker | 架构 | 资源 | 第一阶段角色 |
