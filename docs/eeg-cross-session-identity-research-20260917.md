@@ -1,8 +1,10 @@
 # RA-EEG / EdgeForge 跨 session EEG 身份特征研究
 
-更新日期：2026-09-17
+更新日期：2026-09-18
 
 ## 结论摘要
+
+> 2026-09-18 实验更新：本地实际没有 BED payload；BED 仍是 Zenodo 受限访问候选。本机已有且已完成实验的是 SEED、ISRUC-II、BCICIV-2a 和 BCICIV-2b。完整新结果、特征分层、verification EER 和解耦设计见 [EEG 独立实验报告](../../EEG/docs/cross-session-identity-foundation.md)。
 
 1. EdgeForge 当前使用的 ISRUC 数据来自 Subgroup I；原始协议明确为每人一次整夜 PSG，因此项目里的多个 epoch/chunk 不能解释为多个 session、trial 或日期。ISRUC 只有 Subgroup II 的 8 人各有两次记录，而且公开资料只说明记录位于不同日期，没有给出统一间隔。
 2. FACED 是每名参与者一次连续佩戴下完成 7 个 block、28 个视频 trial 的情绪诱发实验；block、trial 和穿插的算术题都是同一次记录内部结构，不是跨 session 或跨天数据。
@@ -10,6 +12,19 @@
 4. Sensors 2023 的 29 人 × 20 个不同日期 session 是强纵向验证基准，采集跨度平均约 70 天，但原始数据仅可向作者申请。BMT_EEG 的同行评议论文是 23 人 × 3 session、相邻 session 至少 15 天，支持随机与 skilled forgery；完整数据同样需要申请，当前 GitHub 只公开代码和极少样例。
 5. 已下载并验证两个完整公开跨 session 数据集：BCI Competition IV 2a（9 人 × 2 个不同日期 session）和 2b（9 人 × 5 个不同日期 session）。2a 是无反馈四类 MI 的跨天基准；2b 更适合研究同一任务中多日 session/反馈条件漂移，但官方资料只给出前两个 screening 日期位于两周内，没有给出全部五天的精确跨度。
 6. 对稳定身份识别，优先级应从“任务响应本身”转向“跨任务仍保留的个体残差”：个体化谱形、IAF/相对谱功率、1/f 参数、归一化空间协方差或连接、以及显式去除 task/session 信息的表示。SSVEP 谐波、ERP 波形、MI 的局灶 ERD/ERS、睡眠分期谱和高频肌电都很强，但首先编码的是任务或状态；如果不做 task-conditioned 分析，它们很容易产生伪身份结果。
+
+## 2026-09-18 本地跨 session 实验结果
+
+| Dataset | 主协议 | 幅值不变 logistic identification | Cosine-centroid control | Logistic verification EER | 主要发现 |
+|---|---|---:|---:|---:|---|
+| SEED | 两个完整 session 训练、第三个测试，三折 | 73.50% | 55.48% | 8.84% | 跨未见 emotion 仍为 66.17%–69.00%；情绪左右不对称未优于通用谱形/形态 |
+| BCICIV-2a | session 1↔2 | 89.77% | 59.33% | 4.09% | 任务期谱形强于 pre-cue baseline；跨 MI 类别仍约 78%–80% |
+| BCICIV-2b | 五次 leave-one-session-out | 87.40% | 73.34% | 含协议迁移主汇总为 5.48% | screening→feedback 为 78.53%，反向为 82.65%；绝对功率有明显 shortcut 风险 |
+| ISRUC-II | recording 1↔2 | 69.65% | 40.59% | 16.68% | N1/N2 最强、W 最弱；N1↔N2 可迁移，W→N2 明显下降 |
+
+四套数据的 chance 为 6.67%–12.50%，两类分类器均高于 chance。结果证明跨 session identity 存在，但分类器容量显著影响数值；尤其 ISRUC-II 的旧五频带 prototype 36.80% 不能再解释为“睡眠身份弱”，相同五频带换 logistic 已达 63.77%，七细频带为 69.65%。绝对功率只作为 gain/阻抗 shortcut 诊断，不进入稳定身份主结论。
+
+当前解耦阶段采用数据集专属前端与共同审计接口：SEED 使用 62 导空间图和左右同源分支；BCICIV 使用 sensorimotor mu/beta ERD 与 C3/C4；ISRUC 使用 30 秒宏观节律加 2–5 秒 spindle/slow-wave 微事件。identity、state/task、session embedding 分开，依次加入 supervised contrastive、训练 session adversary 和 identity/state independence；所有结论必须同时报告 subject probe、state/session leakage、跨状态矩阵和 EER。
 
 ## ISRUC 与 FACED 的真实采集协议
 
@@ -92,7 +107,7 @@ ds004148 的 60 × 3 × 5 = 900 条 task recordings 与 75 小时总量和五种
 1. **BCICIV-2a 管线冒烟测试**：S1 只作 train/enrolment，S2 只作 test/probe；任务匹配评估四类 MI，并另外做 train-three-tasks/test-held-out-task。先用 log-relative PSD、IAF/peak、covariance-Riemannian、cepstrum 四组轻量特征，不从随机 epoch split 开始。
 2. **BCICIV-2b 条件漂移测试**：用 session chronology 划分，分别报告 no-feedback→feedback、early-session→late-session 和逐日结果。3 个双极 EEG 通道让它适合检验“极低通道身份信号是否仍存在”；精确时间跨度未知时只报告 session/day 序号，不自行换算成天数。
 3. **ds004148 正式 benchmark**：空间允许后使用完整下载，或先用 NEMAR Zarr 流式读取少量 subject 做 loader；主矩阵应为 S1→S2（90 min）、S1→S3（30 d）、S1+S2→S3，并对 EC/EO/Math/Music/Memory 做 5×5 task transfer。报告 feature ICC、subject rank-1/balanced accuracy、verification EER/FAR/FRR，三者不能相互替代。
-4. **开放集控制**：若训练深度表示，representation-training subjects 与 identity-evaluation subjects 必须不重叠；分类头可以在 evaluation subjects 的 enrolment session 上拟合。这样才能区分“学会这 60 个人”与“学到可迁移的身份表征”。
+4. **已登记个体 closed-set 控制**：当前目标不是把表示迁移到训练阶段未见的人，而是识别训练时已登记个体的后续 EEG。representation-training 和 identity-evaluation 使用同一 subject 集合，但 recording/session 必须严格分开；开放集 subject-disjoint 只保留为未来可选研究，不作为当前完成条件。
 5. **混杂消融**：统一参考、重采样和带宽；移除 EOG/非 EEG；做 channel permutation、短时相邻窗口去重、文件名/metadata blind、task-balanced negative sampling；将 day/session 预测准确率作为不变性诊断。
 
 最小结果表应同时包含：数据集版本、subject 数、日期/session 划分、任务组合、有效通道、有效时长、窗口重叠、特征、模型、超参数选择所用 session、rank-1/balanced accuracy、EER/FAR/FRR、置信区间，以及 task/session probe。禁止以随机窗口 k-fold 的数字代表 cross-session 性能。
