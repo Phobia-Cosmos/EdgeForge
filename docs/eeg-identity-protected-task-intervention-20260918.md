@@ -30,6 +30,7 @@
 | FACED，1–8 Hz 完全去除 | 3 seeds | 99.53%→98.48% | 23.59%→14.29% | 1.05/1.57 pp | 9.30/7.30 pp | 0.053/0.055 | 稳定通过，但身份扰动更大 |
 | BCICIV-2a，完全时间反转 | 1 run | 64.48%→63.01% | 46.66%→39.65% | 1.48 pp | 7.01 pp | 0.045 | 单次候选，尚非稳定结论 |
 
+
 FACED 的 75% 衰减是当前更合适的操作点：与完全去除相比，它少牺牲约 0.52 个百分点身份准确率，而仍使 emotion task 平均下降 8.48 个百分点。三个 seed 的 task drop 分别为 6.48、7.89 和 11.06 个百分点，identity drop 分别为 0.30、0.41 和 0.89 个百分点，不是由单一随机 seed 驱动。
 
 这项 FACED 结果只能称为同一次 recording 内、held-out video block 上的稳定 proof-of-concept。FACED 没有第二 session；其九分类情绪 baseline 也只有 23.59%（chance 为 11.11%，测试多数类为 15.61%）。此外，FACED 尚无可登记为 identity-only 的显式保护频带，所以表中的显式频带误差为零只是“没有该项约束”，不是证明某个 FACED 身份频带被保护。真正有效的保护证据是 identity accuracy 和 identity embedding 在三个 seed 上均保持稳定。
