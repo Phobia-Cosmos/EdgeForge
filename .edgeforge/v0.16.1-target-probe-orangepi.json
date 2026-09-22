@@ -1,0 +1,158 @@
+{
+  "name": "orangepi",
+  "probe_runner": {
+    "platform": "Linux-6.14.0-36-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "probe_scope": "ssh",
+  "probed_at_utc": "2026-08-24T10:18:50Z",
+  "probes": {
+    "architecture": {
+      "elapsed_ms": 465.482,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "aarch64"
+    },
+    "cpu_count": {
+      "elapsed_ms": 451.956,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "8"
+    },
+    "cpu_info": {
+      "elapsed_ms": 487.101,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "Architecture:                    aarch64\nCPU op-mode(s):                  32-bit, 64-bit\nByte Order:                      Little Endian\nCPU(s):                          8\nOn-line CPU(s) list:             0-7\nVendor ID:                       ARM\nModel name:                      Cortex-A55\nModel:                           0\nThread(s) per core:              1\nCore(s) per socket:              4\nSocket(s):                       1\nStepping:                        r2p0\nCPU max MHz:                     1800.0000\nCPU min MHz:                     408.0000\nBogoMIPS:                        48.00\nFlags:                           fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp\nModel name:                      Cortex-A76\nModel:                           0\nThread(s) per core:              1\nCore(s) per socket:              4\nSocket(s):                       1\nStepping:                        r4p0\nCPU max MHz:                     2400.0000\nCPU min MHz:                     408.0000\nBogoMIPS:                        48.00\nFlags:                           fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp\nL1d cache:                       384 KiB (8 instances)\nL1i cache:                       384 KiB (8 instances)\nL2 cache:                        2.5 MiB (8 instances)\nL3 cache:                        3 MiB (1 instance)\nVulnerability Itlb multihit:     Not affected\nVulnerability L1tf:              Not affected\nVulnerability Mds:               Not affected\nVulnerability Meltdown:          Not affected\nVulnerability Mmio stale data:   Not affected\nVulnerability Retbleed:          Not affected\nVulnerability Spec store bypass: Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:        Mitigation; __user pointer sanitization\nVulnerability Spectre v2:        Vulnerable: Unprivileged eBPF enabled\nVulnerability Srbds:             Not affected\nVulnerability Tsx async abort:   Not affected"
+    },
+    "drm_devices": {
+      "elapsed_ms": 918.687,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "card0\ncard1\nrenderD128\nrenderD129"
+    },
+    "gpu_userspace": {
+      "elapsed_ms": 524.368,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "/etc/OpenCL/vendors/mali.icd\n\tlibmali-hook.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libmali-hook.so.1\n\tlibmali-hook.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libmali-hook.so\n\tlibmali.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libmali.so.1\n\tlibmali.so (libc6,AArch64) => /lib/aarch64-linux-gnu/libmali.so\n\tlibOpenCL.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libOpenCL.so.1\n\tlibvulkan.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libvulkan.so.1"
+    },
+    "iree_tools": {
+      "elapsed_ms": 506.07,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "iree-compile: unavailable\niree-run-module: unavailable"
+    },
+    "kernel": {
+      "elapsed_ms": 508.859,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "Linux 6.1.43-rockchip-rk3588 #1.0.0 SMP Wed Sep 18 13:51:18 CST 2024 aarch64"
+    },
+    "memory_info": {
+      "elapsed_ms": 458.989,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "MemTotal:       16347840 kB\nMemFree:         9552072 kB\nMemAvailable:   13987172 kB\nBuffers:          232380 kB\nCached:          5046936 kB\nSwapCached:            0 kB\nActive:          2294496 kB\nInactive:        3853364 kB\nActive(anon):     537112 kB\nInactive(anon):  1382328 kB\nActive(file):    1757384 kB\nInactive(file):  2471036 kB\nUnevictable:        3152 kB\nMlocked:              64 kB\nSwapTotal:       8173916 kB\nSwapFree:        8173916 kB\nDirty:                20 kB\nWriteback:             0 kB\nAnonPages:        871828 kB\nMapped:           803288 kB\nShmem:           1050896 kB\nKReclaimable:     369316 kB\nSlab:             440728 kB\nSReclaimable:     369316 kB\nSUnreclaim:        71412 kB\nKernelStack:        7412 kB\nPageTables:        15208 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:    16347836 kB\nCommitted_AS:    4355300 kB\nVmallocTotal:   259653632 kB\nVmallocUsed:       70596 kB\nVmallocChunk:          0 kB\nPercpu:             5856 kB\nCmaTotal:         131072 kB\nCmaAllocated:       8208 kB\nCmaReleased:      122864 kB\nCmaFree:          122864 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB"
+    },
+    "nvidia_gpu": {
+      "elapsed_ms": 605.499,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "unavailable"
+    },
+    "opencl_info": {
+      "elapsed_ms": 522.22,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "Platform Name                                   ARM Platform\n  Platform Version                                OpenCL 3.0 v1.g13p0-01eac0.68603db295fbf2c59ac6b927fdfb1c32\n  Platform Name                                   ARM Platform\n  Device Name                                     Mali-G610 r0p0\n  Device Version                                  OpenCL 3.0 v1.g13p0-01eac0.68603db295fbf2c59ac6b927fdfb1c32\n  Driver Version                                  3.0\n  Device Type                                     GPU\n  Device Available                                Yes\n  Max compute units                               4\n    Platform Name                                 ARM Platform\n    Device Name                                   Mali-G610 r0p0\n    Platform Name                                 ARM Platform\n    Device Name                                   Mali-G610 r0p0\n    Platform Name                                 ARM Platform\n    Device Name                                   Mali-G610 r0p0"
+    },
+    "python_runtimes": {
+      "elapsed_ms": 678.634,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "python=3.10.12\nnumpy=True\ntorch=False\nonnxruntime=False\niree=False\nrknn=False"
+    },
+    "rknn_runtime": {
+      "elapsed_ms": 828.967,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "/usr/bin/rknn_server\n/usr/bin/rknn_demo\n/usr/lib/librknnrt.so\n/usr/lib/librknn_api.so"
+    },
+    "rknpu_device": {
+      "elapsed_ms": 782.479,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "absent"
+    },
+    "rknpu_drm_driver": {
+      "elapsed_ms": 597.716,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "/sys/class/drm/card0/device/driver=rockchip-drm\n/sys/class/drm/card1/device/driver=RKNPU\n/sys/class/drm/renderD128/device/driver=rockchip-drm\n/sys/class/drm/renderD129/device/driver=RKNPU"
+    },
+    "rknpu_platform": {
+      "elapsed_ms": 476.754,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "fdab0000.npu\nrknpu_dev.10.auto"
+    },
+    "vulkan_info": {
+      "elapsed_ms": 462.637,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "unavailable"
+    },
+    "vulkan_loader": {
+      "elapsed_ms": 618.084,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "libvulkan.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libvulkan.so.1"
+    }
+  },
+  "runtime_capabilities": {
+    "drm": true,
+    "iree_python": false,
+    "iree_tools": false,
+    "numpy_python": true,
+    "onnxruntime_python": false,
+    "opencl_device_evidence": true,
+    "opencl_userspace": true,
+    "rk3588_npu_device": false,
+    "rk3588_npu_drm": true,
+    "rk3588_npu_platform": true,
+    "rknn_python": false,
+    "rknn_runtime_files": true,
+    "torch_python": false,
+    "vulkan_icd_manifest": false,
+    "vulkan_info": false,
+    "vulkan_loader": true
+  },
+  "schema_version": 1,
+  "ssh_host": "orangepi",
+  "status": "online",
+  "summary": {
+    "architecture": "aarch64",
+    "cpu_count": "8",
+    "cpu_model": "Cortex-A55",
+    "hardware_fingerprint": "7521ce34fa026735133faf8d",
+    "memory_total_mb": 15964
+  }
+}

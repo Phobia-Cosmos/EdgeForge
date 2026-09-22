@@ -51,6 +51,13 @@ class SchedulerTests(unittest.TestCase):
         )
         self.assertEqual(selected["id"], "worker-orangepi")
 
+    def test_backend_capability_is_independent_from_architecture(self):
+        self.x86["capabilities"]["backends"] = ["torch-compile"]
+        self.arm["capabilities"]["backends"] = ["onnx-runtime"]
+        selected = select_worker([self.x86, self.arm], {"worker_backends": ["onnx-runtime"]})
+        self.assertEqual(selected["id"], "worker-orangepi")
+        self.assertIsNone(select_worker([self.x86, self.arm], {"worker_backends": ["iree"]}))
+
     def test_compiler_plan_prefers_measured_lower_latency(self):
         kernel = {
             "id": "kernel-reference-matmul-v1",

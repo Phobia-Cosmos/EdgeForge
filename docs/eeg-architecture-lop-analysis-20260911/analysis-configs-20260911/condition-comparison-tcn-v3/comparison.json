@@ -1,0 +1,609 @@
+{
+  "schema_version": 1,
+  "analysis": "eeg-condition-lop-comparison-v1",
+  "architecture": "tcn",
+  "conditions": {
+    "raw": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/summary.json",
+    "rms_equalized": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-rms-equalized-tcn-v1/summary.json",
+    "target_snr20_noise": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr20-tcn-v1/summary.json",
+    "target_snr15_noise": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr15-tcn-v1/summary.json",
+    "target_snr10_noise": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr10-tcn-v1/summary.json",
+    "target_gain_drift10": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-gain-drift10-tcn-v1/summary.json"
+  },
+  "stats": {
+    "raw": {
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/summary.json",
+      "seeds": [
+        4321,
+        4322,
+        4323
+      ],
+      "source_accuracy": [
+        0.26374998688697815,
+        0.20125000178813934,
+        0.14374999701976776
+      ],
+      "budgets": [
+        0,
+        5,
+        10,
+        25,
+        50
+      ],
+      "budget_metrics": {
+        "0": {
+          "mean": -0.02666666777804494,
+          "positive": 10,
+          "zero": 6,
+          "negative": 8,
+          "count": 24,
+          "min": -0.41999998688697815,
+          "max": 0.2800000011920929
+        },
+        "5": {
+          "mean": -0.05249999991307656,
+          "positive": 11,
+          "zero": 4,
+          "negative": 9,
+          "count": 24,
+          "min": -0.41999998688697815,
+          "max": 0.24000000953674316
+        },
+        "10": {
+          "mean": 0.01999999862164259,
+          "positive": 13,
+          "zero": 6,
+          "negative": 5,
+          "count": 24,
+          "min": -0.26000000536441803,
+          "max": 0.36000001430511475
+        },
+        "25": {
+          "mean": 0.02083333395421505,
+          "positive": 15,
+          "zero": 2,
+          "negative": 7,
+          "count": 24,
+          "min": -0.23999997973442078,
+          "max": 0.4399999976158142
+        },
+        "50": {
+          "mean": -0.007499999677141507,
+          "positive": 11,
+          "zero": 6,
+          "negative": 7,
+          "count": 24,
+          "min": -0.3799999952316284,
+          "max": 0.20000001788139343
+        }
+      }
+    },
+    "rms_equalized": {
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-rms-equalized-tcn-v1/summary.json",
+      "seeds": [
+        4321,
+        4322,
+        4323
+      ],
+      "source_accuracy": [
+        0.20125000178813934,
+        0.14374999701976776,
+        0.20125000178813934
+      ],
+      "budgets": [
+        0,
+        10,
+        25,
+        50
+      ],
+      "budget_metrics": {
+        "0": {
+          "mean": 0.05499999846021334,
+          "positive": 11,
+          "zero": 6,
+          "negative": 7,
+          "count": 24,
+          "min": -0.18000000715255737,
+          "max": 0.41999998688697815
+        },
+        "10": {
+          "mean": 0.0708333325261871,
+          "positive": 15,
+          "zero": 5,
+          "negative": 4,
+          "count": 24,
+          "min": -0.1599999964237213,
+          "max": 0.3400000035762787
+        },
+        "25": {
+          "mean": 0.105833332054317,
+          "positive": 19,
+          "zero": 3,
+          "negative": 2,
+          "count": 24,
+          "min": -0.2199999988079071,
+          "max": 0.4399999976158142
+        },
+        "50": {
+          "mean": 0.1091666636057198,
+          "positive": 15,
+          "zero": 5,
+          "negative": 4,
+          "count": 24,
+          "min": -0.2199999988079071,
+          "max": 0.3799999952316284
+        }
+      }
+    },
+    "target_snr20_noise": {
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr20-tcn-v1/summary.json",
+      "seeds": [
+        4321,
+        4322,
+        4323
+      ],
+      "source_accuracy": [
+        0.26374998688697815,
+        0.20125000178813934,
+        0.14374999701976776
+      ],
+      "budgets": [
+        0,
+        10,
+        25,
+        50
+      ],
+      "budget_metrics": {
+        "0": {
+          "mean": 0.021666665251056354,
+          "positive": 11,
+          "zero": 5,
+          "negative": 8,
+          "count": 24,
+          "min": -0.2199999913573265,
+          "max": 0.2799999862909317
+        },
+        "10": {
+          "mean": 0.037500000558793545,
+          "positive": 13,
+          "zero": 4,
+          "negative": 7,
+          "count": 24,
+          "min": -0.4000000096857548,
+          "max": 0.36000001430511475
+        },
+        "25": {
+          "mean": 0.06833333273728688,
+          "positive": 15,
+          "zero": 5,
+          "negative": 4,
+          "count": 24,
+          "min": -0.2199999988079071,
+          "max": 0.36000001430511475
+        },
+        "50": {
+          "mean": 0.10416666604578495,
+          "positive": 16,
+          "zero": 4,
+          "negative": 4,
+          "count": 24,
+          "min": -0.18000000715255737,
+          "max": 0.3799999952316284
+        }
+      }
+    },
+    "target_snr15_noise": {
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr15-tcn-v1/summary.json",
+      "seeds": [
+        4321,
+        4322,
+        4323
+      ],
+      "source_accuracy": [
+        0.26374998688697815,
+        0.20125000178813934,
+        0.14374999701976776
+      ],
+      "budgets": [
+        0,
+        25,
+        50
+      ],
+      "budget_metrics": {
+        "0": {
+          "mean": 0.01333333303531011,
+          "positive": 10,
+          "zero": 6,
+          "negative": 8,
+          "count": 24,
+          "min": -0.2199999913573265,
+          "max": 0.30000001192092896
+        },
+        "25": {
+          "mean": 0.09249999901900689,
+          "positive": 15,
+          "zero": 4,
+          "negative": 5,
+          "count": 24,
+          "min": -0.24000000953674316,
+          "max": 0.4399999976158142
+        },
+        "50": {
+          "mean": 0.05333333167557915,
+          "positive": 14,
+          "zero": 5,
+          "negative": 5,
+          "count": 24,
+          "min": -0.2199999988079071,
+          "max": 0.36000001430511475
+        }
+      }
+    },
+    "target_snr10_noise": {
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr10-tcn-v1/summary.json",
+      "seeds": [
+        4321,
+        4322,
+        4323
+      ],
+      "source_accuracy": [
+        0.26374998688697815,
+        0.20125000178813934,
+        0.14374999701976776
+      ],
+      "budgets": [
+        0,
+        25,
+        50
+      ],
+      "budget_metrics": {
+        "0": {
+          "mean": 0.012499998013178507,
+          "positive": 8,
+          "zero": 7,
+          "negative": 9,
+          "count": 24,
+          "min": -0.2199999913573265,
+          "max": 0.3400000035762787
+        },
+        "25": {
+          "mean": 0.07583333427707355,
+          "positive": 15,
+          "zero": 3,
+          "negative": 6,
+          "count": 24,
+          "min": -0.23999997973442078,
+          "max": 0.4399999976158142
+        },
+        "50": {
+          "mean": 0.06916666775941849,
+          "positive": 14,
+          "zero": 6,
+          "negative": 4,
+          "count": 24,
+          "min": -0.2199999988079071,
+          "max": 0.36000001430511475
+        }
+      }
+    },
+    "target_gain_drift10": {
+      "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-gain-drift10-tcn-v1/summary.json",
+      "seeds": [
+        4321,
+        4322,
+        4323
+      ],
+      "source_accuracy": [
+        0.26374998688697815,
+        0.20125000178813934,
+        0.14374999701976776
+      ],
+      "budgets": [
+        0,
+        25,
+        50
+      ],
+      "budget_metrics": {
+        "0": {
+          "mean": -0.027500002334515255,
+          "positive": 5,
+          "zero": 9,
+          "negative": 10,
+          "count": 24,
+          "min": -0.2199999913573265,
+          "max": 0.23999997973442078
+        },
+        "25": {
+          "mean": 0.07083333283662796,
+          "positive": 14,
+          "zero": 4,
+          "negative": 6,
+          "count": 24,
+          "min": -0.2199999988079071,
+          "max": 0.36000001430511475
+        },
+        "50": {
+          "mean": -0.030833334506799776,
+          "positive": 10,
+          "zero": 5,
+          "negative": 9,
+          "count": 24,
+          "min": -0.30000001192092896,
+          "max": 0.23999997973442078
+        }
+      }
+    }
+  },
+  "paired_deltas_vs_raw": {
+    "rms_equalized": {
+      "0": {
+        "mean_delta": 0.08166666623825829,
+        "positive_delta": 11,
+        "negative_delta": 10,
+        "count": 24,
+        "min_delta": -0.3800000138580799,
+        "max_delta": 0.6400000154972076
+      },
+      "10": {
+        "mean_delta": 0.05083333390454451,
+        "positive_delta": 9,
+        "negative_delta": 8,
+        "count": 24,
+        "min_delta": -0.1600000001490116,
+        "max_delta": 0.3799999952316284
+      },
+      "25": {
+        "mean_delta": 0.08499999810010195,
+        "positive_delta": 14,
+        "negative_delta": 1,
+        "count": 24,
+        "min_delta": -0.3400000035762787,
+        "max_delta": 0.3400000035762787
+      },
+      "50": {
+        "mean_delta": 0.11666666328286131,
+        "positive_delta": 15,
+        "negative_delta": 5,
+        "count": 24,
+        "min_delta": -0.20000001788139343,
+        "max_delta": 0.7599999904632568
+      }
+    },
+    "target_snr20_noise": {
+      "0": {
+        "mean_delta": 0.04833333302910129,
+        "positive_delta": 11,
+        "negative_delta": 10,
+        "count": 24,
+        "min_delta": -0.4000000096857548,
+        "max_delta": 0.5600000023841858
+      },
+      "10": {
+        "mean_delta": 0.017500001937150955,
+        "positive_delta": 8,
+        "negative_delta": 11,
+        "count": 24,
+        "min_delta": -0.23999997973442078,
+        "max_delta": 0.3799999952316284
+      },
+      "25": {
+        "mean_delta": 0.04749999878307184,
+        "positive_delta": 10,
+        "negative_delta": 6,
+        "count": 24,
+        "min_delta": -0.2199999988079071,
+        "max_delta": 0.2799999862909317
+      },
+      "50": {
+        "mean_delta": 0.11166666572292645,
+        "positive_delta": 17,
+        "negative_delta": 3,
+        "count": 24,
+        "min_delta": -0.2800000011920929,
+        "max_delta": 0.7599999904632568
+      }
+    },
+    "target_snr15_noise": {
+      "0": {
+        "mean_delta": 0.04000000081335505,
+        "positive_delta": 10,
+        "negative_delta": 10,
+        "count": 24,
+        "min_delta": -0.4000000096857548,
+        "max_delta": 0.5600000023841858
+      },
+      "25": {
+        "mean_delta": 0.07166666506479184,
+        "positive_delta": 11,
+        "negative_delta": 4,
+        "count": 24,
+        "min_delta": -0.3400000035762787,
+        "max_delta": 0.36000001430511475
+      },
+      "50": {
+        "mean_delta": 0.060833331352720656,
+        "positive_delta": 12,
+        "negative_delta": 6,
+        "count": 24,
+        "min_delta": -0.35999999940395355,
+        "max_delta": 0.3799999952316284
+      }
+    },
+    "target_snr10_noise": {
+      "0": {
+        "mean_delta": 0.039166665791223444,
+        "positive_delta": 10,
+        "negative_delta": 11,
+        "count": 24,
+        "min_delta": -0.4000000096857548,
+        "max_delta": 0.41999998688697815
+      },
+      "25": {
+        "mean_delta": 0.05500000032285849,
+        "positive_delta": 11,
+        "negative_delta": 5,
+        "count": 24,
+        "min_delta": -0.3400000035762787,
+        "max_delta": 0.36000001430511475
+      },
+      "50": {
+        "mean_delta": 0.07666666743655999,
+        "positive_delta": 13,
+        "negative_delta": 4,
+        "count": 24,
+        "min_delta": -0.09999999403953552,
+        "max_delta": 0.3799999952316284
+      }
+    },
+    "target_gain_drift10": {
+      "0": {
+        "mean_delta": -0.0008333345564703146,
+        "positive_delta": 7,
+        "negative_delta": 12,
+        "count": 24,
+        "min_delta": -0.4000000096857548,
+        "max_delta": 0.41999998688697815
+      },
+      "25": {
+        "mean_delta": 0.04999999888241291,
+        "positive_delta": 11,
+        "negative_delta": 5,
+        "count": 24,
+        "min_delta": -0.3400000035762787,
+        "max_delta": 0.2799999862909317
+      },
+      "50": {
+        "mean_delta": -0.02333333482965827,
+        "positive_delta": 8,
+        "negative_delta": 12,
+        "count": 24,
+        "min_delta": -0.25999999046325684,
+        "max_delta": 0.47999995946884155
+      }
+    }
+  },
+  "gates": {
+    "raw": {
+      "10": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 1,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/audit-budgets/budget-10/gate/tcn.json"
+      },
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 2,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 2,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/audit-budgets/budget-50/gate/tcn.json"
+      }
+    },
+    "rms_equalized": {
+      "10": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 3,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-rms-equalized-tcn-v1/audit-budgets/budget-10/gate/tcn.json"
+      },
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 5,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-rms-equalized-tcn-v1/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 2,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-rms-equalized-tcn-v1/audit-budgets/budget-50/gate/tcn.json"
+      }
+    },
+    "target_snr20_noise": {
+      "10": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 2,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr20-tcn-v1/audit-budgets/budget-10/gate/tcn.json"
+      },
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 3,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr20-tcn-v1/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 2,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr20-tcn-v1/audit-budgets/budget-50/gate/tcn.json"
+      }
+    },
+    "target_snr15_noise": {
+      "10": null,
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 4,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr15-tcn-v1/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 2,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr15-tcn-v1/audit-budgets/budget-50/gate/tcn.json"
+      }
+    },
+    "target_snr10_noise": {
+      "10": null,
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 4,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr10-tcn-v1/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 3,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-snr10-tcn-v1/audit-budgets/budget-50/gate/tcn.json"
+      }
+    },
+    "target_gain_drift10": {
+      "10": null,
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 3,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-gain-drift10-tcn-v1/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "positive_stage_count": 0,
+        "stage_count": 8,
+        "direction_supported": false,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/condition-target-gain-drift10-tcn-v1/audit-budgets/budget-50/gate/tcn.json"
+      }
+    }
+  },
+  "scientific_conclusion_allowed": false,
+  "interpretation": "descriptive paired comparison; a positive mean fresh-gap or condition delta is not sufficient for a LoP claim"
+}

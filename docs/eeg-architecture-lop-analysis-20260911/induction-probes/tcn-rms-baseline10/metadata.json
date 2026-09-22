@@ -1,0 +1,426 @@
+{
+  "schema": "edgeforge.eeg-continuous-architecture-lop.v1",
+  "dataset": "ISRUC",
+  "data_root": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10",
+  "source_subjects": [
+    1,
+    3,
+    4,
+    6,
+    7,
+    9,
+    10,
+    21
+  ],
+  "target_subject_order": [
+    2,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+  ],
+  "retention_subjects": [
+    5,
+    18,
+    19,
+    20
+  ],
+  "target_split": "first 10 epochs per file for adaptation; last 10 for held-out evaluation",
+  "input_shape": [
+    8,
+    3000
+  ],
+  "classes": 5,
+  "source_epochs": 3,
+  "source_lr": 0.002,
+  "adapt_steps": 50,
+  "budgets": [
+    0,
+    10,
+    25,
+    50
+  ],
+  "adapt_lr": 0.001,
+  "batch_size": 32,
+  "adaptation_strategy": "plain",
+  "input_normalization": "none",
+  "target_channel_polarity": null,
+  "replay_ratio": 0.0,
+  "replay_loss_mixture": "(1-replay_ratio)*target_cross_entropy + replay_ratio*source_cross_entropy",
+  "replay_sampling": "fixed deterministic source batches shared by warm and fresh probes",
+  "l2_sp_lambda": 0.0,
+  "l2_sp_anchor": "probe-initial parameters; carried warm state for warm and random initialization for fresh",
+  "checkpoint_diagnostics": false,
+  "diagnostic_max_observations": 256,
+  "fresh_mode": "random-initialization-at-each-target-stage",
+  "warm_mode": "carried-after-previous-stage-final-budget",
+  "device": "cpu",
+  "scientific_conclusion_allowed": false,
+  "source_files": [
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/1/data/3.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/1/label/3.npy",
+      "data_sha256": "b5f5b61589fee82ca82cd63e7617b933d37436605ce20ca90fda9896dc2d10da",
+      "label_sha256": "2bc06544acfac06444f3403f301592a089f470603cd797c44cbb433b47f01b63"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/1/data/5.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/1/label/5.npy",
+      "data_sha256": "1ddffdc38880d9366900ecd6e4de792b8cf543ba5639b2395990db38830c6a01",
+      "label_sha256": "10276e89ed54302c0a7fd97571683a79eeec06c0cd7c49d645345cdf8b5c83cd"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/1/data/21.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/1/label/21.npy",
+      "data_sha256": "67ffe8311e35ce0a60aeade34d210c09cd95764c44308cff370b60c936054d42",
+      "label_sha256": "e98815d780f27fd717fb576a9181ce9a131e805b4a0a3180c91bae2c8e2bcc59"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/1/data/25.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/1/label/25.npy",
+      "data_sha256": "29a36da4ba353b3b7da195e64fecfdf0fe5b4a96532ad4894d48231b4844498e",
+      "label_sha256": "13c23c168347cbb67ba845ef92823356cdb47a7677b6cefcbe92db97d9bf8d09"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/1/data/27.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/1/label/27.npy",
+      "data_sha256": "4369f0c4c6c8a832fea998b8db340de950c799e59ab56315ffcce4c4e8593360",
+      "label_sha256": "3c7020e152320276969366187b1fd577d818ab5d84a150a4ee15ae7a014f6c92"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/3/data/11.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/3/label/11.npy",
+      "data_sha256": "73541cb882c81b3d70b72dab3e350f5742b782e042b0d8e71757f3db8a621999",
+      "label_sha256": "864a3dcd69e78fdceb9627a9e3d16cfe930f2635f5738af0c1f3bcf798500c8b"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/3/data/16.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/3/label/16.npy",
+      "data_sha256": "c3ba16eddfad8d6248bb046f6a84ed2bfbdbff4d9dc077e9e39015942e9499b5",
+      "label_sha256": "36a1941fda1a53623fd687c39cf9fe9429c5847f4ab1ef5ed17c00ac5399c420"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/3/data/29.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/3/label/29.npy",
+      "data_sha256": "10b937171447fb2babe868ee54a16ee4fd7316ad9810d194bc69ed2882ac0539",
+      "label_sha256": "ecaaae41e6438cda900ea3bface79038cf4b7021b694d02ee7780f80b422fab3"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/3/data/43.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/3/label/43.npy",
+      "data_sha256": "4f61ef8bcb7ae23b8acfc67ba65b989e487f3810cfcf953a10f6ecf599ff53d8",
+      "label_sha256": "3705a28eedff3de05362db8ba0761f1a537cc0f5ed0e494d559674c540af8b8b"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/3/data/44.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/3/label/44.npy",
+      "data_sha256": "d3b094b27c67b4b564c4c0ec4291c904ad7f741e1744ee80527f2688f145a175",
+      "label_sha256": "e873b203df177951e3a2c3a736bd33e690400063c0f2b1255c797208ecb2d280"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/4/data/0.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/4/label/0.npy",
+      "data_sha256": "07acfce98785c27ed0c5bb75dae94deaa3b0861e4e1b94fc5b4051ffa09cf6b5",
+      "label_sha256": "1e96596af1d6f13b71f149d17aacd959fbacd9be3d523779d7768326d579bf3a"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/4/data/4.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/4/label/4.npy",
+      "data_sha256": "3589b8fcda4c70f832b12e6859fa4f83a8cd76f843cecbc29b98aa5ccf80a9f9",
+      "label_sha256": "3fc89836d90c0977ae5b32a59e0c94c1367fcfa59a5bcdc5f84c41483e43b46a"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/4/data/35.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/4/label/35.npy",
+      "data_sha256": "1d621cfecd2c03fa01ac02025a5381bb4caae24b00bc450d0393cd8ec5af229b",
+      "label_sha256": "8b658b57603bfd5e5efa4cd0d789d5acab414e6e401ff81dbad68b54dcb3706d"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/4/data/42.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/4/label/42.npy",
+      "data_sha256": "921d4074ffe16dce076df829a4f9c7d2af949e1c2efbd7dd925b809fcef780ee",
+      "label_sha256": "e51ffbfd2283ac37076500d4b2b06ae8ef37f65dae80059d3dfb07981e67e9aa"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/4/data/46.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/4/label/46.npy",
+      "data_sha256": "1b1b6bd31a9f49ef86c39cb5103b30be4ad5b30c6c187f2b8d2418417552eccd",
+      "label_sha256": "7efe92dbdcb6c4b876ead2601aa3859849c7aee11831495f2671e511713b9269"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/6/data/14.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/6/label/14.npy",
+      "data_sha256": "16718c61ee4b3d982f8c09ca0d01fc14d7a50a1cf427bb1300a672cc106e68a7",
+      "label_sha256": "fb3980469ec21e7d8139b2d3061b8c2f744ffb89ba64bf55469dd566267c1269"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/6/data/18.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/6/label/18.npy",
+      "data_sha256": "1d3ada89e7905f8e41a601051088d00a5b5b3e48ef5a2d2f51fc94ab74722960",
+      "label_sha256": "bae91a6bb66ecf6257fdf5fa291b0aea7efd68065b9eb21d69dab947c2fe04fd"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/6/data/20.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/6/label/20.npy",
+      "data_sha256": "e3063729c24bb33b31f7f23ffadfbf8cd706251cdaddc794e25b1be8dc18f4c9",
+      "label_sha256": "6d6d55f5fa815084f531c06b4e3ceb101ae8a4b0fdd62478de01a3475b0afa2f"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/6/data/21.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/6/label/21.npy",
+      "data_sha256": "1924214fb05d79e5ecf54b19f46612a8cd8181aa124915f4696e6bc64e00b0dd",
+      "label_sha256": "2801bf6931b2ff29e0d84fd03f0890a46b150cf5d3745a2fc7b919ddbc2309dc"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/6/data/23.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/6/label/23.npy",
+      "data_sha256": "b2ee737ff17a8cd963fe357c4f6a8dfdf78a1c2a8d3084f4365697c7e390dc49",
+      "label_sha256": "e65978248a385532bb7cc2b9868257c8c8310348aa5fee3bd2e233a39b9439be"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/7/data/3.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/7/label/3.npy",
+      "data_sha256": "b66d77827884518c3805963f928106ecdd3e3c582d2f0b8c08ab99b2ee93dddc",
+      "label_sha256": "402b70ffd572aabfea822fdbd1acbad37d9526d937ac665246b3580cdcfac68f"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/7/data/11.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/7/label/11.npy",
+      "data_sha256": "1e5be06f12de9b6089378128d4d9af9edb188dbb1edac765c912a6d2de66b425",
+      "label_sha256": "a9dca70ec5393637219015edaa7ac677ae6a86a6a4f5303d783110d8b382ec36"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/7/data/15.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/7/label/15.npy",
+      "data_sha256": "1d1e9d142d006cab8ac5a9b17ce7a7ea20b68b0130b63777558afba312274406",
+      "label_sha256": "b8a023f222ea3009fb2a981366414c47c16b3eec566069433ded4163aa76e9f8"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/7/data/24.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/7/label/24.npy",
+      "data_sha256": "c871c11e8fe9d5cb4769b06bd1393dbf4270218866dc29c9bbe5f8d2589adbb2",
+      "label_sha256": "4f45c594025aab4958164b86819866d61f89e1b3e132178fbad560adc28ade9d"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/7/data/30.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/7/label/30.npy",
+      "data_sha256": "406d15627b8d918a508334e92ea279a3d60ce101f22368493fae35e2e43b8ac4",
+      "label_sha256": "231f81f5294eac46ad5c80fdfbb9df3cbd5bffe1ebe954fe99621a0713211f7c"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/9/data/2.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/9/label/2.npy",
+      "data_sha256": "07c1f744cf6c6948ecd30ed59fc3a310b9b63d46eaa77637fd0df4c14679fed0",
+      "label_sha256": "8f4e23191097c7c481485af2732d37fb70eb5d8d6c676bfdebd2cbd821d514a3"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/9/data/20.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/9/label/20.npy",
+      "data_sha256": "d42b7b200c86342c7be18e07c8a7525756ab5717e3dee2d2d9e3325d801b5913",
+      "label_sha256": "7d74e944549e3029750bf801819f1b0ff1e4fd97d335cdc91f59d1131b9c1651"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/9/data/25.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/9/label/25.npy",
+      "data_sha256": "2433f9e3cd15f2eab80ca5b6a1f2c7ec139380832a132fc6e917180b9a9bfa63",
+      "label_sha256": "f5d38e96e7ce36ebdeb7abfa2bed3e377880b537f5b2a285bda46bc77c31d507"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/9/data/31.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/9/label/31.npy",
+      "data_sha256": "e78356fac12e47ce576934a4f52446ea37cbdb5f9e02c987f7f9ad9ae092c562",
+      "label_sha256": "39ccf933e994cdfd47a7f05d4982596a83c42c189e79722d4b9e1c13c476d56a"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/9/data/32.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/9/label/32.npy",
+      "data_sha256": "08f0ae88466407b373359d73bb96801cd3e00f1c65f6f09de430586256ad9382",
+      "label_sha256": "07de4fef0614c2d99eb705e46b762becbe6103bdbadc27e757b7ea2f553828d8"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/10/data/5.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/10/label/5.npy",
+      "data_sha256": "046d2c636928b047eb3089310ff1f94149feb2c50e2a0e96e9e65c8d36374428",
+      "label_sha256": "06aaa8b7fb252008298c26adc4708cc13852def929a3d604330fa6fc453a4a5d"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/10/data/13.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/10/label/13.npy",
+      "data_sha256": "6b224efe03db38f1421272bdcdbffd9ea1b9e9cb1aa25291fd12c76cde3c299c",
+      "label_sha256": "7fb5ae34bdbac5449c0b86bf71a9930e3daf4721f3630b8f3e95cb2933119b7a"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/10/data/34.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/10/label/34.npy",
+      "data_sha256": "647fef36a66dde824888d24bc36245ebec7a7479fa70e43063a02c64be277165",
+      "label_sha256": "5b41d05fe0a747c5c9b3a1a42f0224b4f09f32e864c031db306261c0c7164b2e"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/10/data/35.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/10/label/35.npy",
+      "data_sha256": "1fc8f740a43f49745387ff24bef83aa43366303211652c41debaf4bfc08406a2",
+      "label_sha256": "82e09e31b195b63c3eb3fbf13fcf8fec85429dcd61e5ad6c68559d3155c0b09f"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/10/data/40.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/10/label/40.npy",
+      "data_sha256": "8cbc8c5ea82f5526a9a482ff98212deafd0713c9f0971c9f480075357a398bb6",
+      "label_sha256": "a923eb0d6500d2ddb30e7e200cba831648c02d5254f038bf6e8358d316373439"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/21/data/10.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/21/label/10.npy",
+      "data_sha256": "4d84bdff193c108227d0e8b002e1c49488b74ef5d7770e56ae41ab2199bd0a00",
+      "label_sha256": "74cd1c9402ac1a6c2d13f60d53d6b122bc90528ff0a02ce4a9e336ca5d8122f5"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/21/data/11.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/21/label/11.npy",
+      "data_sha256": "b8ce7cd14915b2e29de9f9c4bda6ee9ae9c8dff95d0ebf47d2511fe72f0c2fb8",
+      "label_sha256": "1045718e0f895182c0ab95ee815753a6dea9fdb6d48c7a13e8b354f65825ea51"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/21/data/14.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/21/label/14.npy",
+      "data_sha256": "3180491dfd56d4e16ffaa8e914384b8bf02dd8578d339b97fe8e13e8e36a2f78",
+      "label_sha256": "8d24f1b0a1b536fd95c919f135a6f196f126b5e4beb86fc6ee2da87fed02f41c"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/21/data/18.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/21/label/18.npy",
+      "data_sha256": "6f9bc22ff7dc756dcac1ae1cbf8a92d64ae82afcc916042e95b43519aad20922",
+      "label_sha256": "585623092cfe8c26d0e3fce0e4566352ac3519019af4facf952d495b765acfbe"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/21/data/19.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/source/21/label/19.npy",
+      "data_sha256": "d11b1c004f8dd2611acc8c085e36d3ec072fda52ba87c0c2252d18ea32a13be7",
+      "label_sha256": "7f9f26ced0e9f6709b54aa0431be1f0986544c4fbc684743871fffa174e904b9"
+    }
+  ],
+  "retention_files": [
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/5/data/12.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/5/label/12.npy",
+      "data_sha256": "29aae3b193581b3b89c28b81f57d45ab14cbca8cb6f2445ea4a38f20e6e85f03",
+      "label_sha256": "2fbb17fb6841645b2eef011014ec9995af3427c17d31bc7904821d92d2afa170"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/5/data/21.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/5/label/21.npy",
+      "data_sha256": "cbfde974552b0f86808e0b13d903e95f952e7bc4e92ce0f95dbde1ea45ea7b1a",
+      "label_sha256": "bc5cb80778fa16aea4bdbffbf14acd12da842f8a2ec63ef097c6ddb2d49afe9f"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/5/data/28.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/5/label/28.npy",
+      "data_sha256": "a09ee1dc15ab74054067548915cfbb9cdc4cbb3e496165cb6b353747545c18a1",
+      "label_sha256": "cc76524bc62fdff4e2e437083f91b2665359a011937195b0f7cd9a733e075af0"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/5/data/29.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/5/label/29.npy",
+      "data_sha256": "84179571b19f525d1683c3d2253e89d76e8becdc21cb20fbb5e57f13efdf5f05",
+      "label_sha256": "3b2cdfdbafd1d50c8887ff85cce8144168fa4333f175936e18ffd6e269107c5e"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/5/data/30.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/5/label/30.npy",
+      "data_sha256": "be8e1c8c5f3ed38c9256f00ef94c677b077c43ab015a7033edba35428a1868b7",
+      "label_sha256": "6ea24904319fff45ff5cab282c6ba21f80af4c0e718995809d94917e09cfa0f1"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/18/data/4.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/18/label/4.npy",
+      "data_sha256": "d3ed03a61f3ed3afbd92c3847c8b8a2fc7b0326cac27eaaf68eca0ea8d230c6f",
+      "label_sha256": "42d61f98e60c355deed4dd36c2ff636ee4e1270ef2592cd76a31c3f8e3b56db5"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/18/data/5.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/18/label/5.npy",
+      "data_sha256": "2ea4860fda281fcd6ee825fb2fddd4875e947d367645a1eadabd9b2cd02bf65c",
+      "label_sha256": "29360a3014fc95fb2a4fc6c74fde3797f7ba17607759a802c0164cc7fa045130"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/18/data/7.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/18/label/7.npy",
+      "data_sha256": "c9a355ec17763c113bb1863cdb638f357fe3a794bede8a40b02de43df0494eae",
+      "label_sha256": "d8593804b832adcd0f682f301b68678de62e91d0b26906db032a9a3f5c232880"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/18/data/12.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/18/label/12.npy",
+      "data_sha256": "8b9018a18c95f7233876fc4efdd0b4d4a687cbfffb98fd263c31b1c6603e937d",
+      "label_sha256": "7507f0f777da340f5b6391fe342ad90e5dd09cee9f8abfd5d73b7ad05699014f"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/18/data/47.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/18/label/47.npy",
+      "data_sha256": "d6923658dcf084cafa68b42e60c5ef0d407d725d9b0a244858bb42488c8c0bd9",
+      "label_sha256": "7522bf1644feeb15e655abd71402b281495d2911f1098910b83617bf98556694"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/19/data/3.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/19/label/3.npy",
+      "data_sha256": "c3f8270bb28d0cab64fe63db0d646f3b77de3948c8cfbb4eaec171d107b8f091",
+      "label_sha256": "c4016522d0c51a9b93a994da101b588e85f1d79705f6c7df925d9d7f385adffe"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/19/data/26.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/19/label/26.npy",
+      "data_sha256": "87bbc8d27820de339b20c12e6421348dc3272e121e1ae038e1075a6ce85d524c",
+      "label_sha256": "a387e5307d54f6e63105149222a0ee5cbe9f2cd5fa3ef0d4c0055b8671949179"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/19/data/28.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/19/label/28.npy",
+      "data_sha256": "3c0136a768a7723392533d52ab5e08a2fb9d71dab3134f8748c58e74a7b332d4",
+      "label_sha256": "2556369a674027384f480e1dc1bc7e23706d4efa5e519f9615eacbdc7f9050e8"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/19/data/34.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/19/label/34.npy",
+      "data_sha256": "0fbdb4701f64ddfa39ef3e08d1b66f5e59601af93104a6b2c2ecff7f42d55c1f",
+      "label_sha256": "6957c2b3b0933e1f45b012f89b37c7543a977024e389486796d28e5a928fe1fe"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/19/data/37.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/19/label/37.npy",
+      "data_sha256": "698a55f08c93c9698714222c11f4cb9dd41ca7e819c81e8c348fb395044c8afd",
+      "label_sha256": "98b9cda1b4e5f0e5283a8245dc96befd6910a63af9e0d9a67af3e193625ac900"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/20/data/8.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/20/label/8.npy",
+      "data_sha256": "b8c9f13806992d506cd96f584ad7a278dbe92e79ca2b276b44dabafb04cc0ac7",
+      "label_sha256": "bdecde8acd9250a2345f0ce97b15342f9c8f8df08fff75c243fbad1e4be1680a"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/20/data/32.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/20/label/32.npy",
+      "data_sha256": "ce5388b362ad116940feabd610384c9bc0200c24e7c6d5e3b48552961e9baf1f",
+      "label_sha256": "5bc3edfd8be16dfb0199f1bdfb32c65fafb86182f18e5d97869544cdfaab683f"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/20/data/34.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/20/label/34.npy",
+      "data_sha256": "ea53b9b78b89ca45c6697b61d431973bf6c59838b9b5955c3baa456b79b18359",
+      "label_sha256": "554167ce383780ae1bdbfaeb80cf6d0ccf340dee4f4608c12f7a99219de25e96"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/20/data/39.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/20/label/39.npy",
+      "data_sha256": "f981eae8b76694d67cfd066d3070925eafd9d4855d2a4785f97a778152ba9eb4",
+      "label_sha256": "a54d7a49b12698a618cb9b49bc9ec34a4cad3f21bcb32c91876991406963ad0b"
+    },
+    {
+      "data": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/20/data/45.npy",
+      "label": "/home/undefined/UbuntuData/datasets/induction-rms-baseline10/retention/20/label/45.npy",
+      "data_sha256": "9d7516874b266ef94956ea9f6950c7aa765bedd65459ede0406d5ddda29d66cd",
+      "label_sha256": "28ccceaca641272274ada15a47ff6772397a9c9dcd09a7a9abe37952fb5584d2"
+    }
+  ]
+}

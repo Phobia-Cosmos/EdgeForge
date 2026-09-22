@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "model": {
+    "name": "brainuicl",
+    "dataset": "ISRUC",
+    "input_layout": "B,T,C,S",
+    "in_channels": 8,
+    "eeg_channels": 6,
+    "eog_channels": 2,
+    "input_length": 3000,
+    "sequence_length": 20,
+    "num_classes": 5,
+    "feature_dim": 128,
+    "heads": 8,
+    "layers": 3,
+    "options": {
+      "d_model": 512,
+      "classifier_hidden": 256
+    }
+  },
+  "diagnostics": {
+    "calibration_manifest": "manifests/isruc-subject1-sessionA.json",
+    "calibration_manifest_digest": null,
+    "objective": {
+      "name": "cross_entropy",
+      "label_source": "ground_truth"
+    },
+    "max_observations": 256,
+    "max_metrics": 20000,
+    "jacobian_samples": 2,
+    "hessian": {
+      "mode": "hvp",
+      "probes": 8,
+      "iterations": 20
+    },
+    "batchnorm": {
+      "freeze_running_stats": true
+    },
+    "feature_axes": {
+      "fusion": -1,
+      "transformer.0": -1,
+      "classifier_input": -1
+    },
+    "fresh_warm": {
+      "budgets": [0, 5, 10, 25, 50],
+      "seeds": [4321, 4322, 4323]
+    }
+  },
+  "registry_examples": [
+    "eegnet",
+    "tcn",
+    "transformer",
+    "conformer",
+    "shallowconvnet",
+    "deepconvnet",
+    "fbcnet",
+    "tsception",
+    "atcnet",
+    "cnn_lstm",
+    "eeg_graph",
+    "lop_mlp",
+    "brainuicl"
+  ],
+  "provenance": {
+    "scientific_conclusion_allowed": false,
+    "notes": "Use the same calibration manifest, split, objective, BN policy and optimizer budget at every checkpoint. This file is a template; it does not contain real data or checkpoint paths."
+  }
+}

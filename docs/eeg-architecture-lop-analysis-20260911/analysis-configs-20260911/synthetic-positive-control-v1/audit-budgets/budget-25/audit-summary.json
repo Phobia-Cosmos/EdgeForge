@@ -1,0 +1,35 @@
+{
+  "architectures": [
+    "no_lesion",
+    "positive_control"
+  ],
+  "budget": 25,
+  "catalog": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/synthetic-positive-control-v1/audit-budgets/budget-25/trajectory-catalog.json",
+  "reports": {
+    "no_lesion": {
+      "design_consistent": true,
+      "direction_supported": false,
+      "gate_digest": "16a421927fcca4197363dec633f01ffff27fed5fcdb1a6896835694dd3b76269",
+      "positive_stage_count": 6,
+      "reasons": [
+        "fresh-gap direction is mixed across seeds/stages; positive and non-positive outcomes cannot support a stable LoP direction"
+      ],
+      "seed_count": 3,
+      "stage_count": 8,
+      "status": "blocked-inconsistent-direction"
+    },
+    "positive_control": {
+      "design_consistent": true,
+      "direction_supported": true,
+      "gate_digest": "de7ed473ae9f6938f9f52d7ace49c4a102a94a318c696482f38f412f1af2bf6a",
+      "positive_stage_count": 8,
+      "reasons": [],
+      "seed_count": 3,
+      "stage_count": 8,
+      "status": "candidate"
+    }
+  },
+  "schema_version": 1,
+  "scientific_conclusion_allowed": false,
+  "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/synthetic-positive-control-v1/summary.json"
+}

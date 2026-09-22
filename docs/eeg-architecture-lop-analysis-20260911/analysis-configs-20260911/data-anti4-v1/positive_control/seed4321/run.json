@@ -1,0 +1,1567 @@
+{
+  "architecture": "positive_control",
+  "seed": 4321,
+  "parameters": 154,
+  "source": {
+    "loss": 0.015311664047961434,
+    "accuracy": 1.0,
+    "macro_f1": 1.0
+  },
+  "stages": [
+    {
+      "stage": 0,
+      "subject": 4,
+      "train_sequences": 128,
+      "eval_sequences": 128,
+      "warm": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 18.6311616897583,
+            "accuracy": 0.0,
+            "macro_f1": 0.0,
+            "retention_loss": 0.030279882485046983,
+            "retention_accuracy": 0.984375,
+            "retention_macro_f1": 0.9843664122137404
+          },
+          {
+            "step": 5,
+            "train_loss": 18.328136444091797,
+            "loss": 18.26274585723877,
+            "accuracy": 0.0,
+            "macro_f1": 0.0,
+            "retention_loss": 0.033926707692444324,
+            "retention_accuracy": 0.98828125,
+            "retention_macro_f1": 0.9882767779456885
+          },
+          {
+            "step": 10,
+            "train_loss": 17.972261428833008,
+            "loss": 17.902474403381348,
+            "accuracy": 0.0,
+            "macro_f1": 0.0,
+            "retention_loss": 0.04561529331840575,
+            "retention_accuracy": 0.984375,
+            "retention_macro_f1": 0.9843711843711844
+          },
+          {
+            "step": 25,
+            "train_loss": 16.88733673095703,
+            "loss": 16.81020450592041,
+            "accuracy": 0.0,
+            "macro_f1": 0.0,
+            "retention_loss": 0.14960273448377848,
+            "retention_accuracy": 0.95703125,
+            "retention_macro_f1": 0.9570305943389029
+          },
+          {
+            "step": 50,
+            "train_loss": 14.693366050720215,
+            "loss": 14.694995403289795,
+            "accuracy": 0.0,
+            "macro_f1": 0.0,
+            "retention_loss": 0.6725574433803558,
+            "retention_accuracy": 0.84375,
+            "retention_macro_f1": 0.8435112170670579
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 14.693366050720215,
+          "loss": 14.694995403289795,
+          "accuracy": 0.0,
+          "macro_f1": 0.0,
+          "retention_loss": 0.6725574433803558,
+          "retention_accuracy": 0.84375,
+          "retention_macro_f1": 0.8435112170670579
+        },
+        "accuracy_aulc": 0.0,
+        "loss_aulc": 16.736158204078674,
+        "macro_f1_aulc": 0.0,
+        "retention_accuracy_aulc": 0.938671875,
+        "retention_loss_aulc": 0.24201017819577827
+      },
+      "fresh": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 1.164215862751007,
+            "accuracy": 0.0390625,
+            "macro_f1": 0.03759398496240601,
+            "retention_loss": 0.657078742980957,
+            "retention_accuracy": 0.62109375,
+            "retention_macro_f1": 0.5895197950243822
+          },
+          {
+            "step": 5,
+            "train_loss": 0.9669463634490967,
+            "loss": 0.9307444095611572,
+            "accuracy": 0.1484375,
+            "macro_f1": 0.1292517006802721,
+            "retention_loss": 0.6913298666477203,
+            "retention_accuracy": 0.54296875,
+            "retention_macro_f1": 0.5093616393925992
+          },
+          {
+            "step": 10,
+            "train_loss": 0.7411891222000122,
+            "loss": 0.7447962164878845,
+            "accuracy": 0.3984375,
+            "macro_f1": 0.36095441872528045,
+            "retention_loss": 0.7259185016155243,
+            "retention_accuracy": 0.46875,
+            "retention_macro_f1": 0.44000514701151644
+          },
+          {
+            "step": 25,
+            "train_loss": 0.37717851996421814,
+            "loss": 0.3766503632068634,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.8437393456697464,
+            "retention_accuracy": 0.296875,
+            "retention_macro_f1": 0.2916436081903708
+          },
+          {
+            "step": 50,
+            "train_loss": 0.10929126292467117,
+            "loss": 0.11839888617396355,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 1.1149011850357056,
+            "retention_accuracy": 0.22265625,
+            "retention_macro_f1": 0.21997825787386505
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.10929126292467117,
+          "loss": 0.11839888617396355,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 1.1149011850357056,
+          "retention_accuracy": 0.22265625,
+          "retention_macro_f1": 0.21997825787386505
+        },
+        "accuracy_aulc": 0.746484375,
+        "loss_aulc": 0.48050434421747923,
+        "macro_f1_aulc": 0.7369957530612035,
+        "retention_accuracy_aulc": 0.353515625,
+        "retention_loss_aulc": 0.8633916586637497
+      },
+      "gaps": [
+        {
+          "step": 0,
+          "fresh_gap": 0.0390625,
+          "fresh_loss_gap": 17.466945827007294,
+          "fresh_macro_f1_gap": 0.03759398496240601
+        },
+        {
+          "step": 5,
+          "fresh_gap": 0.1484375,
+          "fresh_loss_gap": 17.332001447677612,
+          "fresh_macro_f1_gap": 0.1292517006802721
+        },
+        {
+          "step": 10,
+          "fresh_gap": 0.3984375,
+          "fresh_loss_gap": 17.157678186893463,
+          "fresh_macro_f1_gap": 0.36095441872528045
+        },
+        {
+          "step": 25,
+          "fresh_gap": 1.0,
+          "fresh_loss_gap": 16.433554142713547,
+          "fresh_macro_f1_gap": 1.0
+        },
+        {
+          "step": 50,
+          "fresh_gap": 1.0,
+          "fresh_loss_gap": 14.576596517115831,
+          "fresh_macro_f1_gap": 1.0
+        }
+      ],
+      "fresh_gap_final": 1.0,
+      "fresh_loss_gap_final": 14.576596517115831,
+      "fresh_auc_gap": 0.746484375,
+      "fresh_loss_auc_gap": 16.255653859861194
+    },
+    {
+      "stage": 1,
+      "subject": 5,
+      "train_sequences": 128,
+      "eval_sequences": 128,
+      "warm": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 3.7094448804855347,
+            "accuracy": 0.5546875,
+            "macro_f1": 0.554006968641115,
+            "retention_loss": 0.6725574433803558,
+            "retention_accuracy": 0.84375,
+            "retention_macro_f1": 0.8435112170670579
+          },
+          {
+            "step": 5,
+            "train_loss": 3.581742763519287,
+            "loss": 3.3175634145736694,
+            "accuracy": 0.5625,
+            "macro_f1": 0.5620723362658846,
+            "retention_loss": 0.692088782787323,
+            "retention_accuracy": 0.83203125,
+            "retention_macro_f1": 0.8317205533898953
+          },
+          {
+            "step": 10,
+            "train_loss": 4.087893962860107,
+            "loss": 2.9496668577194214,
+            "accuracy": 0.625,
+            "macro_f1": 0.624633431085044,
+            "retention_loss": 0.7109890431165695,
+            "retention_accuracy": 0.8359375,
+            "retention_macro_f1": 0.8356867779204107
+          },
+          {
+            "step": 25,
+            "train_loss": 1.9594848155975342,
+            "loss": 2.0352195501327515,
+            "accuracy": 0.6875,
+            "macro_f1": 0.6871945259042034,
+            "retention_loss": 0.7692200541496277,
+            "retention_accuracy": 0.8125,
+            "retention_macro_f1": 0.8117647058823529
+          },
+          {
+            "step": 50,
+            "train_loss": 1.0692774057388306,
+            "loss": 0.8600805699825287,
+            "accuracy": 0.796875,
+            "macro_f1": 0.7968253968253969,
+            "retention_loss": 0.7893660068511963,
+            "retention_accuracy": 0.7890625,
+            "retention_macro_f1": 0.7877671333824614
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 1.0692774057388306,
+          "loss": 0.8600805699825287,
+          "accuracy": 0.796875,
+          "macro_f1": 0.7968253968253969,
+          "retention_loss": 0.7893660068511963,
+          "retention_accuracy": 0.7890625,
+          "retention_macro_f1": 0.7877671333824614
+        },
+        "accuracy_aulc": 0.683203125,
+        "loss_aulc": 2.1362699195742607,
+        "macro_f1_aulc": 0.6829184278436835,
+        "retention_accuracy_aulc": 0.81484375,
+        "retention_loss_aulc": 0.7500640824437141
+      },
+      "fresh": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 0.8100394308567047,
+            "accuracy": 0.4140625,
+            "macro_f1": 0.3034898062831024,
+            "retention_loss": 0.7173995673656464,
+            "retention_accuracy": 0.51953125,
+            "retention_macro_f1": 0.43898658399700674
+          },
+          {
+            "step": 5,
+            "train_loss": 0.6844028830528259,
+            "loss": 0.6836888790130615,
+            "accuracy": 0.5625,
+            "macro_f1": 0.47602339181286546,
+            "retention_loss": 0.7262828052043915,
+            "retention_accuracy": 0.484375,
+            "retention_macro_f1": 0.40402116402116406
+          },
+          {
+            "step": 10,
+            "train_loss": 0.5754658579826355,
+            "loss": 0.5672613382339478,
+            "accuracy": 0.78125,
+            "macro_f1": 0.7646440767008142,
+            "retention_loss": 0.742917612195015,
+            "retention_accuracy": 0.44921875,
+            "retention_macro_f1": 0.4033225886436896
+          },
+          {
+            "step": 25,
+            "train_loss": 0.24766525626182556,
+            "loss": 0.2801697105169296,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.8240876644849777,
+            "retention_accuracy": 0.3671875,
+            "retention_macro_f1": 0.36656891495601174
+          },
+          {
+            "step": 50,
+            "train_loss": 0.06539347022771835,
+            "loss": 0.06984530761837959,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.9471271485090256,
+            "retention_accuracy": 0.375,
+            "retention_macro_f1": 0.37189474329877936
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.06539347022771835,
+          "loss": 0.06984530761837959,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 0.9471271485090256,
+          "retention_accuracy": 0.375,
+          "retention_macro_f1": 0.37189474329877936
+        },
+        "accuracy_aulc": 0.883203125,
+        "loss_aulc": 0.35185233820229767,
+        "macro_f1_aulc": 0.8657056448356044,
+        "retention_accuracy_aulc": 0.4048828125,
+        "retention_loss_aulc": 0.823498634248972
+      },
+      "gaps": [
+        {
+          "step": 0,
+          "fresh_gap": -0.140625,
+          "fresh_loss_gap": 2.89940544962883,
+          "fresh_macro_f1_gap": -0.2505171623580126
+        },
+        {
+          "step": 5,
+          "fresh_gap": 0.0,
+          "fresh_loss_gap": 2.633874535560608,
+          "fresh_macro_f1_gap": -0.08604894445301914
+        },
+        {
+          "step": 10,
+          "fresh_gap": 0.15625,
+          "fresh_loss_gap": 2.3824055194854736,
+          "fresh_macro_f1_gap": 0.14001064561577026
+        },
+        {
+          "step": 25,
+          "fresh_gap": 0.3125,
+          "fresh_loss_gap": 1.7550498396158218,
+          "fresh_macro_f1_gap": 0.3128054740957966
+        },
+        {
+          "step": 50,
+          "fresh_gap": 0.203125,
+          "fresh_loss_gap": 0.7902352623641491,
+          "fresh_macro_f1_gap": 0.20317460317460312
+        }
+      ],
+      "fresh_gap_final": 0.203125,
+      "fresh_loss_gap_final": 0.7902352623641491,
+      "fresh_auc_gap": 0.19999999999999996,
+      "fresh_loss_auc_gap": 1.784417581371963
+    },
+    {
+      "stage": 2,
+      "subject": 6,
+      "train_sequences": 128,
+      "eval_sequences": 128,
+      "warm": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 0.8184177875518799,
+            "accuracy": 0.8515625,
+            "macro_f1": 0.8482181863571117,
+            "retention_loss": 0.7893660068511963,
+            "retention_accuracy": 0.7890625,
+            "retention_macro_f1": 0.7877671333824614
+          },
+          {
+            "step": 5,
+            "train_loss": 0.38086405396461487,
+            "loss": 0.5954769551753998,
+            "accuracy": 0.859375,
+            "macro_f1": 0.8565379825653798,
+            "retention_loss": 0.73697679489851,
+            "retention_accuracy": 0.796875,
+            "retention_macro_f1": 0.7956276099238517
+          },
+          {
+            "step": 10,
+            "train_loss": 0.5826565623283386,
+            "loss": 0.417227640748024,
+            "accuracy": 0.890625,
+            "macro_f1": 0.8878878878878879,
+            "retention_loss": 0.7025571316480637,
+            "retention_accuracy": 0.796875,
+            "retention_macro_f1": 0.7956276099238517
+          },
+          {
+            "step": 25,
+            "train_loss": 0.020364072173833847,
+            "loss": 0.12464308366179466,
+            "accuracy": 0.9609375,
+            "macro_f1": 0.9593882860587601,
+            "retention_loss": 0.7123576104640961,
+            "retention_accuracy": 0.7578125,
+            "retention_macro_f1": 0.7563252272169001
+          },
+          {
+            "step": 50,
+            "train_loss": 0.0021138719748705626,
+            "loss": 0.03472708398476243,
+            "accuracy": 0.9921875,
+            "macro_f1": 0.9917647815736987,
+            "retention_loss": 0.8171629011631012,
+            "retention_accuracy": 0.7578125,
+            "retention_macro_f1": 0.7563252272169001
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.0021138719748705626,
+          "loss": 0.03472708398476243,
+          "accuracy": 0.9921875,
+          "macro_f1": 0.9917647815736987,
+          "retention_loss": 0.8171629011631012,
+          "retention_accuracy": 0.7578125,
+          "retention_macro_f1": 0.7563252272169001
+        },
+        "accuracy_aulc": 0.9390625,
+        "loss_aulc": 0.24245311750564724,
+        "macro_f1_aulc": 0.9373387949688998,
+        "retention_accuracy_aulc": 0.77109375,
+        "retention_loss_aulc": 0.7429111756384372
+      },
+      "fresh": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 0.6945988833904266,
+            "accuracy": 0.5,
+            "macro_f1": 0.4817813765182186,
+            "retention_loss": 0.7428535968065262,
+            "retention_accuracy": 0.51953125,
+            "retention_macro_f1": 0.4567943830110235
+          },
+          {
+            "step": 5,
+            "train_loss": 0.47886425256729126,
+            "loss": 0.5345191657543182,
+            "accuracy": 0.75,
+            "macro_f1": 0.7494494739417665,
+            "retention_loss": 0.7225049436092377,
+            "retention_accuracy": 0.515625,
+            "retention_macro_f1": 0.47885474126608873
+          },
+          {
+            "step": 10,
+            "train_loss": 0.3695186972618103,
+            "loss": 0.39806267619132996,
+            "accuracy": 0.9609375,
+            "macro_f1": 0.9591184924944107,
+            "retention_loss": 0.7077555358409882,
+            "retention_accuracy": 0.5078125,
+            "retention_macro_f1": 0.4882924043403769
+          },
+          {
+            "step": 25,
+            "train_loss": 0.12910674512386322,
+            "loss": 0.14624204486608505,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.6998894959688187,
+            "retention_accuracy": 0.52734375,
+            "retention_macro_f1": 0.5273365377279317
+          },
+          {
+            "step": 50,
+            "train_loss": 0.03469102457165718,
+            "loss": 0.03869288228452206,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.7759416699409485,
+            "retention_accuracy": 0.52734375,
+            "retention_macro_f1": 0.5261217433873362
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.03469102457165718,
+          "loss": 0.03869288228452206,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 0.7759416699409485,
+          "retention_accuracy": 0.52734375,
+          "retention_macro_f1": 0.5261217433873362
+        },
+        "accuracy_aulc": 0.9421875,
+        "loss_aulc": 0.2359644345007837,
+        "macro_f1_aulc": 0.9408577147189697,
+        "retention_accuracy_aulc": 0.521875,
+        "retention_loss_aulc": 0.7248854972422123
+      },
+      "gaps": [
+        {
+          "step": 0,
+          "fresh_gap": -0.3515625,
+          "fresh_loss_gap": 0.12381890416145325,
+          "fresh_macro_f1_gap": -0.36643680983889304
+        },
+        {
+          "step": 5,
+          "fresh_gap": -0.109375,
+          "fresh_loss_gap": 0.06095778942108154,
+          "fresh_macro_f1_gap": -0.1070885086236133
+        },
+        {
+          "step": 10,
+          "fresh_gap": 0.0703125,
+          "fresh_loss_gap": 0.01916496455669403,
+          "fresh_macro_f1_gap": 0.07123060460652286
+        },
+        {
+          "step": 25,
+          "fresh_gap": 0.0390625,
+          "fresh_loss_gap": -0.02159896120429039,
+          "fresh_macro_f1_gap": 0.04061171394123986
+        },
+        {
+          "step": 50,
+          "fresh_gap": 0.0078125,
+          "fresh_loss_gap": -0.003965798299759626,
+          "fresh_macro_f1_gap": 0.00823521842630126
+        }
+      ],
+      "fresh_gap_final": 0.0078125,
+      "fresh_loss_gap_final": -0.003965798299759626,
+      "fresh_auc_gap": 0.0031249999999999334,
+      "fresh_loss_auc_gap": 0.006488683004863549
+    },
+    {
+      "stage": 3,
+      "subject": 7,
+      "train_sequences": 128,
+      "eval_sequences": 128,
+      "warm": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 5.056591987609863,
+            "accuracy": 0.1328125,
+            "macro_f1": 0.1327595678447171,
+            "retention_loss": 0.8171629011631012,
+            "retention_accuracy": 0.7578125,
+            "retention_macro_f1": 0.7563252272169001
+          },
+          {
+            "step": 5,
+            "train_loss": 3.872535467147827,
+            "loss": 4.427927494049072,
+            "accuracy": 0.1796875,
+            "macro_f1": 0.17963742904229996,
+            "retention_loss": 0.7494162172079086,
+            "retention_accuracy": 0.765625,
+            "retention_macro_f1": 0.7641857037582904
+          },
+          {
+            "step": 10,
+            "train_loss": 3.7616641521453857,
+            "loss": 3.8249984979629517,
+            "accuracy": 0.25,
+            "macro_f1": 0.24981684981684982,
+            "retention_loss": 0.6895380765199661,
+            "retention_accuracy": 0.765625,
+            "retention_macro_f1": 0.7647058823529411
+          },
+          {
+            "step": 25,
+            "train_loss": 1.657052993774414,
+            "loss": 2.2054869532585144,
+            "accuracy": 0.40625,
+            "macro_f1": 0.4056695992179863,
+            "retention_loss": 0.5438305363059044,
+            "retention_accuracy": 0.7890625,
+            "retention_macro_f1": 0.789010989010989
+          },
+          {
+            "step": 50,
+            "train_loss": 0.34166887402534485,
+            "loss": 0.41076821088790894,
+            "accuracy": 0.78125,
+            "macro_f1": 0.779906656841071,
+            "retention_loss": 0.5165913477540016,
+            "retention_accuracy": 0.7890625,
+            "retention_macro_f1": 0.7880144758633381
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.34166887402534485,
+          "loss": 0.41076821088790894,
+          "accuracy": 0.78125,
+          "macro_f1": 0.779906656841071,
+          "retention_loss": 0.5165913477540016,
+          "retention_accuracy": 0.7890625,
+          "retention_macro_f1": 0.7880144758633381
+        },
+        "accuracy_aulc": 0.432421875,
+        "loss_aulc": 2.4455088824033737,
+        "macro_f1_aulc": 0.4318095951572981,
+        "retention_accuracy_aulc": 0.78046875,
+        "retention_loss_aulc": 0.6003874335438013
+      },
+      "fresh": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 0.5795876383781433,
+            "accuracy": 0.7734375,
+            "macro_f1": 0.7730912647472339,
+            "retention_loss": 0.7475238740444183,
+            "retention_accuracy": 0.5078125,
+            "retention_macro_f1": 0.50633608815427
+          },
+          {
+            "step": 5,
+            "train_loss": 0.44622376561164856,
+            "loss": 0.4309050142765045,
+            "accuracy": 0.9453125,
+            "macro_f1": 0.9450407900386432,
+            "retention_loss": 0.7327279448509216,
+            "retention_accuracy": 0.5234375,
+            "retention_macro_f1": 0.517667407956511
+          },
+          {
+            "step": 10,
+            "train_loss": 0.3181180953979492,
+            "loss": 0.31878791749477386,
+            "accuracy": 0.984375,
+            "macro_f1": 0.9843405921213604,
+            "retention_loss": 0.724404364824295,
+            "retention_accuracy": 0.53515625,
+            "retention_macro_f1": 0.5282384823848238
+          },
+          {
+            "step": 25,
+            "train_loss": 0.13889986276626587,
+            "loss": 0.13937952369451523,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.7310324609279633,
+            "retention_accuracy": 0.5625,
+            "retention_macro_f1": 0.5564081935763352
+          },
+          {
+            "step": 50,
+            "train_loss": 0.045193955302238464,
+            "loss": 0.0507684089243412,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.7980173677206039,
+            "retention_accuracy": 0.5546875,
+            "retention_macro_f1": 0.5507389162561576
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.045193955302238464,
+          "loss": 0.0507684089243412,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 0.7980173677206039,
+          "retention_accuracy": 0.5546875,
+          "retention_macro_f1": 0.5507389162561576
+        },
+        "accuracy_aulc": 0.980078125,
+        "loss_aulc": 0.20427137855440378,
+        "macro_f1_aulc": 0.9800267606654981,
+        "retention_accuracy_aulc": 0.5484375,
+        "retention_loss_aulc": 0.7474471874535084
+      },
+      "gaps": [
+        {
+          "step": 0,
+          "fresh_gap": 0.640625,
+          "fresh_loss_gap": 4.47700434923172,
+          "fresh_macro_f1_gap": 0.6403316969025168
+        },
+        {
+          "step": 5,
+          "fresh_gap": 0.765625,
+          "fresh_loss_gap": 3.9970224797725677,
+          "fresh_macro_f1_gap": 0.7654033609963432
+        },
+        {
+          "step": 10,
+          "fresh_gap": 0.734375,
+          "fresh_loss_gap": 3.506210580468178,
+          "fresh_macro_f1_gap": 0.7345237423045106
+        },
+        {
+          "step": 25,
+          "fresh_gap": 0.59375,
+          "fresh_loss_gap": 2.066107429563999,
+          "fresh_macro_f1_gap": 0.5943304007820137
+        },
+        {
+          "step": 50,
+          "fresh_gap": 0.21875,
+          "fresh_loss_gap": 0.35999980196356773,
+          "fresh_macro_f1_gap": 0.22009334315892903
+        }
+      ],
+      "fresh_gap_final": 0.21875,
+      "fresh_loss_gap_final": 0.35999980196356773,
+      "fresh_auc_gap": 0.54765625,
+      "fresh_loss_auc_gap": 2.24123750384897
+    },
+    {
+      "stage": 4,
+      "subject": 8,
+      "train_sequences": 128,
+      "eval_sequences": 128,
+      "warm": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 1.2775815725326538,
+            "accuracy": 0.609375,
+            "macro_f1": 0.6059113300492611,
+            "retention_loss": 0.5165913477540016,
+            "retention_accuracy": 0.7890625,
+            "retention_macro_f1": 0.7880144758633381
+          },
+          {
+            "step": 5,
+            "train_loss": 1.133334994316101,
+            "loss": 0.9140499234199524,
+            "accuracy": 0.671875,
+            "macro_f1": 0.6679021497405485,
+            "retention_loss": 0.4941495284438133,
+            "retention_accuracy": 0.8046875,
+            "retention_macro_f1": 0.803921568627451
+          },
+          {
+            "step": 10,
+            "train_loss": 0.5540595054626465,
+            "loss": 0.6196967661380768,
+            "accuracy": 0.734375,
+            "macro_f1": 0.7327437975927291,
+            "retention_loss": 0.49010784178972244,
+            "retention_accuracy": 0.80078125,
+            "retention_macro_f1": 0.7998988459239506
+          },
+          {
+            "step": 25,
+            "train_loss": 0.1910291463136673,
+            "loss": 0.14277594909071922,
+            "accuracy": 0.953125,
+            "macro_f1": 0.9529411764705882,
+            "retention_loss": 0.5853232443332672,
+            "retention_accuracy": 0.73046875,
+            "retention_macro_f1": 0.729540199966315
+          },
+          {
+            "step": 50,
+            "train_loss": 0.012383546680212021,
+            "loss": 0.01837183628231287,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.788908839225769,
+            "retention_accuracy": 0.640625,
+            "retention_macro_f1": 0.6379511775195228
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.012383546680212021,
+          "loss": 0.01837183628231287,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 0.788908839225769,
+          "retention_accuracy": 0.640625,
+          "retention_macro_f1": 0.6379511775195228
+        },
+        "accuracy_aulc": 0.87578125,
+        "loss_aulc": 0.3409267629031092,
+        "macro_f1_aulc": 0.8748110115832989,
+        "retention_accuracy_aulc": 0.732421875,
+        "retention_loss_aulc": 0.6046225961297751
+      },
+      "fresh": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 0.7440522015094757,
+            "accuracy": 0.4765625,
+            "macro_f1": 0.4342634738439211,
+            "retention_loss": 0.7819480746984482,
+            "retention_accuracy": 0.44140625,
+            "retention_macro_f1": 0.394859079262749
+          },
+          {
+            "step": 5,
+            "train_loss": 0.6900438070297241,
+            "loss": 0.6216135621070862,
+            "accuracy": 0.6796875,
+            "macro_f1": 0.6669839456818325,
+            "retention_loss": 0.7595973759889603,
+            "retention_accuracy": 0.4765625,
+            "retention_macro_f1": 0.43682689781980566
+          },
+          {
+            "step": 10,
+            "train_loss": 0.5070368051528931,
+            "loss": 0.5273898243904114,
+            "accuracy": 0.8671875,
+            "macro_f1": 0.8669845345069992,
+            "retention_loss": 0.7404836267232895,
+            "retention_accuracy": 0.484375,
+            "retention_macro_f1": 0.44523246650906223
+          },
+          {
+            "step": 25,
+            "train_loss": 0.3136974275112152,
+            "loss": 0.2980661541223526,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.7120101451873779,
+            "retention_accuracy": 0.51171875,
+            "retention_macro_f1": 0.5034679659254891
+          },
+          {
+            "step": 50,
+            "train_loss": 0.07473553717136383,
+            "loss": 0.07545730844140053,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.7676167786121368,
+            "retention_accuracy": 0.515625,
+            "retention_macro_f1": 0.5153587786259541
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.07473553717136383,
+          "loss": 0.07545730844140053,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 0.7676167786121368,
+          "retention_accuracy": 0.515625,
+          "retention_macro_f1": 0.5153587786259541
+        },
+        "accuracy_aulc": 0.915234375,
+        "loss_aulc": 0.34293271992355584,
+        "macro_f1_aulc": 0.9118084751617792,
+        "retention_accuracy_aulc": 0.5001953125,
+        "retention_loss_aulc": 0.7398621194064617
+      },
+      "gaps": [
+        {
+          "step": 0,
+          "fresh_gap": -0.1328125,
+          "fresh_loss_gap": 0.5335293710231781,
+          "fresh_macro_f1_gap": -0.17164785620534
+        },
+        {
+          "step": 5,
+          "fresh_gap": 0.0078125,
+          "fresh_loss_gap": 0.2924363613128662,
+          "fresh_macro_f1_gap": -0.0009182040587160101
+        },
+        {
+          "step": 10,
+          "fresh_gap": 0.1328125,
+          "fresh_loss_gap": 0.0923069417476654,
+          "fresh_macro_f1_gap": 0.13424073691427008
+        },
+        {
+          "step": 25,
+          "fresh_gap": 0.046875,
+          "fresh_loss_gap": -0.15529020503163338,
+          "fresh_macro_f1_gap": 0.04705882352941182
+        },
+        {
+          "step": 50,
+          "fresh_gap": 0.0,
+          "fresh_loss_gap": -0.05708547215908766,
+          "fresh_macro_f1_gap": 0.0
+        }
+      ],
+      "fresh_gap_final": 0.0,
+      "fresh_loss_gap_final": -0.05708547215908766,
+      "fresh_auc_gap": 0.03945312500000009,
+      "fresh_loss_auc_gap": -0.002005957020446647
+    },
+    {
+      "stage": 5,
+      "subject": 9,
+      "train_sequences": 128,
+      "eval_sequences": 128,
+      "warm": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 1.1616696119308472,
+            "accuracy": 0.4609375,
+            "macro_f1": 0.45692676627928425,
+            "retention_loss": 0.788908839225769,
+            "retention_accuracy": 0.640625,
+            "retention_macro_f1": 0.6379511775195228
+          },
+          {
+            "step": 5,
+            "train_loss": 0.8258439302444458,
+            "loss": 0.7445008754730225,
+            "accuracy": 0.578125,
+            "macro_f1": 0.5714285714285714,
+            "retention_loss": 0.7534646093845367,
+            "retention_accuracy": 0.625,
+            "retention_macro_f1": 0.6226971260132645
+          },
+          {
+            "step": 10,
+            "train_loss": 0.5720060467720032,
+            "loss": 0.4430742710828781,
+            "accuracy": 0.7734375,
+            "macro_f1": 0.7702828145306022,
+            "retention_loss": 0.7316298186779022,
+            "retention_accuracy": 0.62890625,
+            "retention_macro_f1": 0.6263921960211998
+          },
+          {
+            "step": 25,
+            "train_loss": 0.07331059128046036,
+            "loss": 0.07728120498359203,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.8073775917291641,
+            "retention_accuracy": 0.6171875,
+            "retention_macro_f1": 0.6143392977925353
+          },
+          {
+            "step": 50,
+            "train_loss": 0.01320305373519659,
+            "loss": 0.015816995408385992,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.9780870676040649,
+            "retention_accuracy": 0.60546875,
+            "retention_macro_f1": 0.6016699788941782
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.01320305373519659,
+          "loss": 0.015816995408385992,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 0.9780870676040649,
+          "retention_accuracy": 0.60546875,
+          "retention_macro_f1": 0.6016699788941782
+        },
+        "accuracy_aulc": 0.885546875,
+        "loss_aulc": 0.2560151532059535,
+        "macro_f1_aulc": 0.8840457583629419,
+        "retention_accuracy_aulc": 0.6185546875,
+        "retention_loss_aulc": 0.8285906702280045
+      },
+      "fresh": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 0.6907425820827484,
+            "accuracy": 0.46875,
+            "macro_f1": 0.46875,
+            "retention_loss": 0.7210752069950104,
+            "retention_accuracy": 0.4765625,
+            "retention_macro_f1": 0.46825396825396826
+          },
+          {
+            "step": 5,
+            "train_loss": 0.5547370314598083,
+            "loss": 0.552215963602066,
+            "accuracy": 0.90625,
+            "macro_f1": 0.9054187192118226,
+            "retention_loss": 0.7107814848423004,
+            "retention_accuracy": 0.5,
+            "retention_macro_f1": 0.4980392156862745
+          },
+          {
+            "step": 10,
+            "train_loss": 0.47917789220809937,
+            "loss": 0.43576081097126007,
+            "accuracy": 0.9921875,
+            "macro_f1": 0.9921486842912348,
+            "retention_loss": 0.7042742967605591,
+            "retention_accuracy": 0.51953125,
+            "retention_macro_f1": 0.5182890449309284
+          },
+          {
+            "step": 25,
+            "train_loss": 0.18041977286338806,
+            "loss": 0.18179739266633987,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.7179870754480362,
+            "retention_accuracy": 0.54296875,
+            "retention_macro_f1": 0.5427943398818519
+          },
+          {
+            "step": 50,
+            "train_loss": 0.044049426913261414,
+            "loss": 0.044961171224713326,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.7965507805347443,
+            "retention_accuracy": 0.5390625,
+            "retention_macro_f1": 0.5390343648904352
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.044049426913261414,
+          "loss": 0.044961171224713326,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 0.7965507805347443,
+          "retention_accuracy": 0.5390625,
+          "retention_macro_f1": 0.5390343648904352
+        },
+        "accuracy_aulc": 0.9625,
+        "loss_aulc": 0.26087013753131033,
+        "macro_f1_aulc": 0.9624091087794292,
+        "retention_accuracy_aulc": 0.5296875,
+        "retention_loss_aulc": 0.7343192934989929
+      },
+      "gaps": [
+        {
+          "step": 0,
+          "fresh_gap": 0.0078125,
+          "fresh_loss_gap": 0.47092702984809875,
+          "fresh_macro_f1_gap": 0.011823233720715753
+        },
+        {
+          "step": 5,
+          "fresh_gap": 0.328125,
+          "fresh_loss_gap": 0.19228491187095642,
+          "fresh_macro_f1_gap": 0.3339901477832512
+        },
+        {
+          "step": 10,
+          "fresh_gap": 0.21875,
+          "fresh_loss_gap": 0.007313460111618042,
+          "fresh_macro_f1_gap": 0.2218658697606326
+        },
+        {
+          "step": 25,
+          "fresh_gap": 0.0,
+          "fresh_loss_gap": -0.10451618768274784,
+          "fresh_macro_f1_gap": 0.0
+        },
+        {
+          "step": 50,
+          "fresh_gap": 0.0,
+          "fresh_loss_gap": -0.029144175816327333,
+          "fresh_macro_f1_gap": 0.0
+        }
+      ],
+      "fresh_gap_final": 0.0,
+      "fresh_loss_gap_final": -0.029144175816327333,
+      "fresh_auc_gap": 0.07695312500000007,
+      "fresh_loss_auc_gap": -0.004854984325356804
+    },
+    {
+      "stage": 6,
+      "subject": 10,
+      "train_sequences": 128,
+      "eval_sequences": 128,
+      "warm": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 2.2758076190948486,
+            "accuracy": 0.1953125,
+            "macro_f1": 0.19289868380777472,
+            "retention_loss": 0.9780870676040649,
+            "retention_accuracy": 0.60546875,
+            "retention_macro_f1": 0.6016699788941782
+          },
+          {
+            "step": 5,
+            "train_loss": 1.7693580389022827,
+            "loss": 1.7451889514923096,
+            "accuracy": 0.2578125,
+            "macro_f1": 0.25667828106852497,
+            "retention_loss": 0.9362091571092606,
+            "retention_accuracy": 0.60546875,
+            "retention_macro_f1": 0.602795913664644
+          },
+          {
+            "step": 10,
+            "train_loss": 1.0318949222564697,
+            "loss": 1.2843422889709473,
+            "accuracy": 0.359375,
+            "macro_f1": 0.3592185592185592,
+            "retention_loss": 0.9107240289449692,
+            "retention_accuracy": 0.58984375,
+            "retention_macro_f1": 0.588430739079175
+          },
+          {
+            "step": 25,
+            "train_loss": 0.2752791941165924,
+            "loss": 0.3699253052473068,
+            "accuracy": 0.8203125,
+            "macro_f1": 0.8184397163120567,
+            "retention_loss": 0.9131563305854797,
+            "retention_accuracy": 0.5390625,
+            "retention_macro_f1": 0.5372549019607843
+          },
+          {
+            "step": 50,
+            "train_loss": 0.017358100041747093,
+            "loss": 0.030096976086497307,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 1.0977129936218262,
+            "retention_accuracy": 0.5234375,
+            "retention_macro_f1": 0.5158730158730158
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.017358100041747093,
+          "loss": 0.030096976086497307,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 1.0977129936218262,
+          "retention_accuracy": 0.5234375,
+          "retention_macro_f1": 0.5158730158730158
+        },
+        "accuracy_aulc": 0.685546875,
+        "loss_aulc": 0.7006721000187099,
+        "macro_f1_aulc": 0.6845323606657757,
+        "retention_accuracy_aulc": 0.5552734375,
+        "retention_loss_aulc": 0.9643608555197716
+      },
+      "fresh": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 0.8606885075569153,
+            "accuracy": 0.1796875,
+            "macro_f1": 0.17923664122137406,
+            "retention_loss": 0.6940558552742004,
+            "retention_accuracy": 0.51953125,
+            "retention_macro_f1": 0.5092804712702791
+          },
+          {
+            "step": 5,
+            "train_loss": 0.7685655951499939,
+            "loss": 0.7270397245883942,
+            "accuracy": 0.390625,
+            "macro_f1": 0.37833125778331256,
+            "retention_loss": 0.6775559633970261,
+            "retention_accuracy": 0.5390625,
+            "retention_macro_f1": 0.5158974358974359
+          },
+          {
+            "step": 10,
+            "train_loss": 0.6013488173484802,
+            "loss": 0.6083619296550751,
+            "accuracy": 0.75,
+            "macro_f1": 0.7408906882591093,
+            "retention_loss": 0.6593831181526184,
+            "retention_accuracy": 0.60546875,
+            "retention_macro_f1": 0.5684264993073058
+          },
+          {
+            "step": 25,
+            "train_loss": 0.2943095266819,
+            "loss": 0.2896674871444702,
+            "accuracy": 0.9921875,
+            "macro_f1": 0.9921870231337362,
+            "retention_loss": 0.636354997754097,
+            "retention_accuracy": 0.66796875,
+            "retention_macro_f1": 0.6506494132001863
+          },
+          {
+            "step": 50,
+            "train_loss": 0.05912790074944496,
+            "loss": 0.06308294832706451,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.7073648869991302,
+            "retention_accuracy": 0.60546875,
+            "retention_macro_f1": 0.6044487279514128
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.05912790074944496,
+          "loss": 0.06308294832706451,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 0.7073648869991302,
+          "retention_accuracy": 0.60546875,
+          "retention_macro_f1": 0.6044487279514128
+        },
+        "accuracy_aulc": 0.844921875,
+        "loss_aulc": 0.3690485157072544,
+        "macro_f1_aulc": 0.8418479047447164,
+        "retention_accuracy_aulc": 0.61953125,
+        "retention_loss_aulc": 0.6657182335853576
+      },
+      "gaps": [
+        {
+          "step": 0,
+          "fresh_gap": -0.015625,
+          "fresh_loss_gap": 1.4151191115379333,
+          "fresh_macro_f1_gap": -0.013662042586400663
+        },
+        {
+          "step": 5,
+          "fresh_gap": 0.1328125,
+          "fresh_loss_gap": 1.0181492269039154,
+          "fresh_macro_f1_gap": 0.12165297671478759
+        },
+        {
+          "step": 10,
+          "fresh_gap": 0.390625,
+          "fresh_loss_gap": 0.6759803593158722,
+          "fresh_macro_f1_gap": 0.3816721290405501
+        },
+        {
+          "step": 25,
+          "fresh_gap": 0.171875,
+          "fresh_loss_gap": 0.08025781810283661,
+          "fresh_macro_f1_gap": 0.1737473068216795
+        },
+        {
+          "step": 50,
+          "fresh_gap": 0.0,
+          "fresh_loss_gap": -0.03298597224056721,
+          "fresh_macro_f1_gap": 0.0
+        }
+      ],
+      "fresh_gap_final": 0.0,
+      "fresh_loss_gap_final": -0.03298597224056721,
+      "fresh_auc_gap": 0.15937500000000004,
+      "fresh_loss_auc_gap": 0.33162358431145555
+    },
+    {
+      "stage": 7,
+      "subject": 11,
+      "train_sequences": 128,
+      "eval_sequences": 128,
+      "warm": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 0.4817847013473511,
+            "accuracy": 0.796875,
+            "macro_f1": 0.7964276975776854,
+            "retention_loss": 1.0977129936218262,
+            "retention_accuracy": 0.5234375,
+            "retention_macro_f1": 0.5158730158730158
+          },
+          {
+            "step": 5,
+            "train_loss": 0.3427724540233612,
+            "loss": 0.27042073011398315,
+            "accuracy": 0.8984375,
+            "macro_f1": 0.8983816793893129,
+            "retention_loss": 1.0718339830636978,
+            "retention_accuracy": 0.5234375,
+            "retention_macro_f1": 0.5192118226600986
+          },
+          {
+            "step": 10,
+            "train_loss": 0.12494581937789917,
+            "loss": 0.14209507405757904,
+            "accuracy": 0.9765625,
+            "macro_f1": 0.9765496183206106,
+            "retention_loss": 1.0489114075899124,
+            "retention_accuracy": 0.52734375,
+            "retention_macro_f1": 0.5220269415340935
+          },
+          {
+            "step": 25,
+            "train_loss": 0.01635756529867649,
+            "loss": 0.02008147444576025,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 1.0788574665784836,
+            "retention_accuracy": 0.5234375,
+            "retention_macro_f1": 0.5184705519580636
+          },
+          {
+            "step": 50,
+            "train_loss": 0.003479958279058337,
+            "loss": 0.005782131804153323,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 1.1673673689365387,
+            "retention_accuracy": 0.5,
+            "retention_macro_f1": 0.49692950135101943
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.003479958279058337,
+          "loss": 0.005782131804153323,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 1.1673673689365387,
+          "retention_accuracy": 0.5,
+          "retention_macro_f1": 0.49692950135101943
+        },
+        "accuracy_aulc": 0.975,
+        "loss_aulc": 0.08902844561962411,
+        "macro_f1_aulc": 0.9749694764819377,
+        "retention_accuracy_aulc": 0.518359375,
+        "retention_loss_aulc": 1.0952361583709718
+      },
+      "fresh": {
+        "curve": [
+          {
+            "step": 0,
+            "train_loss": null,
+            "loss": 0.7411119043827057,
+            "accuracy": 0.4296875,
+            "macro_f1": 0.4237434474252235,
+            "retention_loss": 0.681771993637085,
+            "retention_accuracy": 0.5625,
+            "retention_macro_f1": 0.5598133136821419
+          },
+          {
+            "step": 5,
+            "train_loss": 0.6058608293533325,
+            "loss": 0.5902307331562042,
+            "accuracy": 0.7890625,
+            "macro_f1": 0.7890496246108771,
+            "retention_loss": 0.6735463589429855,
+            "retention_accuracy": 0.5859375,
+            "retention_macro_f1": 0.5853047252277034
+          },
+          {
+            "step": 10,
+            "train_loss": 0.4363783895969391,
+            "loss": 0.4661562889814377,
+            "accuracy": 0.953125,
+            "macro_f1": 0.9530791788856305,
+            "retention_loss": 0.6708728224039078,
+            "retention_accuracy": 0.55859375,
+            "retention_macro_f1": 0.5585331237505151
+          },
+          {
+            "step": 25,
+            "train_loss": 0.2051268368959427,
+            "loss": 0.21238628029823303,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.691719263792038,
+            "retention_accuracy": 0.5703125,
+            "retention_macro_f1": 0.5703125
+          },
+          {
+            "step": 50,
+            "train_loss": 0.05179840326309204,
+            "loss": 0.06267387233674526,
+            "accuracy": 1.0,
+            "macro_f1": 1.0,
+            "retention_loss": 0.8043023645877838,
+            "retention_accuracy": 0.5390625,
+            "retention_macro_f1": 0.5376798285889195
+          }
+        ],
+        "budgets": [
+          0,
+          5,
+          10,
+          25,
+          50
+        ],
+        "final": {
+          "step": 50,
+          "train_loss": 0.05179840326309204,
+          "loss": 0.06267387233674526,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "retention_loss": 0.8043023645877838,
+          "retention_accuracy": 0.5390625,
+          "retention_macro_f1": 0.5376798285889195
+        },
+        "accuracy_aulc": 0.941015625,
+        "loss_aulc": 0.28993290653452275,
+        "macro_f1_aulc": 0.940707970609475,
+        "retention_accuracy_aulc": 0.561328125,
+        "retention_loss_aulc": 0.7133810967206955
+      },
+      "gaps": [
+        {
+          "step": 0,
+          "fresh_gap": -0.3671875,
+          "fresh_loss_gap": -0.2593272030353546,
+          "fresh_macro_f1_gap": -0.37268425015246187
+        },
+        {
+          "step": 5,
+          "fresh_gap": -0.109375,
+          "fresh_loss_gap": -0.31981000304222107,
+          "fresh_macro_f1_gap": -0.10933205477843577
+        },
+        {
+          "step": 10,
+          "fresh_gap": -0.0234375,
+          "fresh_loss_gap": -0.32406121492385864,
+          "fresh_macro_f1_gap": -0.02347043943498006
+        },
+        {
+          "step": 25,
+          "fresh_gap": 0.0,
+          "fresh_loss_gap": -0.19230480585247278,
+          "fresh_macro_f1_gap": 0.0
+        },
+        {
+          "step": 50,
+          "fresh_gap": 0.0,
+          "fresh_loss_gap": -0.05689174053259194,
+          "fresh_macro_f1_gap": 0.0
+        }
+      ],
+      "fresh_gap_final": 0.0,
+      "fresh_loss_gap_final": -0.05689174053259194,
+      "fresh_auc_gap": -0.033984374999999956,
+      "fresh_loss_auc_gap": -0.20090446091489864
+    }
+  ],
+  "mode": "positive_control",
+  "elapsed_seconds": 1.8865962028503418,
+  "scientific_conclusion_allowed": false
+}

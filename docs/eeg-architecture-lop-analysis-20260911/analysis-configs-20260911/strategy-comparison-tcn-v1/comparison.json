@@ -1,0 +1,295 @@
+{
+  "schema_version": 1,
+  "analysis": "eeg-adaptation-strategy-lop-comparison-v1",
+  "architecture": "tcn",
+  "budgets": [
+    25,
+    50
+  ],
+  "strategies": {
+    "plain": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/summary.json",
+    "source_replay": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/strategy-source-replay-tcn-v1/summary.json",
+    "l2_sp": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/strategy-l2-sp-tcn-v1/summary.json",
+    "replay_l2_sp": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/strategy-replay-l2-sp-tcn-v1/summary.json"
+  },
+  "design_fingerprint": {
+    "dataset": "ISRUC",
+    "source_subjects": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      9,
+      10,
+      21
+    ],
+    "target_subject_order": [
+      2,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "retention_subjects": [
+      5,
+      18,
+      19,
+      20
+    ],
+    "target_split": "first 10 epochs per file for adaptation; last 10 for held-out evaluation",
+    "input_shape": [
+      8,
+      3000
+    ],
+    "classes": 5,
+    "source_epochs": 3,
+    "source_lr": 0.002,
+    "budgets": [
+      0,
+      5,
+      10,
+      25,
+      50
+    ],
+    "adapt_lr": 0.001,
+    "batch_size": 32,
+    "fresh_mode": "random-initialization-at-each-target-stage",
+    "warm_mode": "carried-after-previous-stage-final-budget"
+  },
+  "stats": {
+    "plain": {
+      "25": {
+        "fresh_gap_mean": 0.02083333395421505,
+        "positive": 15,
+        "zero": 2,
+        "negative": 7,
+        "count": 24,
+        "minimum": -0.23999997973442078,
+        "maximum": 0.4399999976158142,
+        "warm_accuracy_mean": 0.2299999992052714,
+        "fresh_accuracy_mean": 0.25083333315948647,
+        "warm_retention_accuracy_mean": 0.22677083096156517,
+        "fresh_retention_accuracy_mean": 0.22479166447495422
+      },
+      "50": {
+        "fresh_gap_mean": -0.007499999677141507,
+        "positive": 11,
+        "zero": 6,
+        "negative": 7,
+        "count": 24,
+        "minimum": -0.3799999952316284,
+        "maximum": 0.20000001788139343,
+        "warm_accuracy_mean": 0.2441666660209497,
+        "fresh_accuracy_mean": 0.23666666634380817,
+        "warm_retention_accuracy_mean": 0.21937499769652882,
+        "fresh_retention_accuracy_mean": 0.22281249798834324
+      }
+    },
+    "source_replay": {
+      "25": {
+        "fresh_gap_mean": 0.09916666522622108,
+        "positive": 15,
+        "zero": 4,
+        "negative": 5,
+        "count": 24,
+        "minimum": -0.1599999964237213,
+        "maximum": 0.4399999976158142,
+        "warm_accuracy_mean": 0.220833333209157,
+        "fresh_accuracy_mean": 0.3199999984353781,
+        "warm_retention_accuracy_mean": 0.2191666664245228,
+        "fresh_retention_accuracy_mean": 0.2687500001241763
+      },
+      "50": {
+        "fresh_gap_mean": -0.019166667324801285,
+        "positive": 3,
+        "zero": 13,
+        "negative": 8,
+        "count": 24,
+        "minimum": -0.2199999988079071,
+        "maximum": 0.3799999952316284,
+        "warm_accuracy_mean": 0.20500000131626925,
+        "fresh_accuracy_mean": 0.18583333399146795,
+        "warm_retention_accuracy_mean": 0.20802082975084582,
+        "fresh_retention_accuracy_mean": 0.1957291654932002
+      }
+    },
+    "l2_sp": {
+      "25": {
+        "fresh_gap_mean": 0.05916666751727462,
+        "positive": 14,
+        "zero": 3,
+        "negative": 7,
+        "count": 24,
+        "minimum": -0.23999997973442078,
+        "maximum": 0.26000000536441803,
+        "warm_accuracy_mean": 0.21083333265657225,
+        "fresh_accuracy_mean": 0.2700000001738469,
+        "warm_retention_accuracy_mean": 0.2219791654497385,
+        "fresh_retention_accuracy_mean": 0.21260416569809118
+      },
+      "50": {
+        "fresh_gap_mean": 0.03666666413967808,
+        "positive": 15,
+        "zero": 4,
+        "negative": 5,
+        "count": 24,
+        "minimum": -0.24000000953674316,
+        "maximum": 0.23999999463558197,
+        "warm_accuracy_mean": 0.20000000096236667,
+        "fresh_accuracy_mean": 0.23666666510204473,
+        "warm_retention_accuracy_mean": 0.20249999749163786,
+        "fresh_retention_accuracy_mean": 0.21427083077530065
+      }
+    },
+    "replay_l2_sp": {
+      "25": {
+        "fresh_gap_mean": 0.05083333142101765,
+        "positive": 12,
+        "zero": 8,
+        "negative": 4,
+        "count": 24,
+        "minimum": -0.2199999988079071,
+        "maximum": 0.3799999952316284,
+        "warm_accuracy_mean": 0.2558333358416955,
+        "fresh_accuracy_mean": 0.30666666726271313,
+        "warm_retention_accuracy_mean": 0.2292708346309761,
+        "fresh_retention_accuracy_mean": 0.2615625026325385
+      },
+      "50": {
+        "fresh_gap_mean": -0.03750000149011612,
+        "positive": 7,
+        "zero": 5,
+        "negative": 12,
+        "count": 24,
+        "minimum": -0.24000000953674316,
+        "maximum": 0.23999997973442078,
+        "warm_accuracy_mean": 0.22250000076989332,
+        "fresh_accuracy_mean": 0.1849999992797772,
+        "warm_retention_accuracy_mean": 0.21833332938452563,
+        "fresh_retention_accuracy_mean": 0.21208333301668367
+      }
+    }
+  },
+  "paired_deltas_vs_plain": {
+    "source_replay": {
+      "25": {
+        "fresh_gap_mean_delta": 0.07833333127200603,
+        "fresh_gap_improved_cells": 12,
+        "fresh_gap_worsened_cells": 9,
+        "warm_retention_accuracy_mean_delta": -0.007604164537042379,
+        "count": 24
+      },
+      "50": {
+        "fresh_gap_mean_delta": -0.011666667647659779,
+        "fresh_gap_improved_cells": 4,
+        "fresh_gap_worsened_cells": 13,
+        "warm_retention_accuracy_mean_delta": -0.011354167945683002,
+        "count": 24
+      }
+    },
+    "l2_sp": {
+      "25": {
+        "fresh_gap_mean_delta": 0.03833333356305957,
+        "fresh_gap_improved_cells": 9,
+        "fresh_gap_worsened_cells": 6,
+        "warm_retention_accuracy_mean_delta": -0.004791665511826674,
+        "count": 24
+      },
+      "50": {
+        "fresh_gap_mean_delta": 0.044166663816819586,
+        "fresh_gap_improved_cells": 13,
+        "fresh_gap_worsened_cells": 7,
+        "warm_retention_accuracy_mean_delta": -0.016875000204890966,
+        "count": 24
+      }
+    },
+    "replay_l2_sp": {
+      "25": {
+        "fresh_gap_mean_delta": 0.029999997466802597,
+        "fresh_gap_improved_cells": 9,
+        "fresh_gap_worsened_cells": 11,
+        "warm_retention_accuracy_mean_delta": 0.002500003669410944,
+        "count": 24
+      },
+      "50": {
+        "fresh_gap_mean_delta": -0.030000001812974613,
+        "fresh_gap_improved_cells": 7,
+        "fresh_gap_worsened_cells": 13,
+        "warm_retention_accuracy_mean_delta": -0.001041668312003215,
+        "count": 24
+      }
+    }
+  },
+  "gates": {
+    "plain": {
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 2,
+        "stage_count": 8,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 2,
+        "stage_count": 8,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/audit-budgets/budget-50/gate/tcn.json"
+      }
+    },
+    "source_replay": {
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 3,
+        "stage_count": 8,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/strategy-source-replay-tcn-v1/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 0,
+        "stage_count": 8,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/strategy-source-replay-tcn-v1/audit-budgets/budget-50/gate/tcn.json"
+      }
+    },
+    "l2_sp": {
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 3,
+        "stage_count": 8,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/strategy-l2-sp-tcn-v1/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 2,
+        "stage_count": 8,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/strategy-l2-sp-tcn-v1/audit-budgets/budget-50/gate/tcn.json"
+      }
+    },
+    "replay_l2_sp": {
+      "25": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 2,
+        "stage_count": 8,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/strategy-replay-l2-sp-tcn-v1/audit-budgets/budget-25/gate/tcn.json"
+      },
+      "50": {
+        "status": "blocked-inconsistent-direction",
+        "direction_supported": false,
+        "positive_stage_count": 0,
+        "stage_count": 8,
+        "path": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/strategy-replay-l2-sp-tcn-v1/audit-budgets/budget-50/gate/tcn.json"
+      }
+    }
+  },
+  "scientific_conclusion_allowed": false,
+  "interpretation": "fresh-gap is the LoP outcome; retention remains separate and mixed-direction cells block a LoP claim"
+}

@@ -10,6 +10,11 @@ class OperatorTests(unittest.TestCase):
             {"name": "softmax", "shape": [16]},
             {"name": "rmsnorm", "shape": [16]},
             {"name": "silu", "shape": [16]},
+            {
+                "name": "conv_nchwc",
+                "shape": [1, 1, 3, 5, 1, 3, 3, 16, 16],
+                "attrs": {"dilation_h": 2, "dilation_w": 3},
+            },
         )
         for payload in specs:
             result = benchmark_operator(OperatorSpec.from_payload(payload), repeats=2)
@@ -22,6 +27,16 @@ class OperatorTests(unittest.TestCase):
             OperatorSpec.from_payload({"name": "matmul", "shape": [2, 3]})
         with self.assertRaises(ValueError):
             OperatorSpec.from_payload({"name": "softmax", "shape": [4], "dtype": "int4"})
+
+    def test_conv_nchwc_accumulate_is_boolean(self):
+        with self.assertRaisesRegex(ValueError, "accumulate must be a boolean"):
+            OperatorSpec.from_payload(
+                {
+                    "name": "conv_nchwc",
+                    "shape": [1, 1, 3, 5, 1, 3, 3, 16, 16],
+                    "attrs": {"accumulate": "false"},
+                }
+            )
 
     def test_small_sample_p95_uses_the_upper_observation(self):
         result = benchmark_operator(OperatorSpec.from_payload({"name": "softmax", "shape": [8]}), repeats=2)

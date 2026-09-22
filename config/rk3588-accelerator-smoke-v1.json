@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "name": "rk3588-accelerator-smoke",
+  "version": "0.16.1",
+  "target": {
+    "name": "orangepi",
+    "architecture": "aarch64",
+    "device": "rk3588",
+    "accelerators": ["mali-g610-opencl", "rk3588-npu"]
+  },
+  "gpu": {
+    "opencl_kernel": "vector_add_fp32",
+    "vulkan_required_for_pass": true
+  },
+  "npu": {
+    "runtime": "RKNPU2 librknnrt.so",
+    "model": "mobilenet_v1.rknn",
+    "input": "deterministic-zero",
+    "repeat": 3
+  },
+  "camera_used": false,
+  "scientific_conclusion_allowed": false
+}

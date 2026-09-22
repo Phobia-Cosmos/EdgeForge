@@ -25,6 +25,19 @@ def worker_matches(worker: dict[str, Any], requirements: dict[str, Any]) -> bool
     if not required_accelerators.issubset(accelerators):
         return False
 
+    # `backends` is historically a Kernel-plan filter.  Model tasks use the
+    # explicit Worker capability key so existing compiler-plan semantics stay
+    # backwards compatible.
+    required_backends = set(requirements.get("worker_backends") or [])
+    if required_backends:
+        advertised_backends = set(capabilities.get("backends") or [])
+        # Older Workers predate backend advertisement; infer only the
+        # dependency-free reference executor for backwards compatibility.
+        if "python-reference" in required_backends and not advertised_backends:
+            advertised_backends.add("python-reference")
+        if not required_backends.issubset(advertised_backends):
+            return False
+
     required_labels = requirements.get("labels") or {}
     labels = worker.get("labels") or {}
     if any(labels.get(key) != value for key, value in required_labels.items()):

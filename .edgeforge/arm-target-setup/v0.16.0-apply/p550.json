@@ -1,0 +1,86 @@
+{
+  "actions": [
+    {
+      "action": "prepare-user-directories",
+      "result": {
+        "elapsed_ms": 947.291,
+        "exit_code": 1,
+        "status": "failed",
+        "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 33, in <module>\nNameError: name 'PYTHONPATH' is not defined",
+        "stdout": ""
+      }
+    }
+  ],
+  "digest": "7eeb4878de340a93df49fc5f66edfa685f115b8239050991bc0c58bd5c1c17fb",
+  "inventory": {
+    "architecture": "riscv64",
+    "commands": {
+      "clang": null,
+      "cmake": {
+        "path": "/usr/bin/cmake",
+        "version": "cmake version 3.28.3"
+      },
+      "gcc": {
+        "path": "/usr/bin/gcc",
+        "version": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0"
+      },
+      "git": {
+        "path": "/usr/bin/git",
+        "version": "git version 2.43.0"
+      },
+      "ninja": null,
+      "pip3": {
+        "path": "/usr/bin/pip3",
+        "version": "pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)"
+      },
+      "python3": {
+        "path": "/usr/bin/python3",
+        "version": "Python 3.12.3"
+      },
+      "systemctl": {
+        "path": "/usr/bin/systemctl",
+        "version": "systemd 255 (255.4-1ubuntu8.17)"
+      }
+    },
+    "drm_nodes": [
+      "/dev/dri/card0",
+      "/dev/dri/card1",
+      "/dev/dri/renderD128"
+    ],
+    "home": "/home/ubuntu",
+    "hostname": "ubuntu",
+    "kernel": "6.6.92-2025-eic7700",
+    "python": "3.12.3",
+    "python_modules": {
+      "iree": false,
+      "numpy": false,
+      "onnxruntime": false,
+      "rknn": false,
+      "torch": false
+    },
+    "rknn_runtime": {
+      "demo": null,
+      "device_nodes": [],
+      "libraries": [],
+      "models": [],
+      "server": null
+    },
+    "user": "ubuntu"
+  },
+  "inventory_call": {
+    "elapsed_ms": 1665.423,
+    "exit_code": 0,
+    "status": "succeeded",
+    "stderr": "",
+    "stdout": "{\"architecture\": \"riscv64\", \"commands\": {\"clang\": null, \"cmake\": {\"path\": \"/usr/bin/cmake\", \"version\": \"cmake version 3.28.3\"}, \"gcc\": {\"path\": \"/usr/bin/gcc\", \"version\": \"gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\"}, \"git\": {\"path\": \"/usr/bin/git\", \"version\": \"git version 2.43.0\"}, \"ninja\": null, \"pip3\": {\"path\": \"/usr/bin/pip3\", \"version\": \"pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)\"}, \"python3\": {\"path\": \"/usr/bin/python3\", \"version\": \"Python 3.12.3\"}, \"systemctl\": {\"path\": \"/usr/bin/systemctl\", \"version\": \"systemd 255 (255.4-1ubuntu8.17)\"}}, \"drm_nodes\": [\"/dev/dri/card0\", \"/dev/dri/card1\", \"/dev/dri/renderD128\"], \"home\": \"/home/ubuntu\", \"hostname\": \"ubuntu\", \"kernel\": \"6.6.92-2025-eic7700\", \"python\": \"3.12.3\", \"python_modules\": {\"iree\": false, \"numpy\": false, \"onnxruntime\": false, \"rknn\": false, \"torch\": false}, \"rknn_runtime\": {\"demo\": null, \"device_nodes\": [], \"libraries\": [], \"models\": [], \"server\": null}, \"user\": \"ubuntu\"}"
+  },
+  "profile": {
+    "architecture": "riscv64",
+    "role": "riscv64-reference-build",
+    "ssh_host": "p550"
+  },
+  "schema_version": 1,
+  "status": "blocked",
+  "target": "p550",
+  "version": "0.16.0"
+}

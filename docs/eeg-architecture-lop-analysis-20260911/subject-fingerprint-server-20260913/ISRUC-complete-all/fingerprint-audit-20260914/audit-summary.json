@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "dataset": "ISRUC",
+  "source_root": "/home/undefined/Desktop/EdgeForge/docs/eeg-architecture-lop/subject-fingerprint-server-20260913/ISRUC-complete-all",
+  "sample_count_epochs": 85520,
+  "subject_count": 98,
+  "sequence_count": 4276,
+  "feature_dim": 83,
+  "feature_names": [
+    "log_rms_ch0",
+    "log_rms_ch1",
+    "log_rms_ch2",
+    "log_rms_ch3",
+    "log_rms_ch4",
+    "log_rms_ch5",
+    "log_rms_ch6",
+    "log_rms_ch7",
+    "log_rms_centered_ch0",
+    "log_rms_centered_ch1",
+    "log_rms_centered_ch2",
+    "log_rms_centered_ch3",
+    "log_rms_centered_ch4",
+    "log_rms_centered_ch5",
+    "log_rms_centered_ch6",
+    "log_rms_centered_ch7",
+    "roughness_ch0",
+    "roughness_ch1",
+    "roughness_ch2",
+    "roughness_ch3",
+    "roughness_ch4",
+    "roughness_ch5",
+    "roughness_ch6",
+    "roughness_ch7",
+    "diff_ratio_ch0",
+    "diff_ratio_ch1",
+    "diff_ratio_ch2",
+    "diff_ratio_ch3",
+    "diff_ratio_ch4",
+    "diff_ratio_ch5",
+    "diff_ratio_ch6",
+    "diff_ratio_ch7",
+    "relative_delta_power_ch0",
+    "relative_delta_power_ch1",
+    "relative_delta_power_ch2",
+    "relative_delta_power_ch3",
+    "relative_delta_power_ch4",
+    "relative_delta_power_ch5",
+    "relative_delta_power_ch6",
+    "relative_delta_power_ch7",
+    "relative_theta_power_ch0",
+    "relative_theta_power_ch1",
+    "relative_theta_power_ch2",
+    "relative_theta_power_ch3",
+    "relative_theta_power_ch4",
+    "relative_theta_power_ch5",
+    "relative_theta_power_ch6",
+    "relative_theta_power_ch7",
+    "relative_alpha_power_ch0",
+    "relative_alpha_power_ch1",
+    "relative_alpha_power_ch2",
+    "relative_alpha_power_ch3",
+    "relative_alpha_power_ch4",
+    "relative_alpha_power_ch5",
+    "relative_alpha_power_ch6",
+    "relative_alpha_power_ch7",
+    "relative_beta_power_ch0",
+    "relative_beta_power_ch1",
+    "relative_beta_power_ch2",
+    "relative_beta_power_ch3",
+    "relative_beta_power_ch4",
+    "relative_beta_power_ch5",
+    "relative_beta_power_ch6",
+    "relative_beta_power_ch7",
+    "relative_gamma_power_ch0",
+    "relative_gamma_power_ch1",
+    "relative_gamma_power_ch2",
+    "relative_gamma_power_ch3",
+    "relative_gamma_power_ch4",
+    "relative_gamma_power_ch5",
+    "relative_gamma_power_ch6",
+    "relative_gamma_power_ch7",
+    "spectral_entropy_ch0",
+    "spectral_entropy_ch1",
+    "spectral_entropy_ch2",
+    "spectral_entropy_ch3",
+    "spectral_entropy_ch4",
+    "spectral_entropy_ch5",
+    "spectral_entropy_ch6",
+    "spectral_entropy_ch7",
+    "signed_connectivity_mean",
+    "signed_connectivity_std",
+    "signed_connectivity_abs_mean"
+  ],
+  "feature_groups": {
+    "log_rms": {
+      "start": 0,
+      "stop": 8,
+      "dimensions": 8
+    },
+    "log_rms_centered": {
+      "start": 8,
+      "stop": 16,
+      "dimensions": 8
+    },
+    "roughness": {
+      "start": 16,
+      "stop": 24,
+      "dimensions": 8
+    },
+    "diff_ratio": {
+      "start": 24,
+      "stop": 32,
+      "dimensions": 8
+    },
+    "relative_band_power": {
+      "start": 32,
+      "stop": 72,
+      "dimensions": 40
+    },
+    "spectral_entropy": {
+      "start": 72,
+      "stop": 80,
+      "dimensions": 8
+    },
+    "signed_connectivity": {
+      "start": 80,
+      "stop": 83,
+      "dimensions": 3
+    }
+  },
+  "split": "within-subject sequence-disjoint; first half sequences train, second half held out",
+  "pca": {
+    "standardization": "column-wise StandardScaler over all epoch rows",
+    "fit_rows": 85520,
+    "explained_variance_ratio_first_10": [
+      0.2919701933860779,
+      0.21039752662181854,
+      0.09232612699270248,
+      0.06783599406480789,
+      0.05095728859305382,
+      0.036703821271657944,
+      0.03148503229022026,
+      0.02545212395489216,
+      0.02264925092458725,
+      0.017098359763622284
+    ],
+    "explained_variance_ratio_first_2_sum": 0.5023677349090576,
+    "top_absolute_loadings": {
+      "PCA-1": [
+        {
+          "feature": "relative_beta_power_ch4",
+          "loading": 0.16989053785800934
+        },
+        {
+          "feature": "relative_gamma_power_ch1",
+          "loading": 0.16776274144649506
+        },
+        {
+          "feature": "relative_theta_power_ch5",
+          "loading": 0.16730615496635437
+        },
+        {
+          "feature": "relative_alpha_power_ch2",
+          "loading": 0.16608820855617523
+        },
+        {
+          "feature": "diff_ratio_ch0",
+          "loading": 0.16523954272270203
+        },
+        {
+          "feature": "diff_ratio_ch2",
+          "loading": 0.16395723819732666
+        },
+        {
+          "feature": "diff_ratio_ch1",
+          "loading": 0.16367290914058685
+        },
+        {
+          "feature": "diff_ratio_ch4",
+          "loading": 0.16293619573116302
+        },
+        {
+          "feature": "diff_ratio_ch6",
+          "loading": 0.16246677935123444
+        },
+        {
+          "feature": "diff_ratio_ch3",
+          "loading": 0.1612168550491333
+        },
+        {
+          "feature": "diff_ratio_ch5",
+          "loading": 0.15964727103710175
+        },
+        {
+          "feature": "spectral_entropy_ch5",
+          "loading": 0.15680362284183502
+        }
+      ],
+      "PCA-2": [
+        {
+          "feature": "log_rms_ch0",
+          "loading": 0.22301547229290009
+        },
+        {
+          "feature": "log_rms_ch1",
+          "loading": 0.2225150316953659
+        },
+        {
+          "feature": "log_rms_ch2",
+          "loading": 0.21620523929595947
+        },
+        {
+          "feature": "log_rms_ch5",
+          "loading": 0.21499432623386383
+        },
+        {
+          "feature": "log_rms_ch4",
+          "loading": 0.21470165252685547
+        },
+        {
+          "feature": "log_rms_ch6",
+          "loading": 0.21434620022773743
+        },
+        {
+          "feature": "log_rms_ch3",
+          "loading": 0.21399414539337158
+        },
+        {
+          "feature": "log_rms_ch7",
+          "loading": 0.21301765739917755
+        },
+        {
+          "feature": "roughness_ch1",
+          "loading": 0.20672118663787842
+        },
+        {
+          "feature": "roughness_ch5",
+          "loading": 0.2051229327917099
+        },
+        {
+          "feature": "roughness_ch0",
+          "loading": 0.20458422601222992
+        },
+        {
+          "feature": "roughness_ch2",
+          "loading": 0.20429345965385437
+        }
+      ]
+    }
+  },
+  "identity_probe": {
+    "all_83_features": {
+      "accuracy": 0.7328327171903881,
+      "balanced_accuracy": 0.7315746092101985
+    },
+    "without_log_rms": {
+      "removed_dimensions": 8,
+      "accuracy": 0.730452865064695,
+      "balanced_accuracy": 0.7291693348578187
+    },
+    "without_log_rms_centered": {
+      "removed_dimensions": 8,
+      "accuracy": 0.727449168207024,
+      "balanced_accuracy": 0.7261111842359917
+    },
+    "without_roughness": {
+      "removed_dimensions": 8,
+      "accuracy": 0.7314926062846581,
+      "balanced_accuracy": 0.7301778319304414
+    },
+    "without_diff_ratio": {
+      "removed_dimensions": 8,
+      "accuracy": 0.7204713493530499,
+      "balanced_accuracy": 0.719083973668496
+    },
+    "without_relative_band_power": {
+      "removed_dimensions": 40,
+      "accuracy": 0.5214879852125693,
+      "balanced_accuracy": 0.5205594747328098
+    },
+    "without_spectral_entropy": {
+      "removed_dimensions": 8,
+      "accuracy": 0.7217883548983364,
+      "balanced_accuracy": 0.7205919910542921
+    },
+    "without_signed_connectivity": {
+      "removed_dimensions": 3,
+      "accuracy": 0.7095425138632163,
+      "balanced_accuracy": 0.7082931024043491
+    }
+  },
+  "standardized_geometry": {
+    "within_subject_median_radius_mean": 5.751831998630446,
+    "between_subject_centroid_distance_median": 5.61777925491333,
+    "between_within_ratio": 0.9766939048725632
+  },
+  "interpretation": {
+    "cnn_encoder_used": false,
+    "labels_used_as_features": false,
+    "pca_points_are_epochs": true,
+    "scientific_conclusion_allowed": false
+  }
+}

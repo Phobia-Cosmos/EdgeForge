@@ -69,6 +69,14 @@ Catalog 记录的结果文件 SHA-256 由 ExperimentBundle 在导入时重新计
 
 该 Probe 明确标为 `supervised-oracle-fixed-budget-heldout`。它诊断“当前表示和参数是否仍能在固定预算下学习”，但不代表 BrainUICL 无监督 target protocol 的部署性能。正式 LoP 结论至少需要多个 checkpoint stage、完整预算、多个 seed 和预注册统计分析；V7 release smoke 只验证链路可运行。
 
+## 版本化 LoP 分析
+
+控制面现在可以从已持久化的 Experiment Bundle 创建 `lop-lagged-correlation-v1` 分析。默认关系是 `ER(t-1) → Plasticity(t)`，其中 `lag=1` 表示 checkpoint 排序中的前一个 stage，而不是把 stage 整数减一；因此 stages `[0, 10, 25]` 会产生 `0→10` 和 `10→25` 两个 transition。
+
+分析只读取每个 `experiment_id` 最新一次 task 的指标，并把 task、控制面/Runtime 版本、source digest 和 Artifact digest 写入分析身份。输入实验必须共享 workload、protocol、comparison group、method、checkpoint transition 和 lagged context pairing grid，每个实验必须提供不同 seed；用户选中的任何实验缺少可用 pair 时都会阻断完整分析。`context_policy=exact` 只在完全相同的 metric context 内配对，用于防止不同 subject 串配；`aggregate-step` 则先在同一 stage 内取均值。
+
+输出包含 Pearson、Spearman、确定性 seed-cluster percentile bootstrap 95% CI、实际 pair、阻断原因和 SHA-256 `analysis_digest`。最低 seed 门槛固定为 3，即使调用者传入更小的 `minimum_seeds` 也不会放宽。`status=ok` 只说明版本化描述性统计具备足够输入，不代表显著性、因果性或 LoP 机制成立；`scientific_conclusion_allowed` 永远为 `false`。
+
 ## 数据与安全边界
 
 - 原始 ISRUC/FACED payload 保留在共享数据盘，控制面只看到数据身份、manifest digest 和 Worker 能力。

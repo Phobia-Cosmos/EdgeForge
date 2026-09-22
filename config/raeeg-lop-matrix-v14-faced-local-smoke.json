@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "matrix_id": "faced-lop-v014-local-smoke",
+  "version": "0.14.0",
+  "brainuicl_root": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL",
+  "python": "/home/undefined/Disk/python-envs/brainuicl/bin/python",
+  "output_root": "/home/undefined/Disk/ai-storage/EdgeForge/raeeg-lop-matrix/v0.14.0-faced-local-smoke",
+  "audit": {
+    "context_policy": "exact",
+    "minimum_pairs": 3,
+    "minimum_seeds": 3
+  },
+  "defaults": {
+    "seed": 4321,
+    "device": "cuda:0",
+    "max_files": 2,
+    "batch_size": 1,
+    "max_batches": 1,
+    "importance_batches": 1,
+    "importance_top_k": 10,
+    "probe_steps": "0,2",
+    "train_fraction": 0.5,
+    "lr": 1e-5,
+    "weight_decay": 0.0,
+    "split": "subject-1-mini-smoke"
+  },
+  "datasets": [
+    {
+      "name": "FACED",
+      "data_root": "/home/undefined/Disk/datasets/FACED_processed",
+      "subjects": [1],
+      "stages": [0, 1],
+      "conditions": [{"name": "clean"}],
+      "methods": [
+        {
+          "name": "finetune-mini-smoke",
+          "checkpoint_roots": {
+            "0": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/FACED/Pretrain",
+            "1": "/home/undefined/Desktop/EdgeForge/logs/archive/v0.13.0/lop-instrumentation-20260822/faced-cl-smoke/external-run/finetune/checkpoints/individual_1"
+          },
+          "baseline_checkpoint_root": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/FACED/Pretrain",
+          "fresh_checkpoint_root": "/home/undefined/Disk/ai-storage/BrainUICL/model_parameter/FACED/Pretrain"
+        }
+      ]
+    }
+  ]
+}

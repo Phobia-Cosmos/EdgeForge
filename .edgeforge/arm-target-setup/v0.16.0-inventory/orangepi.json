@@ -1,0 +1,88 @@
+{
+  "actions": [],
+  "digest": "a8ec19eea2fb2b60c73c6228a277892fad7c202d109bf483fa8ae4cff4d69863",
+  "inventory": {
+    "architecture": "aarch64",
+    "commands": {
+      "clang": null,
+      "cmake": {
+        "path": "/usr/bin/cmake",
+        "version": "cmake version 3.22.1"
+      },
+      "gcc": {
+        "path": "/usr/bin/gcc",
+        "version": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0"
+      },
+      "git": {
+        "path": "/usr/bin/git",
+        "version": "git version 2.34.1"
+      },
+      "ninja": null,
+      "pip3": {
+        "path": "/usr/bin/pip3",
+        "version": "pip 22.0.2 from /usr/lib/python3/dist-packages/pip (python 3.10)"
+      },
+      "python3": {
+        "path": "/usr/bin/python3",
+        "version": "Python 3.10.12"
+      },
+      "systemctl": {
+        "path": "/usr/bin/systemctl",
+        "version": "systemd 249 (249.11-0ubuntu3.20)"
+      }
+    },
+    "drm_nodes": [
+      "/dev/dri/card0",
+      "/dev/dri/card1",
+      "/dev/dri/renderD128",
+      "/dev/dri/renderD129"
+    ],
+    "home": "/home/orangepi",
+    "hostname": "orangepi5ultra",
+    "kernel": "6.1.43-rockchip-rk3588",
+    "python": "3.10.12",
+    "python_modules": {
+      "iree": false,
+      "numpy": true,
+      "onnxruntime": false,
+      "rknn": false,
+      "torch": false
+    },
+    "rknn_runtime": {
+      "demo": {
+        "path": "/usr/bin/rknn_demo",
+        "version": "/usr/bin/rknn_demo: error while loading shared libraries: libjpeg.so.62: cannot open shared object file: No such file or directory"
+      },
+      "device_nodes": [],
+      "libraries": [
+        "/usr/lib/librknnrt.so",
+        "/usr/lib/librknn_api.so"
+      ],
+      "models": [
+        "/usr/share/rknn_demo/mobilenet_ssd.rknn"
+      ],
+      "server": {
+        "error": "Command '['/usr/bin/rknn_server', '--version']' timed out after 5 seconds",
+        "path": "/usr/bin/rknn_server",
+        "version": null
+      }
+    },
+    "user": "orangepi"
+  },
+  "inventory_call": {
+    "elapsed_ms": 6109.814,
+    "exit_code": 0,
+    "status": "succeeded",
+    "stderr": "",
+    "stdout": "{\"architecture\": \"aarch64\", \"commands\": {\"clang\": null, \"cmake\": {\"path\": \"/usr/bin/cmake\", \"version\": \"cmake version 3.22.1\"}, \"gcc\": {\"path\": \"/usr/bin/gcc\", \"version\": \"gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0\"}, \"git\": {\"path\": \"/usr/bin/git\", \"version\": \"git version 2.34.1\"}, \"ninja\": null, \"pip3\": {\"path\": \"/usr/bin/pip3\", \"version\": \"pip 22.0.2 from /usr/lib/python3/dist-packages/pip (python 3.10)\"}, \"python3\": {\"path\": \"/usr/bin/python3\", \"version\": \"Python 3.10.12\"}, \"systemctl\": {\"path\": \"/usr/bin/systemctl\", \"version\": \"systemd 249 (249.11-0ubuntu3.20)\"}}, \"drm_nodes\": [\"/dev/dri/card0\", \"/dev/dri/card1\", \"/dev/dri/renderD128\", \"/dev/dri/renderD129\"], \"home\": \"/home/orangepi\", \"hostname\": \"orangepi5ultra\", \"kernel\": \"6.1.43-rockchip-rk3588\", \"python\": \"3.10.12\", \"python_modules\": {\"iree\": false, \"numpy\": true, \"onnxruntime\": false, \"rknn\": false, \"torch\": false}, \"rknn_runtime\": {\"demo\": {\"path\": \"/usr/bin/rknn_demo\", \"version\": \"/usr/bin/rknn_demo: error while loading shared libraries: libjpeg.so.62: cannot open shared object file: No such file or directory\"}, \"device_nodes\": [], \"libraries\": [\"/usr/lib/librknnrt.so\", \"/usr/lib/librknn_api.so\"], \"models\": [\"/usr/share/rknn_demo/mobilenet_ssd.rknn\"], \"server\": {\"error\": \"Command '['/usr/bin/rknn_server', '--version']' timed out after 5 seconds\", \"path\": \"/usr/bin/rknn_server\", \"version\": null}}, \"user\": \"orangepi\"}"
+  },
+  "profile": {
+    "architecture": "aarch64",
+    "role": "arm64-cpu-reference",
+    "ssh_host": "orangepi"
+  },
+  "schema_version": 1,
+  "status": "ready",
+  "target": "orangepi",
+  "version": "0.16.0"
+}

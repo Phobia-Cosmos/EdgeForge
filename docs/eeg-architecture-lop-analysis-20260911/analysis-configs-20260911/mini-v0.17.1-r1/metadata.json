@@ -1,0 +1,26 @@
+{
+  "schema": "edgeforge.eeg-architecture-benchmark.v1",
+  "dataset": "ISRUC",
+  "data_root": "/home/undefined/Desktop/EdgeForge/data/eeg-mini/isruc-v0.17.1",
+  "source_files": [
+    "/home/undefined/Desktop/EdgeForge/data/eeg-mini/isruc-v0.17.1/source/1/data/3.npy",
+    "/home/undefined/Desktop/EdgeForge/data/eeg-mini/isruc-v0.17.1/source/3/data/16.npy",
+    "/home/undefined/Desktop/EdgeForge/data/eeg-mini/isruc-v0.17.1/source/4/data/0.npy"
+  ],
+  "target_files": [
+    "/home/undefined/Desktop/EdgeForge/data/eeg-mini/isruc-v0.17.1/target/2/data/45.npy"
+  ],
+  "retention_files": [
+    "/home/undefined/Desktop/EdgeForge/data/eeg-mini/isruc-v0.17.1/retention/5/data/30.npy"
+  ],
+  "target_split": "first 10 epochs of every file for adaptation; last 10 for held-out evaluation",
+  "input_shape": [
+    8,
+    3000
+  ],
+  "classes": 5,
+  "epochs": 3,
+  "adapt_steps": 5,
+  "device": "cpu",
+  "scientific_conclusion_allowed": false
+}

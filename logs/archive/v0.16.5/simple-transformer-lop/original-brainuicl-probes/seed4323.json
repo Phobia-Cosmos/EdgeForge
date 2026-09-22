@@ -1,0 +1,3479 @@
+{
+  "config": {
+    "checkpoint_stage": 0,
+    "dataset": "ISRUC",
+    "device": "cuda:0",
+    "lr": 1e-05,
+    "method": "finetune",
+    "probe_steps": [
+      0,
+      10,
+      25,
+      50
+    ],
+    "retention_batch_size": 1,
+    "retention_data_root": "/mnt/ubuntu-space/datasets/brainuicl/processed/isruc_group1_npy_float32",
+    "retention_max_files": 2,
+    "retention_subjects": [
+      1
+    ],
+    "seed": 4323,
+    "split": "subject-2-v0165-original",
+    "subject": 2,
+    "weight_decay": 0.0
+  },
+  "environment": {
+    "cuda": "13.0",
+    "device": "cuda:0",
+    "python": "3.12.3",
+    "torch": "2.9.1+cu130"
+  },
+  "instrumentation": "brainuicl-fixed-budget-probe-v1",
+  "metrics": [
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.plasticity.acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.27499999999999997
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.plasticity.mf1_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.11516483516483515
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.plasticity.loss_reduction",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 6.132893919944763
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.plasticity.aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 0.37125
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.plasticity.loss_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.8248492792248725
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.plasticity.fresh_gap",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.425
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.plasticity.fresh_loss_gap",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -1.046459436416626
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.sequence_count",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.0
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_loss_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 7.0655357837677
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_loss_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 0.601011335849762
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_loss_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -6.464524447917938
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_loss_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.138520050048828
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_acc_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.075
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_acc_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.75
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.675
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_acc_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.44375
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_mf1_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.02608695652173913
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_mf1_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.32
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_mf1_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.29391304347826086
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_mf1_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.1975414054861995
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_loss_delta",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": -6.464524447917938
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_acc_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.675
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint.retention_mf1_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.29391304347826086
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_loss_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1.5467276573181152
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_loss_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.142933189868927
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_loss_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.5962055325508118
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_loss_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1.7332822024822234
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_acc_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.22499999999999998
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_acc_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.275
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.050000000000000044
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_acc_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.27
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_mf1_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.07826086956521738
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_mf1_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.07096774193548387
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_mf1_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.007293127629733512
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_mf1_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.07169705469845722
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_loss_delta",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 0.5962055325508118
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_acc_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.050000000000000044
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh.retention_mf1_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.007293127629733512
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint_acc_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.675
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint_mf1_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.29391304347826086
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.checkpoint_loss_delta",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": -6.464524447917938
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh_acc_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.050000000000000044
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh_mf1_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.007293127629733512
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.forgetting.fresh_loss_delta",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 0.5962055325508118
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.reproducibility.seed",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 4323.0
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.optimizer.lr",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1e-05
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.optimizer.weight_decay",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 0.0
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.optimizer.update_steps",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 50.0
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.train_sequences",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.0
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.eval_sequences",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.0
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.loss_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 7.795743465423584
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.loss_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1.6628495454788208
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.loss_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -6.132893919944763
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.loss_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.8248492792248725
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.acc_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.2
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.acc_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.475
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.27499999999999997
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.acc_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.37125
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.mf1_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.05714285714285715
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.mf1_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.1723076923076923
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.mf1_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.11516483516483515
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.mf1_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.14328389203389202
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_loss_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 7.0655357837677
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_loss_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 0.601011335849762
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_loss_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -6.464524447917938
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_loss_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.138520050048828
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_acc_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.075
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_acc_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.75
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.675
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_acc_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.44375
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_mf1_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.02608695652173913
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_mf1_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.32
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_mf1_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.29391304347826086
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_mf1_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.1975414054861995
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_loss_delta",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": -6.464524447917938
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_acc_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.675
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.retention.retention_mf1_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.29391304347826086
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.loss",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 7.795743465423584
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.acc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.2
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.mf1",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.05714285714285715
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_loss",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 7.0655357837677
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_acc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.075
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_mf1",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.02608695652173913
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.loss",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "scalar",
+      "value": 2.698878675699234
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.acc",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "ratio",
+      "value": 0.25
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.mf1",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "ratio",
+      "value": 0.15651515151515152
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.train_loss",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "scalar",
+      "value": 1.7049591541290283
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_loss",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "scalar",
+      "value": 2.387570798397064
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_acc",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "ratio",
+      "value": 0.275
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_mf1",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "ratio",
+      "value": 0.16599650349650347
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.loss",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "scalar",
+      "value": 2.387107193470001
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.acc",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "ratio",
+      "value": 0.42500000000000004
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.mf1",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "ratio",
+      "value": 0.13840973840973841
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.train_loss",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "scalar",
+      "value": 0.21912042796611786
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_loss",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "scalar",
+      "value": 1.712052345275879
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_acc",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "ratio",
+      "value": 0.45
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_mf1",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "ratio",
+      "value": 0.18358395989974938
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.loss",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "scalar",
+      "value": 1.6628495454788208
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.acc",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "ratio",
+      "value": 0.475
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.mf1",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "ratio",
+      "value": 0.1723076923076923
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.train_loss",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "scalar",
+      "value": 0.05058012157678604
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_loss",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "scalar",
+      "value": 0.601011335849762
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_acc",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "ratio",
+      "value": 0.75
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.old.curve.retention_mf1",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "ratio",
+      "value": 0.32
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.loss_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1.50345116853714
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.loss_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.7093089818954468
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.loss_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 1.2058578133583069
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.loss_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.0060365319252016
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.acc_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.325
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.acc_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.05
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.275
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.acc_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.0775
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.mf1_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.1001610305958132
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.mf1_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.01818181818181818
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.mf1_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.08197921241399503
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.mf1_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.026379739423217682
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_loss_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1.5467276573181152
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_loss_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.142933189868927
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_loss_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.5962055325508118
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_loss_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1.7332822024822234
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_acc_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.22499999999999998
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_acc_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.275
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.050000000000000044
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_acc_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.27
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_mf1_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.07826086956521738
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_mf1_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.07096774193548387
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_mf1_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.007293127629733512
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_mf1_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.07169705469845722
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_loss_delta",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 0.5962055325508118
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_acc_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.050000000000000044
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.retention.retention_mf1_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.007293127629733512
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.loss",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1.50345116853714
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.acc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.325
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.mf1",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.1001610305958132
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_loss",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1.5467276573181152
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_acc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.22499999999999998
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_mf1",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.07826086956521738
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.loss",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "scalar",
+      "value": 1.6185176372528076
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.acc",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "ratio",
+      "value": 0.05
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.mf1",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "ratio",
+      "value": 0.01818181818181818
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.train_loss",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "scalar",
+      "value": 1.0964292287826538
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_loss",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "scalar",
+      "value": 1.528290331363678
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_acc",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "ratio",
+      "value": 0.275
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_mf1",
+      "namespace": "raeeg.research",
+      "step": 10,
+      "unit": "ratio",
+      "value": 0.07096774193548387
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.loss",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "scalar",
+      "value": 1.9343369007110596
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.acc",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "ratio",
+      "value": 0.05
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.mf1",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "ratio",
+      "value": 0.01818181818181818
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.train_loss",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "scalar",
+      "value": 0.48471879959106445
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_loss",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "scalar",
+      "value": 1.6520088911056519
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_acc",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "ratio",
+      "value": 0.275
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_mf1",
+      "namespace": "raeeg.research",
+      "step": 25,
+      "unit": "ratio",
+      "value": 0.07096774193548387
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.loss",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "scalar",
+      "value": 2.7093089818954468
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.acc",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "ratio",
+      "value": 0.05
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.mf1",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "ratio",
+      "value": 0.01818181818181818
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.train_loss",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "scalar",
+      "value": 0.09192982316017151
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_loss",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "scalar",
+      "value": 2.142933189868927
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_acc",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "ratio",
+      "value": 0.275
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.fresh.curve.retention_mf1",
+      "namespace": "raeeg.research",
+      "step": 50,
+      "unit": "ratio",
+      "value": 0.07096774193548387
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.loss_gap_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -1.046459436416626
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.acc_gap_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.425
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.mf1_gap_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.1541258741258741
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.loss_aulc_gap",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.8188127472996709
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.acc_aulc_gap",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.29375
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.mf1_aulc_gap",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.11690415261067434
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.sequence_count",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.0
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_loss_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 7.0655357837677
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_loss_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 0.601011335849762
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_loss_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -6.464524447917938
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_loss_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.138520050048828
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_acc_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.075
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_acc_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.75
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.675
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_acc_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.44375
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_mf1_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.02608695652173913
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_mf1_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.32
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_mf1_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.29391304347826086
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_mf1_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.1975414054861995
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_loss_delta",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": -6.464524447917938
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_acc_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.675
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint.retention_mf1_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.29391304347826086
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_loss_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1.5467276573181152
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_loss_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 2.142933189868927
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_loss_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.5962055325508118
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_loss_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 1.7332822024822234
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_acc_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.22499999999999998
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_acc_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.275
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.050000000000000044
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_acc_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.27
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_mf1_initial",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.07826086956521738
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_mf1_final",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.07096774193548387
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_mf1_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.007293127629733512
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_mf1_aulc",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.07169705469845722
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_loss_delta",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 0.5962055325508118
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_acc_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.050000000000000044
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh.retention_mf1_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.007293127629733512
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint_acc_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.675
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint_mf1_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.29391304347826086
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.checkpoint_loss_delta",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": -6.464524447917938
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh_acc_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": -0.050000000000000044
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh_mf1_drop",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.007293127629733512
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.probe.retention.fresh_loss_delta",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "scalar",
+      "value": 0.5962055325508118
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "plasticity.acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.27499999999999997
+    },
+    {
+      "context": {
+        "dataset": "ISRUC",
+        "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "method": "finetune",
+        "probe_budget": 50,
+        "split": "subject-2-v0165-original",
+        "subject": "2"
+      },
+      "name": "task.plasticity.acc_gain",
+      "namespace": "raeeg.research",
+      "step": 0,
+      "unit": "ratio",
+      "value": 0.27499999999999997
+    }
+  ],
+  "read_only": true,
+  "schema_version": 1,
+  "source": {
+    "checkpoint_digests": [
+      {
+        "path": "/home/undefined/Disk/ai-storage/EdgeForge/raeeg-pretrain/v0.16.4/ISRUC/seed4323/model_parameter/ISRUC/Pretrain/feature_extractor_parameter_4323.pkl",
+        "sha256": "977038bec260beac70bd3ad88185f749752ab56df0e4e0a152192f835c84d726"
+      },
+      {
+        "path": "/home/undefined/Disk/ai-storage/EdgeForge/raeeg-pretrain/v0.16.4/ISRUC/seed4323/model_parameter/ISRUC/Pretrain/feature_encoder_parameter_4323.pkl",
+        "sha256": "ceca79c58525c150e2b6699ca95f46c5a6531e79514b7a7a2fb07bf3d296f6d3"
+      },
+      {
+        "path": "/home/undefined/Disk/ai-storage/EdgeForge/raeeg-pretrain/v0.16.4/ISRUC/seed4323/model_parameter/ISRUC/Pretrain/sleep_classifier_parameter_4323.pkl",
+        "sha256": "1fedf206e6e4ae9cca141048c64cd26b28a3b84b6fee597ad7b5475186be1d99"
+      }
+    ],
+    "fresh_checkpoint_digests": [],
+    "input_files": [
+      {
+        "data": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32/2/data/0.npy",
+        "data_sha256": "61c7325b7da8bc064af33268b59edfa1806f087cc65a7213e58ac0b887c81073",
+        "label": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32/2/label/0.npy",
+        "label_sha256": "c223e68be2a1ce2c8b6af954323cc37e795d881be45a0a09e66f1da16bf5c997"
+      },
+      {
+        "data": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32/2/data/1.npy",
+        "data_sha256": "bd50b2e6ecfad8fa4e7c607d1631b3ca054b3e47d777c3f4cde686ab1618d41b",
+        "label": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32/2/label/1.npy",
+        "label_sha256": "c223e68be2a1ce2c8b6af954323cc37e795d881be45a0a09e66f1da16bf5c997"
+      },
+      {
+        "data": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32/2/data/10.npy",
+        "data_sha256": "1b162a7588c21bed6379484c101a6ee8c6ffe6855352698f7d82293804b060db",
+        "label": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32/2/label/10.npy",
+        "label_sha256": "af546b9e7f8829c5af678daab9f7356e70a34798ae4efeb0df4cf884d105ef47"
+      },
+      {
+        "data": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32/2/data/11.npy",
+        "data_sha256": "49eebf2d52a37cd0e070994be5d176f264b963e71ccf23f546e2940ea480ab40",
+        "label": "/home/undefined/Disk/datasets/brainuicl/processed/isruc_group1_npy_float32/2/label/11.npy",
+        "label_sha256": "620e5d56c5babdccc84be4da571545209e56dfaf7d44704676331a47ee12c727"
+      }
+    ],
+    "retention_input_files": [
+      {
+        "data": "/mnt/ubuntu-space/datasets/brainuicl/processed/isruc_group1_npy_float32/1/data/0.npy",
+        "data_sha256": "b12f6408bc46eff39bc7bf8c9756aca3d27eb173fdd4f75aa712e169ed9eab0a",
+        "label": "/mnt/ubuntu-space/datasets/brainuicl/processed/isruc_group1_npy_float32/1/label/0.npy",
+        "label_sha256": "65f0912051a7bd38c52b31616c5769a6f7072baff23eabd365ef8c72eb8c3d12"
+      },
+      {
+        "data": "/mnt/ubuntu-space/datasets/brainuicl/processed/isruc_group1_npy_float32/1/data/1.npy",
+        "data_sha256": "a0672ba3e4abbf6759a1afc19d63891975372001f46ab29ce07b2efb318a5cb1",
+        "label": "/mnt/ubuntu-space/datasets/brainuicl/processed/isruc_group1_npy_float32/1/label/1.npy",
+        "label_sha256": "2456ff49a0b895bda5cb03f3f57618dbdc6a2b2695b57d20b284e4103630c599"
+      }
+    ]
+  },
+  "status": "succeeded",
+  "summary": {
+    "acc_gain": 0.27499999999999997,
+    "acc_gap_final": -0.425,
+    "dataset": "ISRUC",
+    "fresh_mode": "random-initialization",
+    "loss_aulc_gap": 0.8188127472996709,
+    "loss_gap_final": -1.046459436416626,
+    "method": "finetune",
+    "mf1_gain": 0.11516483516483515,
+    "retention_acc_drop": -0.675,
+    "retention_enabled": true,
+    "retention_labels_loaded_for_eval": true,
+    "retention_mf1_drop": -0.29391304347826086,
+    "retention_optimizer_update": false,
+    "scientific_conclusion_allowed": false,
+    "stage": 0
+  },
+  "tasks": [
+    {
+      "forgetting": {
+        "checkpoint": {
+          "retention_acc_aulc": 0.44375,
+          "retention_acc_drop": -0.675,
+          "retention_acc_final": 0.75,
+          "retention_acc_gain": 0.675,
+          "retention_acc_initial": 0.075,
+          "retention_loss_aulc": 2.138520050048828,
+          "retention_loss_delta": -6.464524447917938,
+          "retention_loss_final": 0.601011335849762,
+          "retention_loss_gain": -6.464524447917938,
+          "retention_loss_initial": 7.0655357837677,
+          "retention_mf1_aulc": 0.1975414054861995,
+          "retention_mf1_drop": -0.29391304347826086,
+          "retention_mf1_final": 0.32,
+          "retention_mf1_gain": 0.29391304347826086,
+          "retention_mf1_initial": 0.02608695652173913
+        },
+        "checkpoint_acc_drop": -0.675,
+        "checkpoint_loss_delta": -6.464524447917938,
+        "checkpoint_mf1_drop": -0.29391304347826086,
+        "fresh": {
+          "retention_acc_aulc": 0.27,
+          "retention_acc_drop": -0.050000000000000044,
+          "retention_acc_final": 0.275,
+          "retention_acc_gain": 0.050000000000000044,
+          "retention_acc_initial": 0.22499999999999998,
+          "retention_loss_aulc": 1.7332822024822234,
+          "retention_loss_delta": 0.5962055325508118,
+          "retention_loss_final": 2.142933189868927,
+          "retention_loss_gain": 0.5962055325508118,
+          "retention_loss_initial": 1.5467276573181152,
+          "retention_mf1_aulc": 0.07169705469845722,
+          "retention_mf1_drop": 0.007293127629733512,
+          "retention_mf1_final": 0.07096774193548387,
+          "retention_mf1_gain": -0.007293127629733512,
+          "retention_mf1_initial": 0.07826086956521738
+        },
+        "fresh_acc_drop": -0.050000000000000044,
+        "fresh_loss_delta": 0.5962055325508118,
+        "fresh_mf1_drop": 0.007293127629733512,
+        "interpretation": "fixed old-task retention diagnostic; labels are evaluation-only and no retention optimizer update is performed; not a LoP outcome or BWT estimate",
+        "labels_loaded": true,
+        "optimizer_scope": "target-train-only",
+        "optimizer_update": false,
+        "protocol": "old-task-retention-eval-v1",
+        "sequence_count": 2,
+        "subjects": [
+          1
+        ]
+      },
+      "measurement_protocol": "supervised-oracle-fixed-budget-heldout-v1",
+      "optimizer": {
+        "lr": 1e-05,
+        "name": "Adam",
+        "scope": "target-train-only",
+        "state_interpretation": "probe-local optimizer state; not a checkpoint trajectory",
+        "state_persisted": false,
+        "update_steps": 50,
+        "weight_decay": 0.0
+      },
+      "plasticity": {
+        "acc_gain": 0.27499999999999997,
+        "aulc": 0.37125,
+        "fresh_gap": -0.425,
+        "fresh_loss_gap": -1.046459436416626,
+        "loss_aulc": 2.8248492792248725,
+        "loss_reduction": 6.132893919944763,
+        "mf1_gain": 0.11516483516483515
+      },
+      "probe": {
+        "acc_aulc_gap": -0.29375,
+        "acc_gap_final": -0.425,
+        "budget_steps": [
+          0,
+          10,
+          25,
+          50
+        ],
+        "eval_sequences": 2,
+        "fresh": {
+          "acc_aulc": 0.0775,
+          "acc_final": 0.05,
+          "acc_gain": -0.275,
+          "acc_initial": 0.325,
+          "curve": [
+            {
+              "acc": 0.325,
+              "loss": 1.50345116853714,
+              "mf1": 0.1001610305958132,
+              "retention_acc": 0.22499999999999998,
+              "retention_loss": 1.5467276573181152,
+              "retention_mf1": 0.07826086956521738,
+              "step": 0,
+              "train_loss": null
+            },
+            {
+              "acc": 0.05,
+              "loss": 1.6185176372528076,
+              "mf1": 0.01818181818181818,
+              "retention_acc": 0.275,
+              "retention_loss": 1.528290331363678,
+              "retention_mf1": 0.07096774193548387,
+              "step": 10,
+              "train_loss": 1.0964292287826538
+            },
+            {
+              "acc": 0.05,
+              "loss": 1.9343369007110596,
+              "mf1": 0.01818181818181818,
+              "retention_acc": 0.275,
+              "retention_loss": 1.6520088911056519,
+              "retention_mf1": 0.07096774193548387,
+              "step": 25,
+              "train_loss": 0.48471879959106445
+            },
+            {
+              "acc": 0.05,
+              "loss": 2.7093089818954468,
+              "mf1": 0.01818181818181818,
+              "retention_acc": 0.275,
+              "retention_loss": 2.142933189868927,
+              "retention_mf1": 0.07096774193548387,
+              "step": 50,
+              "train_loss": 0.09192982316017151
+            }
+          ],
+          "loss_aulc": 2.0060365319252016,
+          "loss_final": 2.7093089818954468,
+          "loss_gain": 1.2058578133583069,
+          "loss_initial": 1.50345116853714,
+          "mf1_aulc": 0.026379739423217682,
+          "mf1_final": 0.01818181818181818,
+          "mf1_gain": -0.08197921241399503,
+          "mf1_initial": 0.1001610305958132,
+          "retention": {
+            "retention_acc_aulc": 0.27,
+            "retention_acc_drop": -0.050000000000000044,
+            "retention_acc_final": 0.275,
+            "retention_acc_gain": 0.050000000000000044,
+            "retention_acc_initial": 0.22499999999999998,
+            "retention_loss_aulc": 1.7332822024822234,
+            "retention_loss_delta": 0.5962055325508118,
+            "retention_loss_final": 2.142933189868927,
+            "retention_loss_gain": 0.5962055325508118,
+            "retention_loss_initial": 1.5467276573181152,
+            "retention_mf1_aulc": 0.07169705469845722,
+            "retention_mf1_drop": 0.007293127629733512,
+            "retention_mf1_final": 0.07096774193548387,
+            "retention_mf1_gain": -0.007293127629733512,
+            "retention_mf1_initial": 0.07826086956521738
+          },
+          "steps": [
+            0,
+            10,
+            25,
+            50
+          ]
+        },
+        "fresh_mode": "random-initialization",
+        "loss_aulc_gap": 0.8188127472996709,
+        "loss_gap_final": -1.046459436416626,
+        "mf1_aulc_gap": -0.11690415261067434,
+        "mf1_gap_final": -0.1541258741258741,
+        "old": {
+          "acc_aulc": 0.37125,
+          "acc_final": 0.475,
+          "acc_gain": 0.27499999999999997,
+          "acc_initial": 0.2,
+          "curve": [
+            {
+              "acc": 0.2,
+              "loss": 7.795743465423584,
+              "mf1": 0.05714285714285715,
+              "retention_acc": 0.075,
+              "retention_loss": 7.0655357837677,
+              "retention_mf1": 0.02608695652173913,
+              "step": 0,
+              "train_loss": null
+            },
+            {
+              "acc": 0.25,
+              "loss": 2.698878675699234,
+              "mf1": 0.15651515151515152,
+              "retention_acc": 0.275,
+              "retention_loss": 2.387570798397064,
+              "retention_mf1": 0.16599650349650347,
+              "step": 10,
+              "train_loss": 1.7049591541290283
+            },
+            {
+              "acc": 0.42500000000000004,
+              "loss": 2.387107193470001,
+              "mf1": 0.13840973840973841,
+              "retention_acc": 0.45,
+              "retention_loss": 1.712052345275879,
+              "retention_mf1": 0.18358395989974938,
+              "step": 25,
+              "train_loss": 0.21912042796611786
+            },
+            {
+              "acc": 0.475,
+              "loss": 1.6628495454788208,
+              "mf1": 0.1723076923076923,
+              "retention_acc": 0.75,
+              "retention_loss": 0.601011335849762,
+              "retention_mf1": 0.32,
+              "step": 50,
+              "train_loss": 0.05058012157678604
+            }
+          ],
+          "loss_aulc": 2.8248492792248725,
+          "loss_final": 1.6628495454788208,
+          "loss_gain": -6.132893919944763,
+          "loss_initial": 7.795743465423584,
+          "mf1_aulc": 0.14328389203389202,
+          "mf1_final": 0.1723076923076923,
+          "mf1_gain": 0.11516483516483515,
+          "mf1_initial": 0.05714285714285715,
+          "retention": {
+            "retention_acc_aulc": 0.44375,
+            "retention_acc_drop": -0.675,
+            "retention_acc_final": 0.75,
+            "retention_acc_gain": 0.675,
+            "retention_acc_initial": 0.075,
+            "retention_loss_aulc": 2.138520050048828,
+            "retention_loss_delta": -6.464524447917938,
+            "retention_loss_final": 0.601011335849762,
+            "retention_loss_gain": -6.464524447917938,
+            "retention_loss_initial": 7.0655357837677,
+            "retention_mf1_aulc": 0.1975414054861995,
+            "retention_mf1_drop": -0.29391304347826086,
+            "retention_mf1_final": 0.32,
+            "retention_mf1_gain": 0.29391304347826086,
+            "retention_mf1_initial": 0.02608695652173913
+          },
+          "steps": [
+            0,
+            10,
+            25,
+            50
+          ]
+        },
+        "optimizer": {
+          "lr": 1e-05,
+          "name": "Adam",
+          "scope": "target-train-only",
+          "state_interpretation": "probe-local optimizer state; not a checkpoint trajectory",
+          "state_persisted": false,
+          "update_steps": 50,
+          "weight_decay": 0.0
+        },
+        "protocol": "supervised-oracle-fixed-budget-heldout-v1",
+        "reproducibility": {
+          "cublas_workspace_config": ":4096:8",
+          "cuda_available": true,
+          "cudnn_benchmark": false,
+          "cudnn_deterministic": true,
+          "deterministic_algorithms": true,
+          "seed": 4323
+        },
+        "retention": {
+          "checkpoint": {
+            "retention_acc_aulc": 0.44375,
+            "retention_acc_drop": -0.675,
+            "retention_acc_final": 0.75,
+            "retention_acc_gain": 0.675,
+            "retention_acc_initial": 0.075,
+            "retention_loss_aulc": 2.138520050048828,
+            "retention_loss_delta": -6.464524447917938,
+            "retention_loss_final": 0.601011335849762,
+            "retention_loss_gain": -6.464524447917938,
+            "retention_loss_initial": 7.0655357837677,
+            "retention_mf1_aulc": 0.1975414054861995,
+            "retention_mf1_drop": -0.29391304347826086,
+            "retention_mf1_final": 0.32,
+            "retention_mf1_gain": 0.29391304347826086,
+            "retention_mf1_initial": 0.02608695652173913
+          },
+          "checkpoint_acc_drop": -0.675,
+          "checkpoint_loss_delta": -6.464524447917938,
+          "checkpoint_mf1_drop": -0.29391304347826086,
+          "fresh": {
+            "retention_acc_aulc": 0.27,
+            "retention_acc_drop": -0.050000000000000044,
+            "retention_acc_final": 0.275,
+            "retention_acc_gain": 0.050000000000000044,
+            "retention_acc_initial": 0.22499999999999998,
+            "retention_loss_aulc": 1.7332822024822234,
+            "retention_loss_delta": 0.5962055325508118,
+            "retention_loss_final": 2.142933189868927,
+            "retention_loss_gain": 0.5962055325508118,
+            "retention_loss_initial": 1.5467276573181152,
+            "retention_mf1_aulc": 0.07169705469845722,
+            "retention_mf1_drop": 0.007293127629733512,
+            "retention_mf1_final": 0.07096774193548387,
+            "retention_mf1_gain": -0.007293127629733512,
+            "retention_mf1_initial": 0.07826086956521738
+          },
+          "fresh_acc_drop": -0.050000000000000044,
+          "fresh_loss_delta": 0.5962055325508118,
+          "fresh_mf1_drop": 0.007293127629733512,
+          "interpretation": "fixed old-task retention diagnostic; labels are evaluation-only and no retention optimizer update is performed; not a LoP outcome or BWT estimate",
+          "labels_loaded": true,
+          "optimizer_scope": "target-train-only",
+          "optimizer_update": false,
+          "protocol": "old-task-retention-eval-v1",
+          "sequence_count": 2,
+          "subjects": [
+            1
+          ]
+        },
+        "train_sequences": 2
+      },
+      "probe_budget": 50,
+      "split": "subject-2-v0165-original",
+      "stage": 0,
+      "subject": 2,
+      "task": 0
+    }
+  ]
+}

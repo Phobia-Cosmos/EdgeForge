@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "name": "edgeforge-v12-target-probe",
+  "targets": [
+    {"name": "orangepi", "ssh_host": "orangepi", "architecture": "aarch64", "role": "conditional-arm64-runtime"},
+    {"name": "p550", "ssh_host": "p550", "architecture": "riscv64", "role": "control-plane-portability"},
+    {"name": "meles", "ssh_host": "meles", "architecture": "riscv64", "role": "control-plane-portability", "status": "offline-by-operator"},
+    {"name": "workstation-4070s", "architecture": "x86_64", "role": "compiler-reference"}
+  ],
+  "probe": {"read_only": true, "timeout_seconds": 8, "stores_raw_eeg": false, "stores_checkpoint": false},
+  "metadata": {"status": "v12-development-probe", "scientific_conclusion_allowed": false}
+}

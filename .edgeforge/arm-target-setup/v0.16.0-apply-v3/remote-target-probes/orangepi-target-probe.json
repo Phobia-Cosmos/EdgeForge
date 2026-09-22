@@ -1,0 +1,117 @@
+{
+  "name": "orangepi",
+  "probe_runner": {
+    "platform": "Linux-6.1.43-rockchip-rk3588-aarch64-with-glibc2.35",
+    "python": "3.10.12"
+  },
+  "probe_scope": "local",
+  "probed_at_utc": "2026-08-24T05:58:14Z",
+  "probes": {
+    "architecture": {
+      "elapsed_ms": 3.021,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "aarch64"
+    },
+    "cpu_count": {
+      "elapsed_ms": 2.642,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "8"
+    },
+    "cpu_info": {
+      "elapsed_ms": 5.152,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "Architecture:                    aarch64\nCPU op-mode(s):                  32-bit, 64-bit\nByte Order:                      Little Endian\nCPU(s):                          8\nOn-line CPU(s) list:             0-7\nVendor ID:                       ARM\nModel name:                      Cortex-A55\nModel:                           0\nThread(s) per core:              1\nCore(s) per socket:              4\nSocket(s):                       1\nStepping:                        r2p0\nCPU max MHz:                     1800.0000\nCPU min MHz:                     408.0000\nBogoMIPS:                        48.00\nFlags:                           fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp\nModel name:                      Cortex-A76\nModel:                           0\nThread(s) per core:              1\nCore(s) per socket:              4\nSocket(s):                       1\nStepping:                        r4p0\nCPU max MHz:                     2400.0000\nCPU min MHz:                     408.0000\nBogoMIPS:                        48.00\nFlags:                           fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp\nL1d cache:                       384 KiB (8 instances)\nL1i cache:                       384 KiB (8 instances)\nL2 cache:                        2.5 MiB (8 instances)\nL3 cache:                        3 MiB (1 instance)\nVulnerability Itlb multihit:     Not affected\nVulnerability L1tf:              Not affected\nVulnerability Mds:               Not affected\nVulnerability Meltdown:          Not affected\nVulnerability Mmio stale data:   Not affected\nVulnerability Retbleed:          Not affected\nVulnerability Spec store bypass: Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:        Mitigation; __user pointer sanitization\nVulnerability Spectre v2:        Vulnerable: Unprivileged eBPF enabled\nVulnerability Srbds:             Not affected\nVulnerability Tsx async abort:   Not affected"
+    },
+    "drm_devices": {
+      "elapsed_ms": 9.801,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "card0\ncard1\nrenderD128\nrenderD129"
+    },
+    "iree_tools": {
+      "elapsed_ms": 8.062,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "iree-compile: unavailable\niree-run-module: unavailable"
+    },
+    "kernel": {
+      "elapsed_ms": 1.91,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "Linux 6.1.43-rockchip-rk3588 #1.0.0 SMP Wed Sep 18 13:51:18 CST 2024 aarch64"
+    },
+    "memory_info": {
+      "elapsed_ms": 3.207,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "MemTotal:       16347840 kB\nMemFree:        11678660 kB\nMemAvailable:   14026184 kB\nBuffers:          178552 kB\nCached:          3232596 kB\nSwapCached:            0 kB\nActive:          1820400 kB\nInactive:        2432416 kB\nActive(anon):     537072 kB\nInactive(anon):  1355456 kB\nActive(file):    1283328 kB\nInactive(file):  1076960 kB\nUnevictable:        3152 kB\nMlocked:              64 kB\nSwapTotal:       8173916 kB\nSwapFree:        8173916 kB\nDirty:                 0 kB\nWriteback:             0 kB\nAnonPages:        845128 kB\nMapped:           801436 kB\nShmem:           1050860 kB\nKReclaimable:     149872 kB\nSlab:             217256 kB\nSReclaimable:     149872 kB\nSUnreclaim:        67384 kB\nKernelStack:        7424 kB\nPageTables:        15048 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:    16347836 kB\nCommitted_AS:    4288560 kB\nVmallocTotal:   259653632 kB\nVmallocUsed:       70580 kB\nVmallocChunk:          0 kB\nPercpu:             5216 kB\nCmaTotal:         131072 kB\nCmaAllocated:       8208 kB\nCmaReleased:      122864 kB\nCmaFree:          122864 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB"
+    },
+    "nvidia_gpu": {
+      "elapsed_ms": 8.742,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "unavailable"
+    },
+    "python_runtimes": {
+      "elapsed_ms": 39.741,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "python=3.10.12\nnumpy=True\ntorch=False\nonnxruntime=False\niree=False\nrknn=False"
+    },
+    "rknn_runtime": {
+      "elapsed_ms": 5.673,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "/usr/bin/rknn_server\n/usr/bin/rknn_demo\n/usr/lib/librknnrt.so\n/usr/lib/librknn_api.so"
+    },
+    "rknpu_device": {
+      "elapsed_ms": 10.003,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "absent"
+    },
+    "vulkan_info": {
+      "elapsed_ms": 6.477,
+      "exit_code": 0,
+      "status": "succeeded",
+      "stderr": "",
+      "stdout": "unavailable"
+    }
+  },
+  "runtime_capabilities": {
+    "drm": true,
+    "iree_python": false,
+    "iree_tools": false,
+    "numpy_python": true,
+    "onnxruntime_python": false,
+    "rk3588_npu_device": false,
+    "rknn_python": false,
+    "rknn_runtime_files": true,
+    "torch_python": false,
+    "vulkan_info": false
+  },
+  "schema_version": 1,
+  "ssh_host": null,
+  "status": "online",
+  "summary": {
+    "architecture": "aarch64",
+    "cpu_count": "8",
+    "cpu_model": "Cortex-A55",
+    "hardware_fingerprint": "2eef8acc3e7aabb24c00f506",
+    "memory_total_mb": 15964
+  }
+}

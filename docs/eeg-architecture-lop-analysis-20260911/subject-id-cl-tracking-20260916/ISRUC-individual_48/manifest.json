@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-16T18:53:27+08:00",
+  "script": "scripts/subject_identity_probe.py",
+  "experiment": "closed-set-subject-identity-probe-v1",
+  "dataset": "ISRUC",
+  "arguments": {
+    "dataset": "ISRUC",
+    "data_root": "/mnt/ubuntu-space/datasets/brainuicl/processed/isruc_group1_npy_float32",
+    "brainuicl_root": "/home/undefined/Desktop/bci/code/tta_security/BrainUICL",
+    "checkpoint_root": "/mnt/ubuntu-space/ai-storage/BrainUICL/model_parameter/ISRUC/EpochNum_2_cpc/individual_48",
+    "checkpoint_seed": 4321,
+    "batch_size": 8,
+    "gpu": 0,
+    "seed": 4321,
+    "max_sequences": 0,
+    "probe_dim": 64,
+    "plot_max_sequences": 5000,
+    "save_vectors": false,
+    "output": "docs/eeg-architecture-lop-analysis-20260911/subject-id-cl-tracking-20260916/ISRUC-individual_48"
+  },
+  "sequence_count": 4276,
+  "subject_count": 98,
+  "device": "cuda:0",
+  "checkpoint_seed": 4321,
+  "probe_dim": 64,
+  "save_vectors": false,
+  "runtime": {
+    "python": "3.12.3",
+    "platform": "Linux-6.14.0-36-generic-x86_64-with-glibc2.39",
+    "torch": "2.9.1+cu130",
+    "numpy": "2.5.0"
+  }
+}

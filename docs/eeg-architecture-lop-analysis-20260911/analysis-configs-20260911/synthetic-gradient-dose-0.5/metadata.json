@@ -1,0 +1,47 @@
+{
+  "schema": "edgeforge.synthetic-eeg-continuous-lop-positive-control.v1",
+  "dataset": "edgeforge-synthetic-eeg-lop-positive-control-v1",
+  "data_root": "/home/undefined/UbuntuData/datasets/edgeforge-synthetic-eeg-lop-positive-control-v1",
+  "source_subjects": [
+    1,
+    2,
+    3
+  ],
+  "target_subject_order": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "retention_subjects": [
+    12,
+    13
+  ],
+  "target_split": "first-half-adaptation-last-half-heldout",
+  "input_shape": [
+    8,
+    3000
+  ],
+  "classes": 2,
+  "source_steps": 500,
+  "source_lr": 0.01,
+  "adapt_steps": 50,
+  "budgets": [
+    0,
+    5,
+    10,
+    25,
+    50
+  ],
+  "adapt_lr": 0.005,
+  "batch_size": 64,
+  "positive_control": "warm_encoder_gradient_scale_after_source_pretraining",
+  "warm_encoder_gradient_scale": 0.5,
+  "fresh_mode": "random-initialization-at-each-target-stage",
+  "warm_mode": "carried-after-previous-stage-final-budget",
+  "scientific_conclusion_allowed": false
+}

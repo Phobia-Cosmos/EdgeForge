@@ -1,0 +1,76 @@
+{
+  "architectures": [
+    "brainuicl",
+    "eegnet",
+    "lop_mlp",
+    "tcn",
+    "transformer"
+  ],
+  "budget": 50,
+  "catalog": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/audit-v1/trajectory-catalog.json",
+  "reports": {
+    "brainuicl": {
+      "design_consistent": true,
+      "direction_supported": false,
+      "gate_digest": "60e14fd0b021f5ac6107788d47f91ef2281dc0970d2627f2afa168d7b7e8df34",
+      "positive_stage_count": 2,
+      "reasons": [
+        "fresh-gap direction is mixed across seeds/stages; positive and non-positive outcomes cannot support a stable LoP direction"
+      ],
+      "seed_count": 3,
+      "stage_count": 8,
+      "status": "blocked-inconsistent-direction"
+    },
+    "eegnet": {
+      "design_consistent": true,
+      "direction_supported": false,
+      "gate_digest": "6fdfd3ace3eb63148f67d629e936f6442f9c123dcadd7e45997dd3db6a7b3e4c",
+      "positive_stage_count": 0,
+      "reasons": [
+        "fresh-gap direction is mixed across seeds/stages; positive and non-positive outcomes cannot support a stable LoP direction"
+      ],
+      "seed_count": 3,
+      "stage_count": 8,
+      "status": "blocked-inconsistent-direction"
+    },
+    "lop_mlp": {
+      "design_consistent": true,
+      "direction_supported": false,
+      "gate_digest": "1f3dc77cbc691629803d0ed03116b87e387c303cefea2eeb04e643d33b019536",
+      "positive_stage_count": 0,
+      "reasons": [
+        "at least one stage has a zero or non-positive seed-level fresh gap"
+      ],
+      "seed_count": 3,
+      "stage_count": 8,
+      "status": "insufficient-direction"
+    },
+    "tcn": {
+      "design_consistent": true,
+      "direction_supported": false,
+      "gate_digest": "eb3e06fb8ee0dc5ca6991f2579eceb8c0a812cbab708202108c368b58fb72892",
+      "positive_stage_count": 2,
+      "reasons": [
+        "fresh-gap direction is mixed across seeds/stages; positive and non-positive outcomes cannot support a stable LoP direction"
+      ],
+      "seed_count": 3,
+      "stage_count": 8,
+      "status": "blocked-inconsistent-direction"
+    },
+    "transformer": {
+      "design_consistent": true,
+      "direction_supported": false,
+      "gate_digest": "e5cf2522801789d5023af57eeb2221a2a52273efd306b8b8a6397cdc88f0159c",
+      "positive_stage_count": 0,
+      "reasons": [
+        "at least one stage has a zero or non-positive seed-level fresh gap"
+      ],
+      "seed_count": 3,
+      "stage_count": 8,
+      "status": "insufficient-direction"
+    }
+  },
+  "schema_version": 1,
+  "scientific_conclusion_allowed": false,
+  "summary": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop/continuous-medium-v0.18.0-r2/summary.json"
+}

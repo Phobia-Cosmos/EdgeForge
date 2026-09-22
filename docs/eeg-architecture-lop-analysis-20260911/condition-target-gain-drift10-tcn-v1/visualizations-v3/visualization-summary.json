@@ -1,0 +1,254 @@
+{
+  "schema_version": 3,
+  "analysis": "eeg-drift-visualization-v2",
+  "data_root": "/home/undefined/UbuntuData/datasets/edgeforge-isruc-medium-target-gain-drift10-v1",
+  "output_dir": "/home/undefined/UbuntuData/ai-storage/EdgeForge/eeg-architecture-lop-analysis-20260911/condition-target-gain-drift10-tcn-v1/visualizations-v3",
+  "sampling_rate_hz": 100.0,
+  "epoch_samples": 3000,
+  "epoch_duration_seconds": 30.0,
+  "preprocessing": "read existing float32 arrays; no filtering or resampling in visualization script",
+  "waveform_window_seconds": 30.0,
+  "epoch_layout": "each ISRUC file is represented in its original order; adaptation is first 10 epochs/file and evaluation is the remaining epochs (normally last 10)",
+  "label_fraction_definition": "count of epochs in each sleep-stage class divided by the number of epochs in that file split",
+  "target_split_definition": "target adaptation and held-out evaluation are kept separate per file; evaluation is never used for updates",
+  "groups": {
+    "source": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      9,
+      10,
+      21
+    ],
+    "target": [
+      2,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "retention": [
+      5,
+      18,
+      19,
+      20
+    ]
+  },
+  "pca": {
+    "rows": 1000,
+    "features": 13,
+    "explained_variance_ratio": [
+      0.9435322139245834,
+      0.019845125988156978
+    ]
+  },
+  "pca_gain_invariant": {
+    "rows": 1000,
+    "features": 21,
+    "explained_variance_ratio": [
+      0.19017626467781254,
+      0.15893784903176522
+    ],
+    "feature_definition": "per-epoch global RMS normalized; centered log channel-RMS ratios, centered log temporal-difference RMS ratios, and 0.5-40 Hz band fractions"
+  },
+  "quantitative_drift": {
+    "target_rms_by_subject": {
+      "2": 1.5332084331021179e-06,
+      "11": 1.4985414964030497e-05,
+      "12": 1.853845333243953e-06,
+      "13": 1.5861733118072152e-05,
+      "14": 1.7291986296186224e-05,
+      "15": 1.929234940689639e-06,
+      "16": 2.1496150566235883e-06,
+      "17": 1.7561500499141403e-05
+    },
+    "target_rms_max_min_ratio": 11.454085511132677,
+    "target_rms_log10_span": 1.0589604210397896,
+    "target_band_fraction_by_subject": {
+      "2": {
+        "delta": 0.702101350997448,
+        "theta": 0.09895906133669034,
+        "alpha": 0.0793348016507024,
+        "sigma": 0.039172920326082376,
+        "beta": 0.05836817319901478
+      },
+      "11": {
+        "delta": 0.5110527566693969,
+        "theta": 0.3624348705697861,
+        "alpha": 0.06458695163362997,
+        "sigma": 0.012454686184071782,
+        "beta": 0.028366417020861782
+      },
+      "12": {
+        "delta": 0.8097428170991973,
+        "theta": 0.0847803199820489,
+        "alpha": 0.045147108014520466,
+        "sigma": 0.013247134436944225,
+        "beta": 0.03242430973535858
+      },
+      "13": {
+        "delta": 0.7383177216676954,
+        "theta": 0.08829864003083043,
+        "alpha": 0.06572918811423333,
+        "sigma": 0.025957206580915555,
+        "beta": 0.05882961111478416
+      },
+      "14": {
+        "delta": 0.6619637382239983,
+        "theta": 0.11795630975887544,
+        "alpha": 0.11835188041367053,
+        "sigma": 0.027342452567832264,
+        "beta": 0.04998538783400735
+      },
+      "15": {
+        "delta": 0.6893335838900809,
+        "theta": 0.11401848806388867,
+        "alpha": 0.06653464615763958,
+        "sigma": 0.022871361952016434,
+        "beta": 0.07180772594881432
+      },
+      "16": {
+        "delta": 0.6282168062393094,
+        "theta": 0.21348832079728572,
+        "alpha": 0.0743658700292193,
+        "sigma": 0.01560702933473437,
+        "beta": 0.0446113955795764
+      },
+      "17": {
+        "delta": 0.6420385866578442,
+        "theta": 0.19483546604026547,
+        "alpha": 0.06288510071248235,
+        "sigma": 0.014921359990941383,
+        "beta": 0.0539401046040035
+      }
+    },
+    "target_spectral_js_to_median": {
+      "2": 0.005241894509107371,
+      "11": 0.047856941959217414,
+      "12": 0.00911674655689406,
+      "13": 0.003871401806897436,
+      "14": 0.004853615022991493,
+      "15": 0.006317357739016489,
+      "16": 0.01272852097000109,
+      "17": 0.007878876854501267
+    },
+    "target_feature_subject_order": [
+      "2",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17"
+    ],
+    "target_feature_pairwise_euclidean": [
+      [
+        0.0,
+        7.267666244322358,
+        0.6801539866129844,
+        6.637685694989924,
+        7.551013140349622,
+        0.5058219297923376,
+        1.0209280345405125,
+        7.541053568244579
+      ],
+      [
+        7.267666244322358,
+        0.0,
+        7.439528304806714,
+        1.1653466729020052,
+        0.8383143362775811,
+        7.402514563513751,
+        6.476858181552199,
+        0.6278369868324096
+      ],
+      [
+        0.6801539866129844,
+        7.439528304806714,
+        0.0,
+        6.852578069541751,
+        7.7638041304703505,
+        0.457313238959379,
+        1.0480128013065824,
+        7.727605110981714
+      ],
+      [
+        6.637685694989924,
+        1.1653466729020052,
+        6.852578069541751,
+        0.0,
+        1.1298797074735705,
+        6.7961092543151596,
+        5.912797957266866,
+        1.3092558354385495
+      ],
+      [
+        7.551013140349622,
+        0.8383143362775811,
+        7.7638041304703505,
+        1.1298797074735705,
+        0.0,
+        7.718325862858442,
+        6.821456050000638,
+        0.7066065415401765
+      ],
+      [
+        0.5058219297923376,
+        7.402514563513751,
+        0.457313238959379,
+        6.7961092543151596,
+        7.718325862858442,
+        0.0,
+        1.0162307695492137,
+        7.67626531373849
+      ],
+      [
+        1.0209280345405125,
+        6.476858181552199,
+        1.0480128013065824,
+        5.912797957266866,
+        6.821456050000638,
+        1.0162307695492137,
+        0.0,
+        6.780033841998076
+      ],
+      [
+        7.541053568244579,
+        0.6278369868324096,
+        7.727605110981714,
+        1.3092558354385495,
+        0.7066065415401765,
+        7.67626531373849,
+        6.780033841998076,
+        0.0
+      ]
+    ],
+    "target_feature_farthest_pair": {
+      "subject_a": "12",
+      "subject_b": "14",
+      "distance": 7.7638041304703505
+    },
+    "spectral_distance_definition": "Jensen-Shannon divergence of normalized 0.5-40 Hz mean channel PSD to the target-subject median PSD",
+    "feature_distance_definition": "Euclidean distance after standardizing subject means of epoch-level log-RMS and band-power features across target subjects"
+  },
+  "figures": [
+    "eeg-drift-waveforms.png",
+    "eeg-drift-normalized-overlay.png",
+    "eeg-drift-spectra.png",
+    "eeg-drift-rms-trajectory.png",
+    "eeg-drift-subject-distance.png",
+    "eeg-drift-pca.png",
+    "eeg-drift-pca-gain-invariant.png",
+    "eeg-drift-labels.png"
+  ],
+  "on_demand_outputs": {
+    "subject_sequence_heatmaps": "eeg-subject-<subject>-all-epochs.png (generated by scripts/visualize-eeg-drift.py; intentionally not archived)"
+  },
+  "scientific_conclusion_allowed": false
+}

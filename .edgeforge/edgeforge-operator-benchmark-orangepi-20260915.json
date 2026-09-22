@@ -1,0 +1,189 @@
+{
+  "target": "orangepi",
+  "architecture": "aarch64",
+  "timestamp": "2026-09-15T12:45:00+08:00",
+  "backend": "python-reference",
+  "runs": [
+    {
+      "operator": {
+        "name": "matmul",
+        "shape": [
+          16,
+          16,
+          16
+        ],
+        "dtype": "fp32",
+        "backend": "python-reference",
+        "attrs": {}
+      },
+      "backend": "python-reference",
+      "correctness": true,
+      "errors": [],
+      "checksum": "dd3604b5f9f88d00b2ce48d83192eb36d1e9c8ab576b1929fdf3c9bb182c5628",
+      "timings_ms": [
+        1.028,
+        1.027,
+        1.023,
+        1.011,
+        1.014,
+        1.012,
+        1.03,
+        1.012,
+        1.013,
+        1.015
+      ],
+      "summary": {
+        "runs": 10,
+        "min_ms": 1.011,
+        "median_ms": 1.0145,
+        "p95_ms": 1.03
+      }
+    },
+    {
+      "operator": {
+        "name": "softmax",
+        "shape": [
+          128
+        ],
+        "dtype": "fp32",
+        "backend": "python-reference",
+        "attrs": {}
+      },
+      "backend": "python-reference",
+      "correctness": true,
+      "errors": [],
+      "checksum": "99876746d04cabcba57a7e1e966118903db092c2e190110de482b55519782188",
+      "timings_ms": [
+        0.067,
+        0.057,
+        0.055,
+        0.055,
+        0.055,
+        0.054,
+        0.055,
+        0.054,
+        0.054,
+        0.054
+      ],
+      "summary": {
+        "runs": 10,
+        "min_ms": 0.054,
+        "median_ms": 0.055,
+        "p95_ms": 0.067
+      }
+    },
+    {
+      "operator": {
+        "name": "rmsnorm",
+        "shape": [
+          128
+        ],
+        "dtype": "fp32",
+        "backend": "python-reference",
+        "attrs": {}
+      },
+      "backend": "python-reference",
+      "correctness": true,
+      "errors": [],
+      "checksum": "c81e09383ecd1dceea9cf36ec2765d3dc08a9679e43dcd42b9b0c6816fff90dc",
+      "timings_ms": [
+        0.052,
+        0.043,
+        0.043,
+        0.042,
+        0.043,
+        0.042,
+        0.042,
+        0.042,
+        0.042,
+        0.042
+      ],
+      "summary": {
+        "runs": 10,
+        "min_ms": 0.042,
+        "median_ms": 0.042,
+        "p95_ms": 0.052
+      }
+    },
+    {
+      "operator": {
+        "name": "silu",
+        "shape": [
+          128
+        ],
+        "dtype": "fp32",
+        "backend": "python-reference",
+        "attrs": {}
+      },
+      "backend": "python-reference",
+      "correctness": true,
+      "errors": [],
+      "checksum": "7987a91ac83fa715e7f31d796413d33ac649f4361f5ff46228bfa26267e2670c",
+      "timings_ms": [
+        0.052,
+        0.049,
+        0.048,
+        0.048,
+        0.047,
+        0.047,
+        0.047,
+        0.047,
+        0.048,
+        0.048
+      ],
+      "summary": {
+        "runs": 10,
+        "min_ms": 0.047,
+        "median_ms": 0.048,
+        "p95_ms": 0.052
+      }
+    },
+    {
+      "operator": {
+        "name": "conv_nchwc",
+        "shape": [
+          1,
+          1,
+          4,
+          4,
+          1,
+          3,
+          3,
+          1,
+          4
+        ],
+        "dtype": "fp32",
+        "backend": "python-reference",
+        "attrs": {
+          "stride_h": 1,
+          "stride_w": 1,
+          "dilation_h": 1,
+          "dilation_w": 1,
+          "accumulate": false
+        }
+      },
+      "backend": "python-reference",
+      "correctness": true,
+      "errors": [],
+      "checksum": "cbf65b3b66a9982ece0b600bf9e9f180d72534e6d895493d8e225c425352099b",
+      "timings_ms": [
+        0.496,
+        0.482,
+        0.48,
+        0.479,
+        0.48,
+        0.478,
+        0.479,
+        0.48,
+        0.478,
+        0.478
+      ],
+      "summary": {
+        "runs": 10,
+        "min_ms": 0.478,
+        "median_ms": 0.4795,
+        "p95_ms": 0.496
+      }
+    }
+  ]
+}
